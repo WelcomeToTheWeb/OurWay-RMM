@@ -72,11 +72,11 @@ func TestAssetPathAllowlist(t *testing.T) {
 	cases := map[string]bool{
 		"ourway-rmm-agent-linux-amd64":          true,
 		"ourway-rmm-agent-linux-amd64.minisig":  true,
-		"secret.txt":                        false, // on disk but not in manifest
-		"..":                                false,
-		"../secret.txt":                     false,
-		"../..":                             false,
-		"":                                  false,
+		"secret.txt":                            false, // on disk but not in manifest
+		"..":                                    false,
+		"../secret.txt":                         false,
+		"../..":                                 false,
+		"":                                      false,
 		"ourway-rmm-agent-darwin-amd64":         false, // not in manifest
 		"ourway-rmm-agent-linux-amd64.exe":      false,
 		"ourway-rmm-agent-linux-amd64.minisig2": false,
