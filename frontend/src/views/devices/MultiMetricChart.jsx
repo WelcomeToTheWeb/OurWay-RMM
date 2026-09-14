@@ -6,9 +6,9 @@ import TimeSeriesChart from "../../ui/TimeSeriesChart.jsx";
 
 const METRIC_DEFS = [
   { name: "cpu.utilization_percent", label: "CPU Utilization", source: "" },
-  { name: "mem.used_percent", label: "Memory Used", source: "" },
+  { name: "memory.used_percent", label: "Memory Used", source: "" },
   { name: "disk.used_percent", label: "Disk Used", source: "" },
-  { name: "net.bytes_received", label: "Network In", source: "" },
+  { name: "net.bytes_total", label: "Network Total", source: "" },
 ];
 
 const RANGES = ["1h", "6h", "24h", "7d"];

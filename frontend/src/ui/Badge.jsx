@@ -7,9 +7,18 @@ export function fmtNum(n) {
 	return (Math.round(n * 100) / 100).toString();
 }
 
-export function Badge({ children, className = "" }) {
+// Badge variants: ok (green), offline (amber), err (red), default (red count chip)
+export function Badge({ children, className = "", variant = "" }) {
+	let variantClass = "";
+	if (variant === "ok") {
+		variantClass = "badge-ok";
+	} else if (variant === "offline") {
+		variantClass = "badge-offline";
+	} else if (variant === "err") {
+		variantClass = "badge-err";
+	}
 	return (
-		<span className={"badge" + (className ? " " + className : "")}>
+		<span className={"badge" + (variantClass ? " " + variantClass : "") + (className ? " " + className : "")}>
 			{children}
 		</span>
 	);

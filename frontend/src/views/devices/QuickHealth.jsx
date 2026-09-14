@@ -107,9 +107,9 @@ export default function QuickHealth({ token, device, onUnauthorized }) {
     try {
       await Promise.all([
         fetchMetric("cpu.utilization_percent", "", setCpuData),
-        fetchMetric("mem.used_percent", "", setMemData),
+        fetchMetric("memory.used_percent", "", setMemData),
         fetchMetric("disk.used_percent", "", setDiskData),
-        fetchMetric("net.bytes_received", "", setNetData),
+        fetchMetric("net.bytes_total", "", setNetData),
       ]);
     } catch (e) {
       if (e.unauthorized) onUnauthorized();

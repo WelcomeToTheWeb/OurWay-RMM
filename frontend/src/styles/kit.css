@@ -519,6 +519,21 @@ table.events th {
   color: var(--badge-fg);
   box-shadow: var(--badge-glow);
 }
+.badge-ok {
+  background: var(--st-green-bg);
+  color: var(--st-green-fg);
+  box-shadow: 0 0 6px var(--st-green-fg);
+}
+.badge-offline {
+  background: var(--st-amber-bg);
+  color: var(--st-amber-fg);
+  box-shadow: none;
+}
+.badge-err {
+  background: var(--st-red-bg);
+  color: var(--st-red-fg);
+  box-shadow: 0 0 6px var(--st-red-fg);
+}
 .nav-item .badge {
   margin-left: 7px;
 }

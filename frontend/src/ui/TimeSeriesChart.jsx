@@ -140,7 +140,7 @@ const METRIC_LABELS = {
   "cpu.utilization_percent": "CPU utilization",
   "cpu.idle_percent": "CPU idle",
   "cpu.load1": "CPU load (1m)",
-  "mem.used_percent": "Memory used",
+  "memory.used_percent": "Memory used",
   "mem.available_percent": "Memory available",
   "mem.used_bytes_total": "Memory used",
   "disk.used_percent": "Disk used",

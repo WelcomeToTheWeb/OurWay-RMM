@@ -12,12 +12,12 @@ const PAIRS = [
   },
   {
     title: "Memory & Swap",
-    left: { name: "mem.used_percent", label: "Memory Used" },
+    left: { name: "memory.used_percent", label: "Memory Used" },
     right: { name: "swap.used_percent", label: "Swap Used" },
   },
   {
     title: "Network In & Out",
-    left: { name: "net.bytes_received", label: "Network In" },
+    left: { name: "net.bytes_total", label: "Network Total" },
     right: { name: "net.bytes_sent", label: "Network Out" },
   },
 ];
