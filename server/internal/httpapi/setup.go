@@ -74,14 +74,14 @@ func (s *Server) handleSetupStatus(w http.ResponseWriter, r *http.Request) {
 
 	// Build the response with OIDC info
 	resp := map[string]any{
-		"available":         st.Available,
-		"setup":             st.Setup,
-		"org_name":          st.OrgName,
-		"admin_user":        st.AdminUser,
-		"smtp_host":         st.SMTPHost,
-		"smtp_configured":   st.SMTPConfigured,
-		"devices_enrolled":  st.DevicesEnrolled,
-		"oidc_enabled":      oidcAvailable,
+		"available":        st.Available,
+		"setup":            st.Setup,
+		"org_name":         st.OrgName,
+		"admin_user":       st.AdminUser,
+		"smtp_host":        st.SMTPHost,
+		"smtp_configured":  st.SMTPConfigured,
+		"devices_enrolled": st.DevicesEnrolled,
+		"oidc_enabled":     oidcAvailable,
 	}
 	writeJSON(w, http.StatusOK, resp)
 }

@@ -1,11 +1,12 @@
 // C #10b: OpenID Connect (OIDC) authentication.
 //
 // Routes:
-//   POST /api/oidc/login -> redirect to OIDC provider authorization endpoint
-//   GET  /api/oidc/callback?code=...&state=... -> exchange code, issue JWT
-//   GET  /api/oidc/status -> check if OIDC is configured/enabled
-//   POST /api/oidc/config -> save OIDC provider configuration (admin)
-//   GET  /api/oidc/config -> retrieve OIDC provider configuration (admin)
+//
+//	POST /api/oidc/login -> redirect to OIDC provider authorization endpoint
+//	GET  /api/oidc/callback?code=...&state=... -> exchange code, issue JWT
+//	GET  /api/oidc/status -> check if OIDC is configured/enabled
+//	POST /api/oidc/config -> save OIDC provider configuration (admin)
+//	GET  /api/oidc/config -> retrieve OIDC provider configuration (admin)
 //
 // OIDC is an alternative authentication method that allows users to log in
 // with their identity provider (e.g., Google, GitHub, Azure AD, Keycloak).
@@ -280,9 +281,9 @@ func (s *Server) handleOIDCStatus(w http.ResponseWriter, r *http.Request) {
 
 	// Don't expose sensitive info
 	writeJSON(w, http.StatusOK, map[string]any{
-		"enabled": cfg.Enabled,
+		"enabled":    cfg.Enabled,
 		"configured": cfg.IssuerURL != "" && cfg.ClientID != "",
-		"provider": cfg.IssuerURL,
+		"provider":   cfg.IssuerURL,
 	})
 }
 

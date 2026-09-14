@@ -27,13 +27,13 @@ import (
 
 // ProviderConfig holds the OIDC provider settings stored by the admin.
 type ProviderConfig struct {
-	Enabled     bool   `json:"enabled"`
-	IssuerURL   string `json:"issuer_url"`
-	ClientID    string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-	Scopes      []string `json:"scopes"` // defaults to ["openid", "email", "profile"]
-	RoleClaim   string `json:"role_claim"`   // claim to map to role (optional)
-	EmailClaim  string `json:"email_claim"`  // claim to use for email (default: email)
+	Enabled      bool     `json:"enabled"`
+	IssuerURL    string   `json:"issuer_url"`
+	ClientID     string   `json:"client_id"`
+	ClientSecret string   `json:"client_secret"`
+	Scopes       []string `json:"scopes"`      // defaults to ["openid", "email", "profile"]
+	RoleClaim    string   `json:"role_claim"`  // claim to map to role (optional)
+	EmailClaim   string   `json:"email_claim"` // claim to use for email (default: email)
 }
 
 // DefaultScopes for OIDC login.
@@ -121,7 +121,7 @@ func OAuth2Config(cfg ProviderConfig, redirectURL string) *oauth2.Config {
 		return &oauth2.Config{
 			ClientID: cfg.ClientID,
 			Endpoint: oauth2.Endpoint{
-				AuthURL: cfg.IssuerURL + "/authorize",
+				AuthURL:  cfg.IssuerURL + "/authorize",
 				TokenURL: cfg.IssuerURL + "/token",
 			},
 			RedirectURL: redirectURL,
@@ -129,10 +129,10 @@ func OAuth2Config(cfg ProviderConfig, redirectURL string) *oauth2.Config {
 		}
 	}
 	return &oauth2.Config{
-		ClientID: cfg.ClientID,
+		ClientID:     cfg.ClientID,
 		ClientSecret: cfg.ClientSecret,
 		Endpoint: oauth2.Endpoint{
-			AuthURL: cfg.IssuerURL + "/authorize",
+			AuthURL:  cfg.IssuerURL + "/authorize",
 			TokenURL: cfg.IssuerURL + "/token",
 		},
 		RedirectURL: redirectURL,
@@ -155,12 +155,12 @@ func scopes(scopes []string) []string {
 
 // IDTokenClaims holds the claims extracted from an OIDC ID token.
 type IDTokenClaims struct {
-	Sub       string `json:"sub"`
-	Email     string `json:"email"`
-	EmailVerified bool `json:"email_verified"`
-	Name      string `json:"name"`
-	Picture   string `json:"picture"`
-	Role      string `json:"role"`
+	Sub           string `json:"sub"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"email_verified"`
+	Name          string `json:"name"`
+	Picture       string `json:"picture"`
+	Role          string `json:"role"`
 }
 
 // ParseIDTokenClaims parses raw claims into our struct.
@@ -194,12 +194,12 @@ func ParseIDTokenClaims(claims map[string]interface{}) (*IDTokenClaims, error) {
 
 // OIDCIdentity represents a user identified via OIDC.
 type OIDCIdentity struct {
-	ProviderSub string    // OIDC subject
-	Username    string    // Local username
-	Email       string    // Email address
-	Name        string    // Display name
-	Role        string    // RBAC role (admin/tech/viewer)
-	Picture     string    // Avatar URL
+	ProviderSub string // OIDC subject
+	Username    string // Local username
+	Email       string // Email address
+	Name        string // Display name
+	Role        string // RBAC role (admin/tech/viewer)
+	Picture     string // Avatar URL
 }
 
 // UsernameFromEmail generates a local username from an email address.

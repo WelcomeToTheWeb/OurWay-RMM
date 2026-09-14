@@ -89,10 +89,10 @@ func TestParseIDTokenClaims(t *testing.T) {
 
 func TestMapClaimsToIdentity(t *testing.T) {
 	claims := &IDTokenClaims{
-		Sub:       "12345",
-		Email:     "test@example.com",
-		Name:      "Test User",
-		Picture:   "https://example.com/pic.jpg",
+		Sub:     "12345",
+		Email:   "test@example.com",
+		Name:    "Test User",
+		Picture: "https://example.com/pic.jpg",
 	}
 
 	identity := MapClaimsToIdentity(claims, map[string]interface{}{}, "")

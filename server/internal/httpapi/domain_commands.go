@@ -155,10 +155,10 @@ type dispatchRequest struct {
 	ContentB64 string   `json:"content_b64"` // gap #1a: inline content for push
 	Mode       string   `json:"mode"`        // gap #1a: octal mode for push
 	// Process management
-	PID      int32  `json:"pid"`
-	Force    bool   `json:"force"`
+	PID   int32 `json:"pid"`
+	Force bool  `json:"force"`
 	// Service management
-	ServiceName string `json:"service_name"`
+	ServiceName   string `json:"service_name"`
 	ServiceAction string `json:"service_action"`
 }
 

@@ -37,10 +37,10 @@ const (
 	CapFilePull = "rmmway.file_pull"
 	CapFilePush = "rmmway.file_push"
 	// Process/service management.
-	CapListProcesses   = "rmmway.list_processes"
-	CapKillProcess     = "rmmway.kill_process"
-	CapListServices    = "rmmway.list_services"
-	CapServiceControl  = "rmmway.service_control"
+	CapListProcesses  = "rmmway.list_processes"
+	CapKillProcess    = "rmmway.kill_process"
+	CapListServices   = "rmmway.list_services"
+	CapServiceControl = "rmmway.service_control"
 
 	// TokenIssuer is the `iss` claim of every capability token.
 	TokenIssuer = "rmmway"
