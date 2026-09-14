@@ -8,11 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os/exec"
-	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/sys/windows"
+	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 
 	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
@@ -46,10 +47,10 @@ func listProcessesWindows(nameFilter string) ([]ProcessInfo, error) {
 		}
 
 		info := ProcessInfo{
-			PID:      p.Id,
-			Name:     p.Name,
-			CPU:      fmt.Sprintf("%.1f", p.CPU),
-			Mem:      fmt.Sprintf("%.1f", memPct),
+			PID:       p.Id,
+			Name:      p.Name,
+			CPU:       fmt.Sprintf("%.1f", p.CPU),
+			Mem:       fmt.Sprintf("%.1f", memPct),
 			StartTime: p.StartTime,
 		}
 
@@ -65,15 +66,14 @@ func listProcessesWindows(nameFilter string) ([]ProcessInfo, error) {
 }
 
 type windowsProcess struct {
-	Id          int     `json:"Id"`
-	Name        string  `json:"Name"`
-	CPU         float64 `json:"CPU"`
-	WorkingSet64 int64  `json:"WorkingSet64"`
-	StartTime   string  `json:"StartTime"`
+	Id           int     `json:"Id"`
+	Name         string  `json:"Name"`
+	CPU          float64 `json:"CPU"`
+	WorkingSet64 int64   `json:"WorkingSet64"`
+	StartTime    string  `json:"StartTime"`
 }
 
 func totalMemoryBytes() uint64 {
-	// Use GlobalMemoryStatusEx equivalent
 	out, err := exec.Command("powershell", "-NoProfile", "-Command", "[int64]((Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory)").Output()
 	if err != nil {
 		return 0
@@ -86,32 +86,20 @@ func totalMemoryBytes() uint64 {
 }
 
 func processUserWindows(pid int) (string, error) {
-	// Use tasklist to get process owner
+	// Simplified: use tasklist to get session info
 	out, err := exec.Command("tasklist", "/FI", fmt.Sprintf("PID eq %d", pid), "/FO", "CSV", "/NH").Output()
 	if err != nil {
 		return "", err
 	}
-
-	// Parse CSV output: "ImageName","PID","Session Name","Session#","Mem Usage"
-	// Actually tasklist with /FI returns image name, PID, session, session#, mem usage
-	// To get username, use a different approach
-	return "SYSTEM", nil // Simplified for now
+	_ = out // For now, just return a placeholder
+	return "SYSTEM", nil
 }
 
 func killProcessWindows(pid int, force bool) error {
-	// Use OpenProcess and TerminateProcess
-	h, err := windows.OpenProcess(windows.PROCESS_TERMINATE, false, uint32(pid))
-	if err != nil {
-		return fmt.Errorf("open process %d: %w", pid, err)
-	}
-	defer windows.CloseHandle(h)
-
 	if force {
-		return windows.TerminateProcess(h, 0)
+		return exec.Command("taskkill", "/F", "/PID", strconv.Itoa(pid)).Run()
 	}
-	// For non-force, send WM_CLOSE is complex; use taskkill instead
-	cmd := exec.Command("taskkill", "/PID", strconv.Itoa(pid))
-	return cmd.Run()
+	return exec.Command("taskkill", "/PID", strconv.Itoa(pid)).Run()
 }
 
 func listServicesWindows(nameFilter string) ([]ServiceInfo, error) {
@@ -147,30 +135,26 @@ func listServicesWindows(nameFilter string) ([]ServiceInfo, error) {
 		services = append(services, ServiceInfo{
 			Name:   name,
 			Status: serviceStatusString(status.State),
-			Active: statusString(status),
+			Active: serviceStatusString(status.State),
 		})
 	}
 
 	return services, nil
 }
 
-func serviceStatusString(state windows.SERVICE_STATE) string {
+func serviceStatusString(state svc.State) string {
 	switch state {
-	case windows.SERVICE_RUNNING:
+	case svc.Running:
 		return "running"
-	case windows.SERVICE_STOPPED:
+	case svc.Stopped:
 		return "stopped"
-	case windows.SERVICE_START_PENDING:
+	case svc.StartPending:
 		return "starting"
-	case windows.SERVICE_STOP_PENDING:
+	case svc.StopPending:
 		return "stopping"
 	default:
 		return "unknown"
 	}
-}
-
-func statusString(status windows.SERVICE_STATUS) string {
-	return serviceStatusString(status.State)
 }
 
 func serviceControlWindows(serviceName string, action string) error {
@@ -188,14 +172,14 @@ func serviceControlWindows(serviceName string, action string) error {
 
 	switch action {
 	case "start":
-		_, err = s.Start()
+		err = s.Start()
 	case "stop":
-		err = s.Control(windows.SERVICE_CONTROL_STOP)
+		_, err = s.Control(svc.Stop)
 	case "restart":
-		err = s.Control(windows.SERVICE_CONTROL_STOP)
+		_, err = s.Control(svc.Stop)
 		if err == nil {
 			time.Sleep(500 * time.Millisecond)
-			_, err = s.Start()
+			err = s.Start()
 		}
 	default:
 		return fmt.Errorf("unknown action: %s", action)
@@ -217,6 +201,5 @@ func serviceAction(a agentv1.ServiceControl_Action) string {
 	}
 }
 
-func runtimeError(msg string) error {
-	return fmt.Errorf("%s", msg)
-}
+// Suppress unused variable warning for windows handle operations
+var _ = windows.OpenProcess

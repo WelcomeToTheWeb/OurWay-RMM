@@ -7,7 +7,6 @@ package uplink
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
