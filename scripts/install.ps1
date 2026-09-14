@@ -238,6 +238,11 @@ if (Get-Service -Name $svc -ErrorAction SilentlyContinue) {
     Log "service $svc registered"
     Set-SvcBinPath $binPath
     Push-SvcBinPath $svc $binPath
+    # Set start type to auto (was disabled for initial registration)
+    & sc.exe config $svc start= auto | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Log "WARNING: could not set service to auto-start"
+    }
     try {
         Start-Service $svc -ErrorAction Stop
     } catch {

@@ -238,10 +238,6 @@ func (s *Server) deviceSub(w http.ResponseWriter, r *http.Request) {
 			s.deviceMetricSeries(w, r, parts[2])
 			return
 		}
-		http.Error(w, "expected /devices/{id}/metrics/series", http.StatusNotFound)
-		return
-	}
-	if len(parts) == 5 {
 		if parts[3] == "inventory" && parts[4] == "collect" {
 			if !requireRole(w, r, "admin", "tech") { // gap #3: operational
 				return
@@ -249,7 +245,7 @@ func (s *Server) deviceSub(w http.ResponseWriter, r *http.Request) {
 			s.handleTriggerInventoryCollect(w, r, parts[2])
 			return
 		}
-		http.Error(w, "expected /devices/{id}/(commands|export|events|metrics|inventory)", http.StatusNotFound)
+		http.Error(w, "expected /devices/{id}/metrics/series or /devices/{id}/inventory/collect", http.StatusNotFound)
 		return
 	}
 	if len(parts) != 4 ||
