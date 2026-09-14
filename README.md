@@ -12,26 +12,28 @@ RMMWay is a self-hosted remote monitoring & management (RMM) platform. A small s
 - **One-click enrollment** — mint a token in the UI, paste a single command on the target
 - **Signed auto-updates** — agents self-update with cryptographic verification
 - **Reporting & compliance** — scheduled and on-demand reports in CSV/PDF
+- **OIDC support** — integrate with Okta, Auth0, Keycloak, and other OpenID Connect identity providers for single sign-on
 - **Integrations** — webhooks (HMAC-SHA256 signed), SSE event stream, and client data export
 
 ## Quick Start
 
-Requires Docker. The entire stack runs in containers with pre-built images. No git clone needed — just download the compose file and configure secrets.
+Requires Docker. The entire stack runs in containers with pre-built images. There is no need to clone the repo — just download the compose file and configure secrets.
 
 ### 1. Get the compose file
 
 Download the release compose file from the [latest release](https://github.com/welcometotheweb/rmmway/releases):
 
 ```sh
-curl -LO https://github.com/welcometotheweb/rmmway/releases/download/v1.1.0/docker-compose.release.yml
+curl -LO https://github.com/welcometotheweb/rmmway/releases/download/v1.2.0/docker-compose.release.yml
 ```
 
 ### 2. Configure secrets
 
-Copy the example environment file and set the required secrets:
+Download the example environment file from the same release and set the required secrets:
 
 ```sh
-cp .env.prod.example .env.prod
+curl -LO https://github.com/welcometotheweb/rmmway/releases/download/v1.2.0/default.env.prod.example
+cp default.env.prod.example .env.prod
 ```
 
 Edit `.env.prod` and set these required secrets (generate each with `openssl rand -hex 32`):
