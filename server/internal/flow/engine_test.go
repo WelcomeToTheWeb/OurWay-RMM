@@ -1,7 +1,7 @@
 package flow
 
 // Live-Postgres lifecycle tests for the W5-2 engine (skipped when
-// RMMWAY_TEST_PG_DSN is not reachable — same convention as the store/heal
+// OURWAY_RMM_TEST_PG_DSN is not reachable — same convention as the store/heal
 // packages). Each test runs in a scratch database it tears down.
 //
 // These exercise the ENGINE with the in-process memBus (synchronous
@@ -24,17 +24,17 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // ---- scratch database ------------------------------------------------------
 
 func scratchPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	dsn := os.Getenv("RMMWAY_TEST_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_TEST_PG_DSN")
 	if dsn == "" {
-		t.Skip("RMMWAY_TEST_PG_DSN not set — skipping flow Postgres test")
+		t.Skip("OURWAY_RMM_TEST_PG_DSN not set — skipping flow Postgres test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -52,7 +52,7 @@ func scratchPool(t *testing.T) *pgxpool.Pool {
 	}
 	rnd := make([]byte, 4)
 	_, _ = rand.Read(rnd)
-	dbName := "rmmway_flow_test_" + time.Now().Format("20060102150405") + "_" + hex.EncodeToString(rnd)
+	dbName := "ourway-rmm_flow_test_" + time.Now().Format("20060102150405") + "_" + hex.EncodeToString(rnd)
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		t.Fatalf("create db: %v", err)
 	}

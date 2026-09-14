@@ -21,7 +21,7 @@ while :; do
   state=$(docker compose ps -a --format '{{.Name}} {{.State}} {{.Health}}' 2>/dev/null || true)
 
   for svc in "${services[@]}"; do
-    # Compose names containers <project>-<service> (here rmmway-<service>);
+    # Compose names containers <project>-<service> (here ourway-rmm-<service>);
     # match the "<svc>" line by exact name suffix.
     line=""
     while read -r name st health; do
@@ -34,7 +34,7 @@ while :; do
     case "$state_word" in
       exited|dead)
         echo "==> $svc container EXITED — logs:" >&2
-        docker logs --tail 30 "rmmway-$svc" >&2 2>/dev/null || true
+        docker logs --tail 30 "ourway-rmm-$svc" >&2 2>/dev/null || true
         fail "service $svc exited; see logs above" ;;
       restarting)
         restarts[$svc]=1
@@ -49,7 +49,7 @@ while :; do
   done
 
   for svc in "${!restarts[@]}"; do
-    echo "    $svc: restarting (check 'docker logs rmmway-$svc')"
+    echo "    $svc: restarting (check 'docker logs ourway-rmm-$svc')"
   done
 
   ok_count=0

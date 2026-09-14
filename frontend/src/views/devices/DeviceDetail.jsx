@@ -387,7 +387,7 @@ function DeviceExport({ token, device, onUnauthorized }) {
     setErr("");
     try {
       const blob = await api.exportDevice(token, device.id);
-      const name = `${host}-rmmway-export-${new Date().toISOString().slice(0, 10)}.zip`;
+      const name = `${host}-ourway-rmm-export-${new Date().toISOString().slice(0, 10)}.zip`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

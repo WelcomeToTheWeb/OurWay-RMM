@@ -1,7 +1,7 @@
-// load-test — RMMWay synthetic agent load test harness.
+// load-test — OurWay RMM synthetic agent load test harness.
 //
 // Simulates N fake agents that enroll, connect, and send heartbeats +
-// metric batches to a live RMMWay server. Reports throughput, latency,
+// metric batches to a live OurWay RMM server. Reports throughput, latency,
 // and resource usage during the test period.
 //
 // Usage: ./load-test -n 5000 -duration 15m -server localhost
@@ -26,7 +26,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // Config from flags.

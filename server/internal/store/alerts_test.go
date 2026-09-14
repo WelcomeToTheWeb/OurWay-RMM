@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/baseline"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/baseline"
 )
 
 // ---- pure reconciler logic (no database) ------------------------------------
@@ -128,11 +128,11 @@ func TestPlanReconcileTwoSeries(t *testing.T) {
 //   - manual ack/resolve transitions work and invalid ones are refused,
 //   - List/Counts return the right rows.
 //
-// Requires RMMWAY_TEST_PG_DSN; skipped otherwise.
+// Requires OURWAY_RMM_TEST_PG_DSN; skipped otherwise.
 func TestAlertsStoreLive(t *testing.T) {
-	dsn := os.Getenv("RMMWAY_TEST_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_TEST_PG_DSN")
 	if dsn == "" {
-		t.Skip("RMMWAY_TEST_PG_DSN not set — skipping alerts Postgres test")
+		t.Skip("OURWAY_RMM_TEST_PG_DSN not set — skipping alerts Postgres test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
@@ -149,7 +149,7 @@ func TestAlertsStoreLive(t *testing.T) {
 	if err := admin.Ping(ctx); err != nil {
 		t.Skipf("postgres not reachable: %v", err)
 	}
-	dbName := "rmmway_test_" + time.Now().Format("20060102150405")
+	dbName := "ourway-rmm_test_" + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		t.Fatalf("create db: %v", err)
 	}

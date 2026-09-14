@@ -2,7 +2,7 @@
 // promise.
 //
 // A client (device) export is a single SELF-DESCRIBING ZIP bundle containing
-// everything RMMWay knows about that client:
+// everything OurWay RMM knows about that client:
 //
 //	manifest.json       — the bundle contract: format name + version, export
 //	                      metadata, and every other file with its size,
@@ -22,7 +22,7 @@
 // Self-describing: manifest.json alone drives Verify — it re-hashes every
 // file, rejects stray entries, and re-reads each Parquet section with an
 // independent standard Parquet reader, checking row counts and decodability.
-// The bundle is portable data, not an RMMWay database dump: no internal
+// The bundle is portable data, not an OurWay RMM database dump: no internal
 // table names, no server-only types in the payloads.
 package export
 
@@ -39,13 +39,13 @@ import (
 
 	"github.com/parquet-go/parquet-go"
 
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // Bundle format identifiers (bump FormatVersion when the layout or the
 // Parquet schemas change).
 const (
-	FormatName    = "rmmway-client-bundle"
+	FormatName    = "ourway-rmm-client-bundle"
 	FormatVersion = 1
 
 	ManifestName = "manifest.json"
@@ -55,8 +55,8 @@ const (
 	AlertsName   = "alerts.json"
 	ReadmeName   = "README.md"
 
-	deviceSchema = "rmmway.device/v1"
-	alertsSchema = "rmmway.alerts/v1"
+	deviceSchema = "ourway-rmm.device/v1"
+	alertsSchema = "ourway-rmm.alerts/v1"
 )
 
 // ---- Parquet section schemas (flat + standard) ------------------------------
@@ -245,7 +245,7 @@ type Service struct {
 // New builds a Service.
 func New(cfg Config) *Service {
 	if cfg.Version == "" {
-		cfg.Version = "rmmway-server"
+		cfg.Version = "ourway-rmm-server"
 	}
 	return &Service{
 		devices: cfg.Devices,
@@ -537,7 +537,7 @@ func nonNil(s []string) []string {
 
 // readme renders the in-bundle README.md.
 func (s *Service) readme(dev *store.Device) string {
-	return fmt.Sprintf(`# RMMWay client export
+	return fmt.Sprintf(`# OurWay RMM client export
 
 Self-describing bundle exported by %s on %s for device %s (%s).
 The contract is in manifest.json: every file's size, sha256 and row count.
@@ -592,6 +592,6 @@ in duckdb:
 
     CREATE TABLE metrics AS SELECT * FROM 'metrics.parquet';
 
-The bundle is portable data, not an RMMWay database dump.
+The bundle is portable data, not an OurWay RMM database dump.
 `, s.version, s.now().UTC().Format(time.RFC3339), dev.ID, dev.Hostname)
 }

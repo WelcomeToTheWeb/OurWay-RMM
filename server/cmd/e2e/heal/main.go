@@ -28,7 +28,7 @@
 //  5. A's heal_events log is the full state machine:
 //     detected -> verifying -> remediating -> confirming -> resolved.
 //
-// Usage: RMMWAY_PG_DSN=... go run ./cmd/e2e/heal
+// Usage: OURWAY_RMM_PG_DSN=... go run ./cmd/e2e/heal
 package main
 
 import (
@@ -51,12 +51,12 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/heal"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/heal"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 func die(f string, a ...any) {
@@ -85,9 +85,9 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
 
-	dsn := os.Getenv("RMMWAY_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_PG_DSN")
 	if dsn == "" {
-		dsn = "postgres://rmmway:rmmway@localhost:5432/rmmway?sslmode=disable"
+		dsn = "postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm?sslmode=disable"
 	}
 	u, err := url.Parse(dsn)
 	if err != nil {
@@ -101,7 +101,7 @@ func main() {
 	if err := admin.Ping(ctx); err != nil {
 		die("postgres not reachable: %v", err)
 	}
-	dbName := "rmmway_heal_e2e_" + time.Now().Format("20060102150405")
+	dbName := "ourway-rmm_heal_e2e_" + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		die("create scratch db: %v", err)
 	}

@@ -5,7 +5,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // wireUsers builds the operator account store (gap #3, wave 2, lane B).

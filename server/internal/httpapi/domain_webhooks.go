@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/welcometotheweb/rmmway/server/internal/webhook"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/webhook"
 )
 
 // ---- W6-2: signed webhooks + live event stream -----------------------------

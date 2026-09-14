@@ -173,9 +173,9 @@ function Header({ route, openCount, onOpenPalette }) {
   return (
     <header className="topbar">
       <div className="brand">
-        RMMWay
+        OurWay RMM
         {health && health.version && (
-          <span className="brand-version" title={`RMMWay ${health.version}`}>
+          <span className="brand-version" title={`OurWay RMM ${health.version}`}>
             {health.version}
           </span>
         )}
@@ -356,7 +356,7 @@ function Shell() {
         if (!env || !env.category) return;
         setLastEvent(env);
         // Command results are journaled under the "automation" category
-        // (rmmway.events.command.result); "command" is kept for streams that
+        // (ourway-rmm.events.command.result); "command" is kept for streams that
         // still label them that way.
         if (
           env.category === "inventory" ||

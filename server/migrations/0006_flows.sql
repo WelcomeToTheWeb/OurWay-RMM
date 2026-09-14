@@ -3,7 +3,7 @@
 --
 -- A flow is a small DAG (trigger -> actions) stored as validated JSONB. The
 -- engine is event-driven: every hop of every run travels the NATS bus
--- (rmmway.events.*), and the database only holds the replay-safe state:
+-- (ourway-rmm.events.*), and the database only holds the replay-safe state:
 --
 --   flows       — the composed DAGs (name, graph JSONB, enabled).
 --   flow_runs   — one row per chain execution (trigger event -> terminal

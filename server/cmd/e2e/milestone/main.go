@@ -6,11 +6,11 @@
 //  1. The current agent binary is staged as a "release" and served from a
 //     local HTTP mirror (the production path is the same installer hitting a
 //     GitHub release; scripts/install.sh already honours the
-//     RMMWAY_GITHUB_API / RMMWAY_DOWNLOAD_BASE overrides for exactly this).
+//     OURWAY_RMM_GITHUB_API / OURWAY_RMM_DOWNLOAD_BASE overrides for exactly this).
 //  2. A bootstrap token is minted through the real /admin/bootstrap.
 //  3. The REAL one-line installer (scripts/install.sh) runs on this machine:
 //     it downloads the agent over HTTP, verifies it runs, installs it,
-//     writes /etc/rmmway/agent.env and starts it as a systemd service.
+//     writes /etc/ourway-rmm/agent.env and starts it as a systemd service.
 //  4. The REAL agent binary self-enrolls (W1-4), persists its identity, and
 //     streams live collector metrics (W1-2) — the first monitored device,
 //     timed from t=0. Gated checks: online in the API, findable in
@@ -70,10 +70,10 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/baseline"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/baseline"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 func die(f string, a ...any) {
@@ -194,8 +194,8 @@ func pollUntil(what string, timeout time.Duration, fn func() error) error {
 
 func main() {
 	httpAddr := "http://127.0.0.1:8080"
-	pgDSN := "postgres://rmmway:***@localhost:5432/rmmway?sslmode=disable"
-	repoRoot := "/opt/projects/RMMWay"
+	pgDSN := "postgres://ourway-rmm:***@localhost:5432/ourway-rmm?sslmode=disable"
+	repoRoot := "/opt/projects/OurWay RMM"
 	if len(os.Args) > 1 {
 		httpAddr = os.Args[1]
 	}
@@ -252,7 +252,7 @@ func main() {
 	if _, err := os.Stat(install); err != nil {
 		die("installer not found at %s: %v", install, err)
 	}
-	agentBin := filepath.Join(repoRoot, "agent/dist/rmmway-agent-linux-amd64")
+	agentBin := filepath.Join(repoRoot, "agent/dist/ourway-rmm-agent-linux-amd64")
 	agentBinInfo, err := os.Stat(agentBin)
 	if err != nil {
 		die("agent binary missing (run `make agent` first): %v", err)
@@ -281,8 +281,8 @@ func main() {
 	}
 	info("staged agent: %s", strings.TrimSpace(string(verOut)))
 
-	mirror := filepath.Join(os.TempDir(), "rmmway-mirror")
-	assetPath := filepath.Join(mirror, "v1", "rmmway-agent-linux-amd64")
+	mirror := filepath.Join(os.TempDir(), "ourway-rmm-mirror")
+	assetPath := filepath.Join(mirror, "v1", "ourway-rmm-agent-linux-amd64")
 	if err := os.MkdirAll(filepath.Dir(assetPath), 0755); err != nil {
 		die("mirror mkdir: %v", err)
 	}
@@ -297,7 +297,7 @@ func main() {
 	// Local release mirror: the installer's "latest" lookup + asset download.
 	go func() {
 		mux := http.NewServeMux()
-		mux.Handle("/repos/welcometotheweb/rmmway/releases/latest",
+		mux.Handle("/repos/welcometotheweb/ourway-rmm/releases/latest",
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				_, _ = w.Write(apiJSON)
@@ -323,20 +323,20 @@ func main() {
 
 	// ---------------------------------------------------------------- 3.
 	step("3. one-line bootstrap via the REAL installer (systemd)")
-	if old, _ := exec.Command("systemctl", "is-active", "rmmway-agent.service").CombinedOutput(); strings.TrimSpace(string(old)) == "active" {
-		die("rmmway-agent already active — not a clean machine (teardown a prior run first)")
+	if old, _ := exec.Command("systemctl", "is-active", "ourway-rmm-agent.service").CombinedOutput(); strings.TrimSpace(string(old)) == "active" {
+		die("ourway-rmm-agent already active — not a clean machine (teardown a prior run first)")
 	}
 	env := os.Environ()
-	// The installer appends /repos/${REPO}/releases/latest to RMMWAY_GITHUB_API
-	// and /${VERSION}/rmmway-agent-<os>-<arch> to RMMWAY_DOWNLOAD_BASE.
+	// The installer appends /repos/${REPO}/releases/latest to OURWAY_RMM_GITHUB_API
+	// and /${VERSION}/ourway-rmm-agent-<os>-<arch> to OURWAY_RMM_DOWNLOAD_BASE.
 	env = append(env,
-		"RMMWAY_GITHUB_API=http://127.0.0.1:18099",
-		"RMMWAY_DOWNLOAD_BASE=http://127.0.0.1:18099",
+		"OURWAY_RMM_GITHUB_API=http://127.0.0.1:18099",
+		"OURWAY_RMM_DOWNLOAD_BASE=http://127.0.0.1:18099",
 	)
 	installCmd := exec.Command("bash", install, "--server", httpAddr, "--bootstrap", boot.BootstrapToken)
 	// The dev server splits HTTP (:8080) and gRPC (:50051); the agent can't
 	// know the gRPC port from the --server URL, so hand it explicitly (the
-	// installer's --grpc-addr writes RMMWAY_GRPC_ADDR into the agent config).
+	// installer's --grpc-addr writes OURWAY_RMM_GRPC_ADDR into the agent config).
 	// The W3-1 mTLS channel (:50052) is passed the same way.
 	if u, uerr := url.Parse(httpAddr); uerr == nil && u.Hostname() != "" {
 		installCmd.Args = append(installCmd.Args,
@@ -359,8 +359,8 @@ func main() {
 			info("installer: %s", line)
 		}
 	}
-	if err := pollUntil("rmmway-agent.service active", 30*time.Second, func() error {
-		out, err := exec.Command("systemctl", "is-active", "rmmway-agent.service").CombinedOutput()
+	if err := pollUntil("ourway-rmm-agent.service active", 30*time.Second, func() error {
+		out, err := exec.Command("systemctl", "is-active", "ourway-rmm-agent.service").CombinedOutput()
 		if err != nil {
 			return err
 		}
@@ -847,7 +847,7 @@ func liveFaultE2E(httpAddr string, pg *pgx.Conn, devID, opToken string) liveStat
 	info("live series: %s[%s] at %.1f%% (measured from the agent's own samples)", metric, source, level)
 
 	// 2. Stop the agent for a deterministic injection window.
-	if out, err := exec.Command("systemctl", "stop", "rmmway-agent.service").CombinedOutput(); err != nil {
+	if out, err := exec.Command("systemctl", "stop", "ourway-rmm-agent.service").CombinedOutput(); err != nil {
 		die("stop agent: %v: %s", err, out)
 	}
 	info("agent service stopped (deterministic fault-injection window)")
@@ -979,7 +979,7 @@ type liveStats struct {
 
 // identityFile is the persisted identity the real agent wrote (same path the
 // installer's config + agent default resolve to).
-const identityFile = "/etc/rmmway/agent-identity.json"
+const identityFile = "/etc/ourway-rmm/agent-identity.json"
 
 type agentIdentity struct {
 	DeviceID string `json:"device_id"`
@@ -994,7 +994,7 @@ type agentIdentity struct {
 // verifyRotation proves the W3-2 DoD against the LIVE server: the agent's
 // leaf (~1h) renews itself automatically — via its own rotator calling
 // RefreshLeaf on the mTLS channel — and the uplink never drops for it. The
-// demo can't wait an hour, so RMMWAY_ROTATE_AFTER=45s (an e2e-only knob)
+// demo can't wait an hour, so OURWAY_RMM_ROTATE_AFTER=45s (an e2e-only knob)
 // forces the first rotation shortly after the agent comes back up:
 //
 //  1. capture the enrolled leaf (identity file + device_certs) and the
@@ -1052,19 +1052,19 @@ func verifyRotation(httpAddr string, pg *pgx.Conn) error {
 
 	// 2. force a rotation ~45s after the agent restarts (e2e knob), then
 	// come back up on the same mTLS channel.
-	cfg := "/etc/rmmway/agent.env"
+	cfg := "/etc/ourway-rmm/agent.env"
 	env, err := os.ReadFile(cfg)
 	if err != nil {
 		return fmt.Errorf("read agent env: %w", err)
 	}
-	if err := os.WriteFile(cfg, append(env, []byte("RMMWAY_ROTATE_AFTER=45s\n")...), 0600); err != nil {
+	if err := os.WriteFile(cfg, append(env, []byte("OURWAY_RMM_ROTATE_AFTER=45s\n")...), 0600); err != nil {
 		return fmt.Errorf("write rotate knob: %w", err)
 	}
 	// Belt and braces for a rerun: restore the original env when done.
 	defer func() {
 		_ = os.WriteFile(cfg, env, 0600)
 	}()
-	if out, err := exec.Command("systemctl", "restart", "rmmway-agent.service").CombinedOutput(); err != nil {
+	if out, err := exec.Command("systemctl", "restart", "ourway-rmm-agent.service").CombinedOutput(); err != nil {
 		return fmt.Errorf("restart agent for rotation: %v: %s", err, out)
 	}
 	if err := pollUntil("rotated leaf in device_certs", 90*time.Second, func() error {
@@ -1226,7 +1226,7 @@ func tlsClientFor(rootPEM, host string) *tls.Config {
 // verifyMTLS proves the W3-1 DoD against the LIVE mTLS gRPC port:
 //
 //  1. read the demo agent's real persisted identity (leaf + key + org root)
-//     from /etc/rmmway/agent-identity.json — the file the installer/agent
+//     from /etc/ourway-rmm/agent-identity.json — the file the installer/agent
 //     wrote during step 3/4, not something this harness minted;
 //  2. open a Stream over TLS presenting that leaf, trusting ONLY the org
 //     root (so the server's cert is verified too) — a valid leaf must get
@@ -1373,20 +1373,20 @@ func verifyCommandCapability(httpAddr, devID string) error {
 	}
 	hasRunScript := false
 	for _, c := range loginOut.Capabilities {
-		if c == "rmmway.run_script" {
+		if c == "ourway-rmm.run_script" {
 			hasRunScript = true
 		}
 	}
 	if !hasRunScript {
-		return fmt.Errorf("operator session lacks rmmway.run_script (caps: %v)", loginOut.Capabilities)
+		return fmt.Errorf("operator session lacks ourway-rmm.run_script (caps: %v)", loginOut.Capabilities)
 	}
 
 	// The agent runs under ProtectSystem=strict + PrivateTmp (the
-	// installer's hardening): the only writable path is /etc/rmmway, so
+	// installer's hardening): the only writable path is /etc/ourway-rmm, so
 	// the marker lands there (visible to the harness, which runs as root).
-	marker := "/etc/rmmway/w33-marker"
+	marker := "/etc/ourway-rmm/w33-marker"
 	_ = os.Remove(marker)
-	script := "echo rmmway-w33-ok > " + marker + " && echo w33-executed"
+	script := "echo ourway-rmm-w33-ok > " + marker + " && echo w33-executed"
 	body, _ := json.Marshal(map[string]any{
 		"action": "run_script",
 		"lang":   "sh",
@@ -1459,7 +1459,7 @@ func verifyCommandCapability(httpAddr, devID string) error {
 	if err != nil {
 		return fmt.Errorf("marker file %s missing — the agent did not actually run the script: %w", marker, err)
 	}
-	if !strings.Contains(string(b), "rmmway-w33-ok") {
+	if !strings.Contains(string(b), "ourway-rmm-w33-ok") {
 		return fmt.Errorf("marker file content wrong: %q", b)
 	}
 	info("real agent executed the script: %s written on disk (capability token verified first)", marker)
@@ -1472,10 +1472,10 @@ func teardown(ctx context.Context, pg *pgx.Conn, demoDevID string) {
 	run := func(name string, args ...string) {
 		_, _ = exec.Command(name, args...).CombinedOutput()
 	}
-	run("systemctl", "disable", "--now", "rmmway-agent.service")
-	run("rm", "-f", "/usr/local/bin/rmmway-agent")
-	run("rm", "-rf", "/etc/rmmway")
-	run("rm", "-f", "/etc/systemd/system/rmmway-agent.service")
+	run("systemctl", "disable", "--now", "ourway-rmm-agent.service")
+	run("rm", "-f", "/usr/local/bin/ourway-rmm-agent")
+	run("rm", "-rf", "/etc/ourway-rmm")
+	run("rm", "-f", "/etc/systemd/system/ourway-rmm-agent.service")
 	run("systemctl", "daemon-reload")
 	for _, q := range []string{
 		`DELETE FROM alerts WHERE device_id=$1`,
@@ -1488,12 +1488,12 @@ func teardown(ctx context.Context, pg *pgx.Conn, demoDevID string) {
 			die("teardown demo device: %v", err)
 		}
 	}
-	_ = os.RemoveAll(filepath.Join(os.TempDir(), "rmmway-mirror"))
+	_ = os.RemoveAll(filepath.Join(os.TempDir(), "ourway-rmm-mirror"))
 }
 
 // ---- misc --------------------------------------------------------------------
 
 func journal(lines int) string {
-	out, _ := exec.Command("journalctl", "-u", "rmmway-agent.service", "-n", strconv.Itoa(lines), "--no-pager").CombinedOutput()
+	out, _ := exec.Command("journalctl", "-u", "ourway-rmm-agent.service", "-n", strconv.Itoa(lines), "--no-pager").CombinedOutput()
 	return string(out)
 }

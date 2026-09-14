@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // fakeMetrics is a deterministic MetricsReader: a fixed grid of samples.
@@ -100,7 +100,7 @@ func newService(t *testing.T, dev *store.Device, m MetricsReader, r RollupReader
 	}
 	// tags aren't set by Register; patch via a direct memory store write.
 	// (Register upserts core fields; tags live on the row.)
-	return New(Config{Devices: ds, Metrics: m, Rollups: r, Alerts: a, Version: "rmmway-server/test"}).
+	return New(Config{Devices: ds, Metrics: m, Rollups: r, Alerts: a, Version: "ourway-rmm-server/test"}).
 		WithNow(func() time.Time { return time.Date(2026, 8, 25, 12, 0, 0, 0, time.UTC) })
 }
 

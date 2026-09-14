@@ -15,7 +15,7 @@ export default class ErrorBoundary extends Component {
 	}
 
 	componentDidCatch(error, info) {
-		console.error("RMMWay view error:", error, info && info.componentStack);
+		console.error("OurWay RMM view error:", error, info && info.componentStack);
 	}
 
 	render() {

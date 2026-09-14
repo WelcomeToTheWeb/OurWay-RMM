@@ -11,7 +11,7 @@ package heal
 //
 // New file only — the heal package is lane B's; no existing heal files
 // were modified. Live-Postgres, same scratch-DB convention as store_test.go
-// (skipped when RMMWAY_TEST_PG_DSN is unset).
+// (skipped when OURWAY_RMM_TEST_PG_DSN is unset).
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 func TestServiceDownPlaybookLifecycle(t *testing.T) {
@@ -33,7 +33,7 @@ func TestServiceDownPlaybookLifecycle(t *testing.T) {
 	eng := New(st, agent.remediator, agent.lookup, notify).WithLogger(log.New(io.Discard, "", 0))
 
 	// 1. Seeded shape: the starter library row is exactly what the agent's
-	// service.status family + RMMWAY_SERVICES allowlist feed into it.
+	// service.status family + OURWAY_RMM_SERVICES allowlist feed into it.
 	pbs, err := st.Playbooks(ctx, true)
 	if err != nil {
 		t.Fatalf("playbooks: %v", err)

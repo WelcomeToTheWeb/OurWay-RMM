@@ -1,4 +1,4 @@
-// Synthetic capture backend (gap #1a). RMMWAY_SESSION_SOURCE=test selects
+// Synthetic capture backend (gap #1a). OURWAY_RMM_SESSION_SOURCE=test selects
 // it; it renders a deterministic animated pattern (gradient background, a
 // block that travels across the screen, and a frame-counter bar) so the
 // whole pipeline — capture loop, SessionFrame uplink, server relay, SSE

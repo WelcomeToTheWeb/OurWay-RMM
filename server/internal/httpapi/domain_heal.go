@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/heal"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/heal"
 )
 
 // ---- W5-1: self-healing playbook engine ------------------------------------

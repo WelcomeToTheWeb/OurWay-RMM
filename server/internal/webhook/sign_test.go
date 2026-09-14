@@ -90,13 +90,13 @@ func TestParseSigBareDigest(t *testing.T) {
 
 func TestCategoryForSubject(t *testing.T) {
 	cases := map[string]string{
-		"rmmway.events.alert":          CategoryAlert,
-		"rmmway.events.device":         CategoryInventory,
-		"rmmway.events.flow.trigger":   CategoryAutomation,
-		"rmmway.events.flow.step":      CategoryAutomation,
-		"rmmway.events.flow.notify":    CategoryAutomation,
-		"rmmway.events.command.result": CategoryAutomation,
-		"rmmway.events.something.else": CategoryOther,
+		"ourway-rmm.events.alert":          CategoryAlert,
+		"ourway-rmm.events.device":         CategoryInventory,
+		"ourway-rmm.events.flow.trigger":   CategoryAutomation,
+		"ourway-rmm.events.flow.step":      CategoryAutomation,
+		"ourway-rmm.events.flow.notify":    CategoryAutomation,
+		"ourway-rmm.events.command.result": CategoryAutomation,
+		"ourway-rmm.events.something.else": CategoryOther,
 	}
 	for subj, want := range cases {
 		if got := CategoryForSubject(subj); got != want {
@@ -106,13 +106,13 @@ func TestCategoryForSubject(t *testing.T) {
 }
 
 func TestEnvelope(t *testing.T) {
-	ev := Event{Seq: 42, Category: CategoryAlert, Type: "rmmway.events.alert", DeviceID: "dev-1",
+	ev := Event{Seq: 42, Category: CategoryAlert, Type: "ourway-rmm.events.alert", DeviceID: "dev-1",
 		At: time.Unix(1, 0).UTC(), Data: []byte(`{"data":{"action":"fired"}}`)}
 	env := ev.Envelope()
-	if env.ID != 42 || env.Category != CategoryAlert || env.Type != "rmmway.events.alert" {
+	if env.ID != 42 || env.Category != CategoryAlert || env.Type != "ourway-rmm.events.alert" {
 		t.Fatalf("bad envelope: %+v", env)
 	}
-	if env.Version != envelopeVersion || env.Source != "rmmway" {
+	if env.Version != envelopeVersion || env.Source != "ourway-rmm" {
 		t.Fatalf("bad provenance: %+v", env)
 	}
 	if !strings.Contains(string(env.Event), `"action":"fired"`) {

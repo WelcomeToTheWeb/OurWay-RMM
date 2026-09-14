@@ -1,7 +1,7 @@
 package heal
 
 // Live-Postgres lifecycle tests for the W5-1 state machine (skipped when
-// RMMWAY_TEST_PG_DSN is not reachable — same convention as the store
+// OURWAY_RMM_TEST_PG_DSN is not reachable — same convention as the store
 // package's live tests). Each test runs in a scratch database it tears
 // down, so dev data is never touched and runs are repeatable.
 
@@ -21,17 +21,17 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // ---- scratch database ------------------------------------------------------
 
 func scratchPool(t *testing.T) (*pgxpool.Pool, *pgxpool.Pool) {
 	t.Helper()
-	dsn := os.Getenv("RMMWAY_TEST_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_TEST_PG_DSN")
 	if dsn == "" {
-		t.Skip("RMMWAY_TEST_PG_DSN not set — skipping heal Postgres test")
+		t.Skip("OURWAY_RMM_TEST_PG_DSN not set — skipping heal Postgres test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -50,7 +50,7 @@ func scratchPool(t *testing.T) (*pgxpool.Pool, *pgxpool.Pool) {
 	}
 	rnd := make([]byte, 4)
 	_, _ = rand.Read(rnd)
-	dbName := "rmmway_heal_test_" + time.Now().Format("20060102150405") + "_" + hex.EncodeToString(rnd)
+	dbName := "ourway-rmm_heal_test_" + time.Now().Format("20060102150405") + "_" + hex.EncodeToString(rnd)
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		t.Fatalf("create db: %v", err)
 	}
@@ -264,7 +264,7 @@ func TestHealLifecycleIsReplaySafe(t *testing.T) {
 		t.Fatalf("dispatches: got %d, want 3", len(d))
 	}
 	for _, dd := range d {
-		if dd.Lang != "sh" || !strings.Contains(dd.Script, "rmmway self-heal: disk.full") {
+		if dd.Lang != "sh" || !strings.Contains(dd.Script, "ourway-rmm self-heal: disk.full") {
 			t.Fatalf("bad dispatch: %+v", dd)
 		}
 	}

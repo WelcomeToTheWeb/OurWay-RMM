@@ -6,7 +6,7 @@ package main
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/reports"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/reports"
 )
 
 // wireReports builds the reports store (Postgres-backed). Returns nil

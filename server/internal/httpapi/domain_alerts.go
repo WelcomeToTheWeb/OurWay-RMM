@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/welcometotheweb/rmmway/server/internal/baseline"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
-	"github.com/welcometotheweb/rmmway/server/internal/users"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/baseline"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/users"
 )
 
 // ---- W2-3: dynamic baselining ----------------------------------------------

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // gap #8a evidence — fleet dashboard home at 1280px and 390px.
-// RMMWay round-1 rig pattern: serve frontend/dist + a fixture API, log in
+// OurWay RMM round-1 rig pattern: serve frontend/dist + a fixture API, log in
 // with the rig's admin account, drive the hash router, screenshot.
 //
 // Playwright is resolved from the sibling symlink ./node_modules (->
@@ -62,7 +62,7 @@ async function main() {
     page.click('button[type="submit"]'),
   ]);
   await page.waitForFunction(() =>
-    window.localStorage.getItem("rmmway.operator.token"),
+    window.localStorage.getItem("ourway-rmm.operator.token"),
   );
 
   // 1) 1280px: default-route proof — a bare #/ must land on the dashboard

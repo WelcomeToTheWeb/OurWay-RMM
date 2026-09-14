@@ -1,4 +1,4 @@
-# RMMWay production edge (A-1) — the public HTTP entry point.
+# OurWay RMM production edge (A-1) — the public HTTP entry point.
 #
 #   80/443  operator API + frontend. Automatic TLS: Let's Encrypt (HTTP-01)
 #           for a public domain, Caddy's internal CA for localhost.
@@ -10,18 +10,18 @@
 # isolated from the operator API on 443.
 #
 # Env (from .env.prod via the caddy service):
-#   RMMWAY_DOMAIN      the public hostname (default: localhost)
-#   RMMWAY_ACME_EMAIL  Let's Encrypt account email (expiry notices)
+#   OURWAY_RMM_DOMAIN      the public hostname (default: localhost)
+#   OURWAY_RMM_ACME_EMAIL  Let's Encrypt account email (expiry notices)
 
 {
-	email {$RMMWAY_ACME_EMAIL:admin@localhost}
+	email {$OURWAY_RMM_ACME_EMAIL:admin@localhost}
 	admin off
 	servers {
 		protocols h1 h2c h3
 	}
 }
 
-{$RMMWAY_DOMAIN:localhost} {
+{$OURWAY_RMM_DOMAIN:localhost} {
 	encode gzip zstd
 
 	header {

@@ -57,13 +57,13 @@ Completed 2026-07-19. Build green (`--outDir dist-b`); all 11 jsdom UI smokes gr
 - `<meta name="description">` — one-line product description.
 - `<meta name="theme-color" content="#0b0e14">` — matches the dark
   default background.
-- Title kept as "RMMWay".
+- Title kept as "OurWay RMM".
 
 ### 5. Version footer (item 5)
 
 - **Done, not skipped.** `GET /healthz` already returns
   `{"ok", "version", "probes"}` (`server/cmd/server/main.go`, version
-  from `RMMWAY_VERSION`, default `0.1.0`) — the topbar's existing 10s
+  from `OURWAY_RMM_VERSION`, default `0.1.0`) — the topbar's existing 10s
   health poll now renders it as a small mono `.brand-version` chip next
   to the brand (hidden when the field is absent, e.g. in the smokes'
   minimal healthz mock).
@@ -116,6 +116,6 @@ None — all 7 items landed.
 ## Notes
 
 - pi-lens autofix reformats on write — judge content via `git diff -w`.
-- The version chip only shows on a real server (`RMMWAY_VERSION` set);
+- The version chip only shows on a real server (`OURWAY_RMM_VERSION` set);
   the smokes' healthz mock omits `version`, so the chip renders nothing
   there — no behavior change in tests.

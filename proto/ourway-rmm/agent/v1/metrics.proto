@@ -3,9 +3,9 @@
 // them into the W1-6 TimescaleDB hypertables.
 syntax = "proto3";
 
-package rmmway.agent.v1;
+package ourway_rmm.agent.v1;
 
-option go_package = "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1";
+option go_package = "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1";
 
 // MetricBatch is one push of sampled metrics. The server deduplicates by
 // (device_id, name, source, timestamp_ms), so replay after a reconnect is

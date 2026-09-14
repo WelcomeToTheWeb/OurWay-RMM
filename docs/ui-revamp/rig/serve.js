@@ -1,4 +1,4 @@
-// Static host + fake RMMWay API for UI evidence screenshots.
+// Static host + fake OurWay RMM API for UI evidence screenshots.
 // Usage: DIST=/path/to/dist PORT=8123 node serve.js
 import http from "node:http";
 import { readFile } from "node:fs/promises";
@@ -253,7 +253,7 @@ const ANOMALIES = [
 const JOURNAL = [
   [
     "alert",
-    "rmmway.events.alert.opened",
+    "ourway-rmm.events.alert.opened",
     "al-01",
     "dev-web01",
     "cpu.utilization_percent high (z=6.4)",
@@ -261,7 +261,7 @@ const JOURNAL = [
   ],
   [
     "inventory",
-    "rmmway.events.device.offline",
+    "ourway-rmm.events.device.offline",
     "",
     "dev-gw03",
     "iot-gw-03 went offline",
@@ -269,7 +269,7 @@ const JOURNAL = [
   ],
   [
     "automation",
-    "rmmway.events.command.result",
+    "ourway-rmm.events.command.result",
     "c-9f21",
     "dev-web01",
     "run_script succeeded (exit 0)",
@@ -277,7 +277,7 @@ const JOURNAL = [
   ],
   [
     "other",
-    "rmmway.events.device.online",
+    "ourway-rmm.events.device.online",
     "",
     "dev-web01",
     "web-01 came online",
@@ -285,7 +285,7 @@ const JOURNAL = [
   ],
   [
     "alert",
-    "rmmway.events.alert.opened",
+    "ourway-rmm.events.alert.opened",
     "al-02",
     "dev-db01",
     "mem.used_percent high (z=4.1)",
@@ -293,7 +293,7 @@ const JOURNAL = [
   ],
   [
     "automation",
-    "rmmway.events.command.dispatched",
+    "ourway-rmm.events.command.dispatched",
     "c-a7f3",
     "dev-web01",
     "run_script dispatched (systemctl restart nginx)",

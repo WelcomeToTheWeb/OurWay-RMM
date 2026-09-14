@@ -1,4 +1,4 @@
-module github.com/welcometotheweb/rmmway/load-test
+module github.com/welcometotheweb/ourway-rmm/load-test
 
 go 1.24.0
 

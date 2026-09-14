@@ -5,7 +5,7 @@ package osevent
 import "testing"
 
 const logShowJSON = `[
-{"timestamp":"2026-09-09 00:00:00.123456 -0700","level":"DEFAULT","message":"agent started","process":"rmmway-agent","subsystem":"rmmway.agent","category":"boot"},
+{"timestamp":"2026-09-09 00:00:00.123456 -0700","level":"DEFAULT","message":"agent started","process":"ourway-rmm-agent","subsystem":"ourway-rmm.agent","category":"boot"},
 {"timestamp":"2026-09-09 00:00:05.000000 -0700","level":"ERROR","message":"disk read failed","process":"kernel"},
 {"timestamp":"2026-09-09 00:00:06.000000 -0700","level":"NOTICE","message":"pressure high","process":"sysmond"},
 {"timestamp":"garbage","level":"INFO","message":"skipped"}
@@ -22,7 +22,7 @@ func TestParseLogShowJSON(t *testing.T) {
 	if entries[0].GetLevel() != "INFO" || entries[1].GetLevel() != "ERROR" || entries[2].GetLevel() != "WARN" {
 		t.Fatalf("levels: %s %s %s", entries[0].GetLevel(), entries[1].GetLevel(), entries[2].GetLevel())
 	}
-	if entries[0].GetAttrs()["process"] != "rmmway-agent" {
+	if entries[0].GetAttrs()["process"] != "ourway-rmm-agent" {
 		t.Errorf("process attr: %v", entries[0].GetAttrs())
 	}
 	// Stable ids across identical reads.

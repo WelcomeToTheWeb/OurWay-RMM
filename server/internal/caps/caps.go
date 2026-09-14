@@ -2,7 +2,7 @@
 //
 // Every dispatched command carries a short-lived capability token that binds
 // ONE device (sub) + ONE capability (cap) + ONE command id (cmd/jti), and
-// expires after a short window (the issuer's TTL, server RMMWAY_CAP_TTL,
+// expires after a short window (the issuer's TTL, server OURWAY_RMM_CAP_TTL,
 // default 10m). Tokens are compact JWTs signed ES256 by the ORG ROOT CA key
 // — the same trust anchor the agent already pins from enroll (W3-1), so no
 // new key material has to reach the agent: it verifies a token with the root
@@ -24,26 +24,26 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
 )
 
 // Capability names. The agent-side verifier (agent/internal/caps) mirrors
 // these constants — the wire contract is documented in commands.proto.
 const (
-	CapRunScript = "rmmway.run_script"
-	CapReboot    = "rmmway.reboot"
+	CapRunScript = "ourway-rmm.run_script"
+	CapReboot    = "ourway-rmm.reboot"
 	// gap #1a: file transfer.
-	CapFilePull = "rmmway.file_pull"
-	CapFilePush = "rmmway.file_push"
+	CapFilePull = "ourway-rmm.file_pull"
+	CapFilePush = "ourway-rmm.file_push"
 	// Process/service management.
-	CapListProcesses  = "rmmway.list_processes"
-	CapKillProcess    = "rmmway.kill_process"
-	CapListServices   = "rmmway.list_services"
-	CapServiceControl = "rmmway.service_control"
+	CapListProcesses  = "ourway-rmm.list_processes"
+	CapKillProcess    = "ourway-rmm.kill_process"
+	CapListServices   = "ourway-rmm.list_services"
+	CapServiceControl = "ourway-rmm.service_control"
 
 	// TokenIssuer is the `iss` claim of every capability token.
-	TokenIssuer = "rmmway"
+	TokenIssuer = "ourway-rmm"
 )
 
 // AllCapabilities is the full Phase 1 capability set (the default admin

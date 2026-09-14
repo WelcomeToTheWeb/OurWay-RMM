@@ -1,10 +1,10 @@
 // Command publish-release assembles a releases directory for the agent's
 // signed auto-update (W4-2) from the artifacts in agent/dist (the output of
-// `make agent && make sign`). It scans for rmmway-agent-<goos>-<arch>[.exe]
+// `make agent && make sign`). It scans for ourway-rmm-agent-<goos>-<arch>[.exe]
 // binaries, requires each to carry a minisign signature (its .minisig), and
 // writes <dir>/release.json describing them (version, the W3-4 public key,
 // per-asset sha256). Point the server at the result with
-// RMMWAY_RELEASES_DIR=<dir> and the agents will pick it up.
+// OURWAY_RMM_RELEASES_DIR=<dir> and the agents will pick it up.
 //
 // Usage:
 //
@@ -20,7 +20,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/welcometotheweb/rmmway/server/internal/releases"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/releases"
 )
 
 func die(f string, a ...any) {
@@ -77,13 +77,13 @@ func main() {
 			continue
 		}
 		n := e.Name()
-		if !strings.HasPrefix(n, "rmmway-agent-") {
+		if !strings.HasPrefix(n, "ourway-rmm-agent-") {
 			continue
 		}
 		if strings.HasSuffix(n, ".minisig") {
 			continue // signature files, not assets
 		}
-		ga := strings.TrimPrefix(n, "rmmway-agent-")
+		ga := strings.TrimPrefix(n, "ourway-rmm-agent-")
 		ga = strings.TrimSuffix(ga, ".exe")
 		if strings.Contains(ga, ".") {
 			continue // SBOMs (.cdx.json) and other non-binary artifacts
@@ -111,9 +111,9 @@ func main() {
 	}
 	fmt.Printf("  - %s\n", releases.ManifestPath)
 	fmt.Println()
-	fmt.Println("serve it with:  RMMWAY_RELEASES_DIR=" + abs(*out) + "  (server env)")
+	fmt.Println("serve it with:  OURWAY_RMM_RELEASES_DIR=" + abs(*out) + "  (server env)")
 	fmt.Println("agents then verify the W3-4 signature and auto-update; a manual pass is:")
-	fmt.Println("  rmmway-agent update --server http://<server>")
+	fmt.Println("  ourway-rmm-agent update --server http://<server>")
 }
 
 func gitDescribe(root string) string {

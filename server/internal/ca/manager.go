@@ -105,7 +105,7 @@ func (m *Manager) RootCertPEM() []byte {
 
 // LeafTTL is the lifetime this manager issues leaves (and its own server
 // cert) for. W3-2 makes this the ~1h short-lived window by default
-// (overridable via RMMWAY_LEAF_TTL).
+// (overridable via OURWAY_RMM_LEAF_TTL).
 func (m *Manager) LeafTTL() time.Duration {
 	m.mu.Lock()
 	defer m.mu.Unlock()

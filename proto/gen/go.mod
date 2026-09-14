@@ -1,4 +1,4 @@
-module github.com/welcometotheweb/rmmway/proto/gen
+module github.com/welcometotheweb/ourway-rmm/proto/gen
 
 go 1.24.0
 

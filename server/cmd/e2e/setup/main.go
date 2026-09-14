@@ -24,7 +24,7 @@
 //     wizard — and a direct completion is still refused (409): the org CA
 //     can't be swapped out from under the agents that pinned it.
 //
-// Usage: RMMWAY_PG_DSN=... go run ./cmd/e2e/setup
+// Usage: OURWAY_RMM_PG_DSN=... go run ./cmd/e2e/setup
 package main
 
 import (
@@ -46,12 +46,12 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/httpapi"
-	"github.com/welcometotheweb/rmmway/server/internal/setup"
-	smtpoutbox "github.com/welcometotheweb/rmmway/server/internal/smtp"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/httpapi"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/setup"
+	smtpoutbox "github.com/welcometotheweb/ourway-rmm/server/internal/smtp"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 func die(f string, a ...any) {
@@ -233,9 +233,9 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	dsn := os.Getenv("RMMWAY_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_PG_DSN")
 	if dsn == "" {
-		dsn = "postgres://rmmway:rmmway@localhost:5432/rmmway?sslmode=disable"
+		dsn = "postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm?sslmode=disable"
 	}
 
 	// ---- scratch Postgres --------------------------------------------------
@@ -252,7 +252,7 @@ func main() {
 	if err := admin.Ping(ctx); err != nil {
 		die("postgres not reachable: %v", err)
 	}
-	dbName := "rmmway_setup_e2e_" + time.Now().Format("20060102150405")
+	dbName := "ourway-rmm_setup_e2e_" + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		die("create scratch db: %v", err)
 	}
@@ -287,14 +287,14 @@ func main() {
 		wizPass = "correct-horse-battery"
 		org     = "Acme Corp"
 	)
-	smtpCfg := smtpoutbox.Config{Host: "127.0.0.1", Port: sink.Port(), From: "rmmway@acme.test", Username: "mailer", Password: "s3cret"}
+	smtpCfg := smtpoutbox.Config{Host: "127.0.0.1", Port: sink.Port(), From: "ourway-rmm@acme.test", Username: "mailer", Password: "s3cret"}
 
 	// ---- boot 1: the FRESH server ------------------------------------------
 	step("boot 1 (fresh database) — the wizard triggers")
 	apiBase, caMgr, issuer, _, cleanup1 := bootServer(pool, "admin", "admin")
 	defer cleanup1()
 	bootRootPEM := caMgr.RootCertPEM()
-	check(len(parseCert(bootRootPEM).Subject.Organization) == 1 && parseCert(bootRootPEM).Subject.Organization[0] == "RMMWay",
+	check(len(parseCert(bootRootPEM).Subject.Organization) == 1 && parseCert(bootRootPEM).Subject.Organization[0] == "OurWay RMM",
 		"boot root should carry the default org, got %v", parseCert(bootRootPEM).Subject.Organization)
 
 	var st setupStatus
@@ -329,8 +329,8 @@ func main() {
 	check(len(mails) == 1, "sink should have captured exactly 1 mail, got %d", len(mails))
 	m := mails[0]
 	check(strings.Contains(m, "To: ops@acme.test"), "mail To wrong: %s", firstLines(m, 6))
-	check(strings.Contains(m, "Subject: RMMWay: SMTP outbox test"), "mail subject wrong: %s", firstLines(m, 6))
-	check(strings.Contains(m, "From: rmmway@acme.test"), "mail From wrong: %s", firstLines(m, 6))
+	check(strings.Contains(m, "Subject: OurWay RMM: SMTP outbox test"), "mail subject wrong: %s", firstLines(m, 6))
+	check(strings.Contains(m, "From: ourway-rmm@acme.test"), "mail From wrong: %s", firstLines(m, 6))
 	info("outbox delivered the verification mail to ops@acme.test (AUTH + DATA captured)")
 
 	// ---- the wizard: one POST completes everything --------------------------
@@ -359,7 +359,7 @@ func main() {
 	newRoot := parseCert(rootPEM)
 	check(len(newRoot.Subject.Organization) == 1 && newRoot.Subject.Organization[0] == org,
 		"org root Subject.O should be [%q], got %v", org, newRoot.Subject.Organization)
-	check(newRoot.Subject.CommonName == "RMMWay Org Root CA", "root CN should stay the stable anchor name, got %q", newRoot.Subject.CommonName)
+	check(newRoot.Subject.CommonName == "OurWay RMM Org Root CA", "root CN should stay the stable anchor name, got %q", newRoot.Subject.CommonName)
 	check(string(rootPEM) != string(bootRootPEM), "the root must actually be re-issued (new key pair)")
 	check(string(caMgr.RootCertPEM()) == string(rootPEM), "the running manager must hold the re-issued root")
 	info("org CA re-issued: Subject=%q / O=[%q], new key pair persisted", newRoot.Subject.CommonName, org)
@@ -513,7 +513,7 @@ func main() {
 
 	// ---- guard: devices enrolled -> the wizard refuses -----------------------
 	step("guard: enrolled devices block the wizard (no CA swap under leaves)")
-	dbName2 := "rmmway_setup_guard_" + time.Now().Format("20060102150405")
+	dbName2 := "ourway-rmm_setup_guard_" + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName2); err != nil {
 		die("create guard db: %v", err)
 	}
@@ -560,7 +560,7 @@ func main() {
 		die("guard root read: %v", err)
 	}
 	gc := parseCert(guardRoot)
-	check(len(gc.Subject.Organization) == 1 && gc.Subject.Organization[0] == "RMMWay",
+	check(len(gc.Subject.Organization) == 1 && gc.Subject.Organization[0] == "OurWay RMM",
 		"guard db root must keep the boot default org, got %v", gc.Subject.Organization)
 	info("wizard refused (409) with enrolled devices; the org CA was not swapped")
 

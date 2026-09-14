@@ -41,17 +41,17 @@ type Event struct {
 }
 
 // Bus subject names (NATS subject per event type; the engine subscribes to
-// all of them under the rmmway.events.> wildcard).
+// all of them under the ourway-rmm.events.> wildcard).
 const (
-	SubjectTrigger = "rmmway.events.flow.trigger"
-	SubjectStep    = "rmmway.events.flow.step"
-	SubjectCommand = "rmmway.events.command.result"
-	SubjectNotify  = "rmmway.events.flow.notify"
+	SubjectTrigger = "ourway-rmm.events.flow.trigger"
+	SubjectStep    = "ourway-rmm.events.flow.step"
+	SubjectCommand = "ourway-rmm.events.command.result"
+	SubjectNotify  = "ourway-rmm.events.flow.notify"
 	// W6-2: non-flow event sources published onto the same bus so the
 	// webhook / SSE framework can journal + fan them out like any other.
-	SubjectAlert  = "rmmway.events.alert"
-	SubjectDevice = "rmmway.events.device"
-	SubjectAll    = "rmmway.events.>"
+	SubjectAlert  = "ourway-rmm.events.alert"
+	SubjectDevice = "ourway-rmm.events.device"
+	SubjectAll    = "ourway-rmm.events.>"
 )
 
 // Bus is the transport interface.

@@ -29,15 +29,15 @@ import (
 
 const (
 	// orgCN is the CommonName on the org root CA.
-	orgCN = "RMMWay Org Root CA"
+	orgCN = "OurWay RMM Org Root CA"
 	// orgDefault is the Subject Organization when no org name is given.
-	orgDefault = "RMMWay"
+	orgDefault = "OurWay RMM"
 	// rootTTL is how long a generated org root is valid (10y).
 	rootTTL = 10 * 365 * 24 * time.Hour
 	// leafTTL is the default lifetime of a device leaf. W3-2 makes leaves
 	// short-lived (~1h) and rotates them automatically (RefreshLeaf) well
 	// inside the window, so the default is the ~1h the task calls for.
-	// Overridable at boot via RMMWAY_LEAF_TTL (tests / long dev sessions).
+	// Overridable at boot via OURWAY_RMM_LEAF_TTL (tests / long dev sessions).
 	leafTTL = 1 * time.Hour
 )
 
@@ -76,8 +76,8 @@ func randomSerial() (*big.Int, error) {
 func GenerateRoot() (*Root, error) { return GenerateRootNamed(orgDefault) }
 
 // GenerateRootNamed (A-2) mints a fresh self-signed org root CA whose
-// Subject carries the organization's name: CN stays "RMMWay Org Root CA",
-// Organization becomes orgName (orgName empty -> the default "RMMWay").
+// Subject carries the organization's name: CN stays "OurWay RMM Org Root CA",
+// Organization becomes orgName (orgName empty -> the default "OurWay RMM").
 // The first-boot setup wizard uses this so the operator's org is stamped
 // into the trust anchor every agent pins.
 func GenerateRootNamed(orgName string) (*Root, error) {
@@ -119,7 +119,7 @@ func GenerateRootNamed(orgName string) (*Root, error) {
 }
 
 // OrgName returns the organization name stamped in the root's Subject
-// ("RMMWay" for pre-A-2 roots).
+// ("OurWay RMM" for pre-A-2 roots).
 
 // RootFromPEM reconstructs a Root from its persisted PEM pair.
 func RootFromPEM(certPEM, keyPEM []byte) (*Root, error) {
@@ -151,7 +151,7 @@ func RootFromPEM(certPEM, keyPEM []byte) (*Root, error) {
 func (r *Root) CertPEM() []byte { return r.certPEM }
 
 // OrgName returns the organization name stamped in the root's Subject
-// (A-2: the wizard's org is carried here; "RMMWay" for pre-A-2 roots).
+// (A-2: the wizard's org is carried here; "OurWay RMM" for pre-A-2 roots).
 func (r *Root) OrgName() string {
 	if len(r.cert.Subject.Organization) > 0 {
 		return r.cert.Subject.Organization[0]
@@ -197,7 +197,7 @@ func (r *Root) IssueLeaf(deviceID, hostname string, ttl time.Duration) (leafCert
 	now := time.Now()
 	tmpl := &x509.Certificate{
 		SerialNumber: serial,
-		Subject:      pkix.Name{CommonName: deviceID, Organization: []string{"RMMWay", "agents"}},
+		Subject:      pkix.Name{CommonName: deviceID, Organization: []string{"OurWay RMM", "agents"}},
 		NotBefore:    now.Add(-time.Hour),
 		NotAfter:     now.Add(ttl),
 		KeyUsage:     x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
@@ -247,7 +247,7 @@ func (r *Root) IssueServerCert(names []string, ttl time.Duration) (certPEMOut, k
 	dns, ips := splitNames(names)
 	tmpl := &x509.Certificate{
 		SerialNumber:   serial,
-		Subject:        pkix.Name{CommonName: "rmmway-server", Organization: []string{"RMMWay"}},
+		Subject:        pkix.Name{CommonName: "ourway-rmm-server", Organization: []string{"OurWay RMM"}},
 		NotBefore:      time.Now().Add(-time.Hour),
 		NotAfter:       time.Now().Add(ttl),
 		KeyUsage:       x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,

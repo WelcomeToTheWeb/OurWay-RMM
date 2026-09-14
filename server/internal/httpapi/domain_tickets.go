@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // ---- helpdesk / ticketing routes (gap #7, wave 3, lane B) ------------------

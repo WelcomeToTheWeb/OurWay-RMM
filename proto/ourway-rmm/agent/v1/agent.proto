@@ -1,4 +1,4 @@
-// AgentService — the single gRPC surface between an RMMWay agent and the
+// AgentService — the single gRPC surface between an OurWay RMM agent and the
 // server. W0-2 defines the contract; W1-4 (agent enroll) and W1-5 (server
 // ingest) implement it.
 //
@@ -17,13 +17,13 @@
 //     rejected at the TLS layer, before any RPC is processed.
 syntax = "proto3";
 
-package rmmway.agent.v1;
+package ourway_rmm.agent.v1;
 
-option go_package = "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1";
+option go_package = "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1";
 
-import "rmmway/agent/v1/metrics.proto";
-import "rmmway/agent/v1/commands.proto";
-import "rmmway/agent/v1/logs.proto";
+import "ourway-rmm/agent/v1/metrics.proto";
+import "ourway-rmm/agent/v1/commands.proto";
+import "ourway-rmm/agent/v1/logs.proto";
 
 service AgentService {
   // Enroll is the first contact for a freshly bootstrapped agent. It proves
@@ -42,7 +42,7 @@ service AgentService {
   // RefreshLeaf (W3-2) re-issues the calling device's mTLS leaf while the
   // OLD leaf is still valid: the agent calls it over the mTLS channel it
   // already holds (presenting the current leaf + its agent JWT), the server
-  // signs a fresh short-lived leaf (RMMWAY_LEAF_TTL, default ~1h) and the
+  // signs a fresh short-lived leaf (OURWAY_RMM_LEAF_TTL, default ~1h) and the
   // agent swaps it in without dropping the uplink. This is what keeps leaf
   // lifetimes short without a gap: rotation always happens well inside the
   // previous cert's validity window.

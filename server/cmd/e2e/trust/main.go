@@ -1,6 +1,6 @@
 // Command trust is the W4-4 milestone harness: "provable trust" (closes
 // Block 2). It runs the exact two things a SKEPTIC — an external party who
-// trusts the RMMWay builders with NOTHING — must be able to do:
+// trusts the OurWay RMM builders with NOTHING — must be able to do:
 //
 // PART A — verify a signed release + read the SBOM
 //
@@ -37,9 +37,9 @@
 //
 //	Part A needs: go (builds the agent + signer) and syft (auto-installed
 //	into bin/ via scripts/install-syft.sh if absent).
-//	Part B needs: RMMWAY_PG_DSN pointing at a Timescale-capable Postgres
+//	Part B needs: OURWAY_RMM_PG_DSN pointing at a Timescale-capable Postgres
 //	where the user can CREATE DATABASE
-//	(locally: RMMWAY_PG_DSN=postgres://postgres@localhost:5432/postgres).
+//	(locally: OURWAY_RMM_PG_DSN=postgres://postgres@localhost:5432/postgres).
 package main
 
 import (
@@ -64,9 +64,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jedisct1/go-minisign"
 
-	"github.com/welcometotheweb/rmmway/server/internal/export"
-	"github.com/welcometotheweb/rmmway/server/internal/httpapi"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/export"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/httpapi"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 func die(f string, a ...any) {
@@ -170,7 +170,7 @@ func verifySigned(pubFile, file string) (comment string, ok bool, err error) {
 
 func main() {
 	root := repoRoot()
-	work, err := os.MkdirTemp("", "rmmway-trust-e2e-")
+	work, err := os.MkdirTemp("", "ourway-rmm-trust-e2e-")
 	if err != nil {
 		die("temp: %v", err)
 	}
@@ -181,7 +181,7 @@ func main() {
 
 	pass := "e2e-trust-pass"
 	goosArch := runtime.GOOS + "-" + runtime.GOARCH
-	asset := "rmmway-agent-" + goosArch
+	asset := "ourway-rmm-agent-" + goosArch
 	agentDir := filepath.Join(root, "agent")
 	signerDir := filepath.Join(root, "tools", "signer")
 
@@ -219,7 +219,7 @@ func main() {
 	// Builder mints a throwaway minisign "release key" and signs everything
 	// with the real tools/signer (the exact signer CI uses).
 	step("A2. builder: mint the release keypair + sign (binary, SBOM, SHA256SUMS)")
-	signer := filepath.Join(work, "rmmway-signer")
+	signer := filepath.Join(work, "ourway-rmm-signer")
 	run(signerDir, "go", nil, "build", "-o", signer, ".")
 	keys := filepath.Join(work, "keys")
 	run(work, signer, []string{"MINISIGN_PASS=" + pass},
@@ -240,7 +240,7 @@ func main() {
 	}
 	// Sign the binary, SBOM and the SHA256SUMS manifest itself.
 	run(work, signer, []string{"MINISIGN_PASS=" + pass}, "sign", "-k", secKey,
-		"-pass", pass, "-c", "rmmway release v0.9.0",
+		"-pass", pass, "-c", "ourway-rmm release v0.9.0",
 		binPath, sbom, sums)
 	info("signed %s, %s.cdx.json, SHA256SUMS with the release key", asset, asset)
 
@@ -356,7 +356,7 @@ func main() {
 	fmt.Println(" PART B: a client owner exports a client + confirms it's theirs")
 	fmt.Println("----------------------------------------------------------------")
 
-	dsn := os.Getenv("RMMWAY_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_PG_DSN")
 	if dsn == "" {
 		dsn = "postgres://postgres@localhost:5432/postgres"
 	}
@@ -395,7 +395,7 @@ func main() {
 			Metrics: export.NewPostgresMetrics(pool),
 			Rollups: export.NewPostgresRollups(pool),
 			Alerts:  export.NewPostgresAlerts(pool),
-			Version: "rmmway-server/e2e-trust",
+			Version: "ourway-rmm-server/e2e-trust",
 		}),
 	})
 	srvURL := serveAPI(apiSrv)
@@ -635,9 +635,9 @@ func scratchDB(ctx context.Context, dsn string) (admin, pool *pgxpool.Pool, name
 		die("admin pool: %v", err)
 	}
 	if err := admin.Ping(ctx); err != nil {
-		die("postgres not reachable: %v (try RMMWAY_PG_DSN=postgres://postgres@localhost:5432/postgres)", err)
+		die("postgres not reachable: %v (try OURWAY_RMM_PG_DSN=postgres://postgres@localhost:5432/postgres)", err)
 	}
-	name = "rmmway_trust_e2e_" + time.Now().Format("20060102150405")
+	name = "ourway-rmm_trust_e2e_" + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+name); err != nil {
 		die("create scratch db: %v (does the user have CREATEDB?)", err)
 	}

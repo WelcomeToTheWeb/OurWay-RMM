@@ -55,7 +55,7 @@ type Server struct {
 
 // New opens a releases directory. dir must exist and contain release.json;
 // a not-yet-populated directory is the caller's concern (return an error so
-// a typo in RMMWAY_RELEASES_DIR fails fast at boot).
+// a typo in OURWAY_RMM_RELEASES_DIR fails fast at boot).
 func New(dir string) (*Server, error) {
 	abs, err := filepath.Abs(dir)
 	if err != nil {

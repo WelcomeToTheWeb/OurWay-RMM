@@ -150,7 +150,7 @@ func (u *Updater) Run(ctx context.Context, checkOnly, noRestart bool) *Result {
 	}
 
 	// 5. Download the binary + its signature to a temp dir.
-	dir, err := os.MkdirTemp("", "rmmway-update-")
+	dir, err := os.MkdirTemp("", "ourway-rmm-update-")
 	if err != nil {
 		return fail(StatusError, "temp dir: %v", err)
 	}

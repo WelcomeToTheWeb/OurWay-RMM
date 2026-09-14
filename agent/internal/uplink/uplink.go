@@ -22,13 +22,13 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/welcometotheweb/rmmway/agent/internal/caps"
-	"github.com/welcometotheweb/rmmway/agent/internal/exec"
-	"github.com/welcometotheweb/rmmway/agent/internal/files"
-	"github.com/welcometotheweb/rmmway/agent/internal/inventory"
-	"github.com/welcometotheweb/rmmway/agent/internal/patchmanager"
-	"github.com/welcometotheweb/rmmway/agent/internal/session"
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/exec"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/files"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/inventory"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/patchmanager"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/session"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // Streamer is the generated client's Stream method (satisfied by

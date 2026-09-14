@@ -5,7 +5,7 @@
 // static-binary constraint (make verify-agent runs go vet per target with
 // CGO_ENABLED=0). Phase 1 therefore reports the "unavailable" status frame
 // (the viewer shows the honest degraded state); the SCK-backed backend
-// lands in phase 2. RMMWAY_SESSION_SOURCE=test still gives the full
+// lands in phase 2. OURWAY_RMM_SESSION_SOURCE=test still gives the full
 // pipeline on any macOS box (and in CI) for e2e purposes.
 package session
 

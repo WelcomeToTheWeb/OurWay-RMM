@@ -14,7 +14,7 @@ const testPub = "untrusted comment: minisign public key 21A03FBA54DCC8F5\nRWT1yN
 func buildDir(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	bin := "rmmway-agent-linux-amd64"
+	bin := "ourway-rmm-agent-linux-amd64"
 	_ = os.WriteFile(filepath.Join(dir, bin), []byte("bin-bytes"), 0o755)
 	_ = os.WriteFile(filepath.Join(dir, bin+".minisig"), []byte("sig-bytes"), 0o644)
 	// A file NOT referenced by the manifest (must not be servable).
@@ -70,16 +70,16 @@ func TestAssetPathAllowlist(t *testing.T) {
 	s, _ := New(dir)
 
 	cases := map[string]bool{
-		"rmmway-agent-linux-amd64":          true,
-		"rmmway-agent-linux-amd64.minisig":  true,
+		"ourway-rmm-agent-linux-amd64":          true,
+		"ourway-rmm-agent-linux-amd64.minisig":  true,
 		"secret.txt":                        false, // on disk but not in manifest
 		"..":                                false,
 		"../secret.txt":                     false,
 		"../..":                             false,
 		"":                                  false,
-		"rmmway-agent-darwin-amd64":         false, // not in manifest
-		"rmmway-agent-linux-amd64.exe":      false,
-		"rmmway-agent-linux-amd64.minisig2": false,
+		"ourway-rmm-agent-darwin-amd64":         false, // not in manifest
+		"ourway-rmm-agent-linux-amd64.exe":      false,
+		"ourway-rmm-agent-linux-amd64.minisig2": false,
 	}
 	for name, wantOK := range cases {
 		_, err := s.AssetPath(name)
@@ -88,7 +88,7 @@ func TestAssetPathAllowlist(t *testing.T) {
 		}
 	}
 	// The allowed binary resolves to a real path inside the dir.
-	p, err := s.AssetPath("rmmway-agent-linux-amd64")
+	p, err := s.AssetPath("ourway-rmm-agent-linux-amd64")
 	if err != nil {
 		t.Fatal(err)
 	}

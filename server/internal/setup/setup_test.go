@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/smtp"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/smtp"
 )
 
 // fakeReissuer records the ReissueRoot calls and returns the "new" root PEM.

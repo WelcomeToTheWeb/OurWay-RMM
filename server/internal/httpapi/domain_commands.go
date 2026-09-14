@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
 )
 
 // ---- W4-2: signed agent release distribution --------------------------------

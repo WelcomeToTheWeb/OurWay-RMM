@@ -3,7 +3,7 @@
 # serves a real STORE-method ZIP with a self-consistent manifest: the device
 # detail's "Client export" panel (Export button), the confirmation naming
 # the device, the Preparing… state, a download named
-# <hostname>-rmmway-export-<date>.zip whose bytes ARE the bundle, and
+# <hostname>-ourway-rmm-export-<date>.zip whose bytes ARE the bundle, and
 # manifest SHA-256/size verification of every data file (PAR1-checked).
 set -euo pipefail
 cd "$(dirname "$0")/.."

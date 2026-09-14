@@ -11,10 +11,10 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // newCapsServer boots the ingest service WITH a capability issuer (fresh

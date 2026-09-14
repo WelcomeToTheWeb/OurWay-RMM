@@ -8,10 +8,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/flow"
-	"github.com/welcometotheweb/rmmway/server/internal/heal"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/heal"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
 )
 
 // busHealNotifier is the heal-engine -> bus bridge (W5-1/W6-2): escalations
@@ -77,7 +77,7 @@ func wireHealEngine(hasPG bool, pgPool *pgxpool.Pool, svc *ingest.Service,
 			}()
 			log.Printf("selfheal: playbook engine started (interval %s; playbooks seeded by 0005_selfheal.sql)", d)
 		} else {
-			log.Println("selfheal: disabled (RMMWAY_HEAL_INTERVAL=off)")
+			log.Println("selfheal: disabled (OURWAY_RMM_HEAL_INTERVAL=off)")
 		}
 	}
 	return healEngine

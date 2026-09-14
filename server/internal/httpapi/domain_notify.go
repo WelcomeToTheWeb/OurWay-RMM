@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/welcometotheweb/rmmway/server/internal/notify"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/notify"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // ---- notification routes (gap #6, wave 3, lane B) --------------------------

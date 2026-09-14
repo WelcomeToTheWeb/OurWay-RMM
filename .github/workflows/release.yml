@@ -31,8 +31,8 @@ jobs:
         run: |
           TAG="${GITHUB_REF_NAME}"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
-            gh release create "$TAG" --title "RMMWay ${TAG}" \
-              --notes "Signed release (W3-4): agent binaries + installers + SHA256SUMS carry minisign signatures (minisign.pub ships alongside); the server image ghcr.io/welcometotheweb/rmmway:${TAG#v} is cosign/Sigstore-signed. Every artifact ships a CycloneDX SBOM (W4-1): <artifact>.cdx.json (+ .minisig)."
+            gh release create "$TAG" --title "OurWay RMM ${TAG}" \
+              --notes "Signed release (W3-4): agent binaries + installers + SHA256SUMS carry minisign signatures (minisign.pub ships alongside); the server image ghcr.io/welcometotheweb/ourway-rmm:${TAG#v} is cosign/Sigstore-signed. Every artifact ships a CycloneDX SBOM (W4-1): <artifact>.cdx.json (+ .minisig)."
           fi
 
   agent:
@@ -84,7 +84,7 @@ jobs:
             done
             echo "upload failed after 5 attempts: $f"; return 1
           }
-          for f in agent/dist/rmmway-agent-* agent/dist/*.minisig \
+          for f in agent/dist/ourway-rmm-agent-* agent/dist/*.minisig \
                    scripts/install.sh scripts/install.sh.minisig \
                    scripts/install.ps1 scripts/install.ps1.minisig \
                    SHA256SUMS SHA256SUMS.minisig keys/minisign.pub; do
@@ -92,7 +92,7 @@ jobs:
           done
           # Invariant: every shipped artifact has its signature present too
           # (W4-1: each binary's SBOM is a shipped artifact as well).
-          EXPECTED='rmmway-agent-linux-amd64 rmmway-agent-linux-arm64 rmmway-agent-darwin-amd64 rmmway-agent-darwin-arm64 rmmway-agent-windows-amd64.exe rmmway-agent-linux-amd64.cdx.json rmmway-agent-linux-arm64.cdx.json rmmway-agent-darwin-amd64.cdx.json rmmway-agent-darwin-arm64.cdx.json rmmway-agent-windows-amd64.exe.cdx.json install.sh install.ps1 SHA256SUMS'
+          EXPECTED='ourway-rmm-agent-linux-amd64 ourway-rmm-agent-linux-arm64 ourway-rmm-agent-darwin-amd64 ourway-rmm-agent-darwin-arm64 ourway-rmm-agent-windows-amd64.exe ourway-rmm-agent-linux-amd64.cdx.json ourway-rmm-agent-linux-arm64.cdx.json ourway-rmm-agent-darwin-amd64.cdx.json ourway-rmm-agent-darwin-arm64.cdx.json ourway-rmm-agent-windows-amd64.exe.cdx.json install.sh install.ps1 SHA256SUMS'
           ACTUAL="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
           for a in $EXPECTED; do
             for f in "$a" "$a.minisig"; do
@@ -131,7 +131,7 @@ jobs:
           context: .
           file: server/Dockerfile
           push: true
-          tags: "ghcr.io/welcometotheweb/rmmway-server:${{ env.TAG }}"
+          tags: "ghcr.io/welcometotheweb/ourway-rmm-server:${{ env.TAG }}"
           # W4-1: also export the built image to a tar so the SBOM step can
           # scan the exact bytes that were pushed.
           outputs: type=docker,dest=server-image.tar
@@ -142,7 +142,7 @@ jobs:
           context: .
           file: frontend/Dockerfile
           push: true
-          tags: "ghcr.io/welcometotheweb/rmmway-frontend:${{ env.TAG }}"
+          tags: "ghcr.io/welcometotheweb/ourway-rmm-frontend:${{ env.TAG }}"
           outputs: type=docker,dest=frontend-image.tar
       - name: Build + push loki (embedded config)
         id: build-loki
@@ -151,7 +151,7 @@ jobs:
           context: ./loki
           file: loki/Dockerfile
           push: true
-          tags: "ghcr.io/welcometotheweb/rmmway-loki:${{ env.TAG }}"
+          tags: "ghcr.io/welcometotheweb/ourway-rmm-loki:${{ env.TAG }}"
       - name: Build + push caddy edge (embedded config)
         id: build-caddy
         uses: docker/build-push-action@v6
@@ -159,27 +159,27 @@ jobs:
           context: ./deploy
           file: deploy/Dockerfile.caddy
           push: true
-          tags: "ghcr.io/welcometotheweb/rmmway-caddy:${{ env.TAG }}"
+          tags: "ghcr.io/welcometotheweb/ourway-rmm-caddy:${{ env.TAG }}"
       # W4-1: CycloneDX SBOM for the server image (Go modules + OS packages
       # of the distroless base), scanned from the exported tar.
       - name: Generate image SBOM (CycloneDX, W4-1)
         run: |
           ./scripts/install-syft.sh
           bin/syft docker-archive:server-image.tar \
-            -o cyclonedx-json=dist/rmmway-server.cdx.json -q
-          ls -lh dist/rmmway-server.cdx.json
+            -o cyclonedx-json=dist/ourway-rmm-server.cdx.json -q
+          ls -lh dist/ourway-rmm-server.cdx.json
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
       - name: Sign image (keyless Sigstore)
         # The signature is attached to the image digest in GHCR; anyone can
         # verify with: cosign verify --certificate-identity ... <image>
-        run: cosign sign --yes "ghcr.io/welcometotheweb/rmmway-server@${{ steps.build-server.outputs.digest }}"
+        run: cosign sign --yes "ghcr.io/welcometotheweb/ourway-rmm-server@${{ steps.build-server.outputs.digest }}"
       # W4-1: attach the image SBOM to the pushed digest in GHCR so it
       # travels with the image (cosign download sbom <image> to retrieve).
       - name: Attach SBOM to image (GHCR)
         run: >
-          cosign attach sbom --sbom dist/rmmway-server.cdx.json --type cyclonedx
-          "ghcr.io/welcometotheweb/rmmway-server@${{ steps.build-server.outputs.digest }}"
+          cosign attach sbom --sbom dist/ourway-rmm-server.cdx.json --type cyclonedx
+          "ghcr.io/welcometotheweb/ourway-rmm-server@${{ steps.build-server.outputs.digest }}"
       - name: Verify signature (self-check)
         # A skeptic's round-trip inside CI: the freshly signed image must
         # verify against the Sigstore identity of THIS repository's Actions.
@@ -187,7 +187,7 @@ jobs:
           cosign verify \
             --certificate-identity-regexp "https://github.com/${GITHUB_REPOSITORY}/.*" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-            "ghcr.io/welcometotheweb/rmmway-server@${{ steps.build-server.outputs.digest }}"
+            "ghcr.io/welcometotheweb/ourway-rmm-server@${{ steps.build-server.outputs.digest }}"
       # W4-1: sign the image SBOM with the same minisign key and publish it
       # as a release asset next to the agent artifacts (which are all
       # minisigned too, so a single public key covers every asset).
@@ -199,10 +199,10 @@ jobs:
           mkdir -p keys bin
           printf '%s\n' "$MINISIGN_PRIVKEY" > keys/minisign.key
           chmod 600 keys/minisign.key
-          go -C tools/signer build -o "$PWD/bin/rmmway-signer" .
-          ./bin/rmmway-signer sign -k keys/minisign.key \
-            -c "rmmway release ${GITHUB_REF_NAME}" dist/rmmway-server.cdx.json
-          ./bin/rmmway-signer verify -p keys/minisign.pub dist/rmmway-server.cdx.json
+          go -C tools/signer build -o "$PWD/bin/ourway-rmm-signer" .
+          ./bin/ourway-rmm-signer sign -k keys/minisign.key \
+            -c "ourway-rmm release ${GITHUB_REF_NAME}" dist/ourway-rmm-server.cdx.json
+          ./bin/ourway-rmm-signer verify -p keys/minisign.pub dist/ourway-rmm-server.cdx.json
       - name: Publish deploy files to release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -232,32 +232,32 @@ jobs:
             done
             echo "upload failed after 5 attempts: $f"; return 1
           }
-          upload "dist/rmmway-server.cdx.json"
-          upload "dist/rmmway-server.cdx.json.minisig"
+          upload "dist/ourway-rmm-server.cdx.json"
+          upload "dist/ourway-rmm-server.cdx.json.minisig"
           ACTUAL="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
-          echo "$ACTUAL" | grep -qx "rmmway-server.cdx.json" || { echo "missing release asset: rmmway-server.cdx.json"; exit 1; }
-          echo "$ACTUAL" | grep -qx "rmmway-server.cdx.json.minisig" || { echo "missing release asset: rmmway-server.cdx.json.minisig"; exit 1; }
+          echo "$ACTUAL" | grep -qx "ourway-rmm-server.cdx.json" || { echo "missing release asset: ourway-rmm-server.cdx.json"; exit 1; }
+          echo "$ACTUAL" | grep -qx "ourway-rmm-server.cdx.json.minisig" || { echo "missing release asset: ourway-rmm-server.cdx.json.minisig"; exit 1; }
           echo "server SBOM asset inventory OK"
       # W4-1: CycloneDX SBOM for the frontend image (npm deps + alpine packages)
       - name: Generate frontend SBOM (CycloneDX, W4-1)
         run: |
           bin/syft docker-archive:frontend-image.tar \
-            -o cyclonedx-json=dist/rmmway-frontend.cdx.json -q
-          ls -lh dist/rmmway-frontend.cdx.json
+            -o cyclonedx-json=dist/ourway-rmm-frontend.cdx.json -q
+          ls -lh dist/ourway-rmm-frontend.cdx.json
       - name: Sign frontend image (keyless Sigstore)
-        run: cosign sign --yes "ghcr.io/welcometotheweb/rmmway-frontend@${{ steps.build-frontend.outputs.digest }}"
+        run: cosign sign --yes "ghcr.io/welcometotheweb/ourway-rmm-frontend@${{ steps.build-frontend.outputs.digest }}"
       - name: Attach frontend SBOM to image (GHCR)
         run: >
-          cosign attach sbom --sbom dist/rmmway-frontend.cdx.json --type cyclonedx
-          "ghcr.io/welcometotheweb/rmmway-frontend@${{ steps.build-frontend.outputs.digest }}"
+          cosign attach sbom --sbom dist/ourway-rmm-frontend.cdx.json --type cyclonedx
+          "ghcr.io/welcometotheweb/ourway-rmm-frontend@${{ steps.build-frontend.outputs.digest }}"
       - name: Sign frontend SBOM (minisign)
         env:
           MINISIGN_PRIVKEY: ${{ secrets.MINISIGN_PRIVKEY }}
           MINISIGN_PASS: ${{ secrets.MINISIGN_PASS }}
         run: |
-          ./bin/rmmway-signer sign -k keys/minisign.key \
-            -c "rmmway release ${GITHUB_REF_NAME}" dist/rmmway-frontend.cdx.json
-          ./bin/rmmway-signer verify -p keys/minisign.pub dist/rmmway-frontend.cdx.json
+          ./bin/ourway-rmm-signer sign -k keys/minisign.key \
+            -c "ourway-rmm release ${GITHUB_REF_NAME}" dist/ourway-rmm-frontend.cdx.json
+          ./bin/ourway-rmm-signer verify -p keys/minisign.pub dist/ourway-rmm-frontend.cdx.json
       - name: Publish frontend SBOM to release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -271,5 +271,5 @@ jobs:
             done
             echo "upload failed after 5 attempts: $f"; return 1
           }
-          upload "dist/rmmway-frontend.cdx.json"
-          upload "dist/rmmway-frontend.cdx.json.minisig"
+          upload "dist/ourway-rmm-frontend.cdx.json"
+          upload "dist/ourway-rmm-frontend.cdx.json.minisig"

@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/welcometotheweb/rmmway/server/internal/reports"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/reports"
 )
 
 // registerReports adds report routes to the API.

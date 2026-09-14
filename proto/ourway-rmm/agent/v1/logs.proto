@@ -11,9 +11,9 @@
 // MetricBatch (IDEA.md §1 outbox).
 syntax = "proto3";
 
-package rmmway.agent.v1;
+package ourway_rmm.agent.v1;
 
-option go_package = "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1";
+option go_package = "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1";
 
 // LogEntry is one structured log event from an agent.
 message LogEntry {

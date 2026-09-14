@@ -191,7 +191,7 @@ func (t *teeHandler) WithGroup(name string) slog.Handler {
 // LokiClient posts a batch of lines to Loki's push API.
 type LokiClient struct {
 	url      string // base URL, e.g. http://localhost:3100
-	job      string // the `job` label (default "rmmway-agent")
+	job      string // the `job` label (default "ourway-rmm-agent")
 	http     *http.Client
 	deviceID string
 }
@@ -201,7 +201,7 @@ func NewLokiClient(url, deviceID string, hc *http.Client) *LokiClient {
 	if hc == nil {
 		hc = &http.Client{Timeout: 10 * time.Second}
 	}
-	return &LokiClient{url: strings.TrimRight(url, "/"), job: "rmmway-agent", http: hc, deviceID: deviceID}
+	return &LokiClient{url: strings.TrimRight(url, "/"), job: "ourway-rmm-agent", http: hc, deviceID: deviceID}
 }
 
 // Push posts entries to Loki (POST /loki/api/v1/push). Loki accepts the

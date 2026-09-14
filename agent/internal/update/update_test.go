@@ -83,7 +83,7 @@ func TestPinnedKeyIsTheW34ReleaseKey(t *testing.T) {
 	}
 }
 
-// TestPublicKeyOverride loads RMMWAY_UPDATE_PUBKEY-style overrides and
+// TestPublicKeyOverride loads OURWAY_RMM_UPDATE_PUBKEY-style overrides and
 // errors on a missing file (a misconfigured trust anchor must not silently
 // fall back to the embedded key).
 func TestPublicKeyOverride(t *testing.T) {
@@ -103,14 +103,14 @@ func TestPublicKeyOverride(t *testing.T) {
 func TestVerifySignatureValid(t *testing.T) {
 	bin, sig := fixture(t)
 	dir := t.TempDir()
-	b := writeBin(t, dir, "rmmway-agent", bin)
+	b := writeBin(t, dir, "ourway-rmm-agent", bin)
 	_ = os.WriteFile(b+".minisig", sig, 0o644)
 
 	comment, err := VerifySignature(testPub(t), b, b+".minisig")
 	if err != nil {
 		t.Fatalf("verify: %v", err)
 	}
-	if !strings.Contains(comment, "rmmway release v2.0.0") {
+	if !strings.Contains(comment, "ourway-rmm release v2.0.0") {
 		t.Fatalf("comment = %q", comment)
 	}
 }
@@ -119,7 +119,7 @@ func TestVerifySignatureTampered(t *testing.T) {
 	bin, sig := fixture(t)
 	dir := t.TempDir()
 	// Flip one byte AFTER signing.
-	b := writeBin(t, dir, "rmmway-agent", flipOne(bin))
+	b := writeBin(t, dir, "ourway-rmm-agent", flipOne(bin))
 	_ = os.WriteFile(b+".minisig", sig, 0o644)
 
 	if _, err := VerifySignature(testPub(t), b, b+".minisig"); err == nil {
@@ -130,7 +130,7 @@ func TestVerifySignatureTampered(t *testing.T) {
 func TestVerifySignatureWrongKey(t *testing.T) {
 	bin, sig := fixture(t)
 	dir := t.TempDir()
-	b := writeBin(t, dir, "rmmway-agent", bin)
+	b := writeBin(t, dir, "ourway-rmm-agent", bin)
 	_ = os.WriteFile(b+".minisig", sig, 0o644)
 
 	// The W3-4 release key is a DIFFERENT key than the test key that signed.
@@ -142,7 +142,7 @@ func TestVerifySignatureWrongKey(t *testing.T) {
 func TestVerifySignatureMissing(t *testing.T) {
 	bin, _ := fixture(t)
 	dir := t.TempDir()
-	b := writeBin(t, dir, "rmmway-agent", bin)
+	b := writeBin(t, dir, "ourway-rmm-agent", bin)
 	// No .minisig written.
 	if _, err := VerifySignature(testPub(t), b, b+".minisig"); err == nil {
 		t.Fatal("unsigned binary verified — expected failure")
@@ -152,7 +152,7 @@ func TestVerifySignatureMissing(t *testing.T) {
 func TestVerifySignatureMalformedPub(t *testing.T) {
 	bin, sig := fixture(t)
 	dir := t.TempDir()
-	b := writeBin(t, dir, "rmmway-agent", bin)
+	b := writeBin(t, dir, "ourway-rmm-agent", bin)
 	_ = os.WriteFile(b+".minisig", sig, 0o644)
 	if _, err := VerifySignature("not-a-key", b, b+".minisig"); err == nil {
 		t.Fatal("malformed public key accepted")
@@ -241,7 +241,7 @@ func goosArch() string { return runtime.GOOS + "-" + runtime.GOARCH }
 // publish drops a (possibly tampered) binary + optional signature into the
 // served dir and points the manifest at it.
 func (rg *releaseRig) publish(version, pubKey string, bin, sig []byte, withSig bool) string {
-	name := "rmmway-agent-" + goosArch()
+	name := "ourway-rmm-agent-" + goosArch()
 	_ = os.WriteFile(filepath.Join(rg.dir, name), bin, 0o755)
 	if withSig {
 		_ = os.WriteFile(filepath.Join(rg.dir, name+".minisig"), sig, 0o644)
@@ -260,7 +260,7 @@ func TestUpdaterAppliesValid(t *testing.T) {
 	rg.publish("2.0.0", testPub(t), bin, sig, true)
 
 	dir := t.TempDir()
-	current := writeBin(t, dir, "rmmway-agent", []byte("old-bytes"))
+	current := writeBin(t, dir, "ourway-rmm-agent", []byte("old-bytes"))
 
 	installed, reexeced := 0, 0
 	u := New(Config{
@@ -298,7 +298,7 @@ func TestUpdaterRefusesTampered(t *testing.T) {
 	rg.publish("2.0.0", testPub(t), flipOne(bin), sig, true)
 
 	dir := t.TempDir()
-	current := writeBin(t, dir, "rmmway-agent", []byte("old-bytes"))
+	current := writeBin(t, dir, "ourway-rmm-agent", []byte("old-bytes"))
 	installed := 0
 	u := New(Config{
 		BaseURL:        rg.ts.URL,
@@ -326,7 +326,7 @@ func TestUpdaterRefusesUnsigned(t *testing.T) {
 	rg.publish("2.0.0", testPub(t), bin, nil, false) // no .minisig
 
 	dir := t.TempDir()
-	current := writeBin(t, dir, "rmmway-agent", []byte("old-bytes"))
+	current := writeBin(t, dir, "ourway-rmm-agent", []byte("old-bytes"))
 	installed := 0
 	u := New(Config{
 		BaseURL:        rg.ts.URL,
@@ -356,7 +356,7 @@ func TestUpdaterRefusesWrongKey(t *testing.T) {
 	rg.publish("2.0.0", PinnedPublicKey(), bin, sig, true)
 
 	dir := t.TempDir()
-	current := writeBin(t, dir, "rmmway-agent", []byte("old-bytes"))
+	current := writeBin(t, dir, "ourway-rmm-agent", []byte("old-bytes"))
 	u := New(Config{
 		BaseURL:        rg.ts.URL,
 		CurrentVersion: "1.0.0",
@@ -380,7 +380,7 @@ func TestUpdaterUpToDate(t *testing.T) {
 	rg.publish("1.0.0", testPub(t), bin, sig, true)
 
 	dir := t.TempDir()
-	current := writeBin(t, dir, "rmmway-agent", []byte("same-bytes"))
+	current := writeBin(t, dir, "ourway-rmm-agent", []byte("same-bytes"))
 	installed := 0
 	u := New(Config{
 		BaseURL:        rg.ts.URL,
@@ -415,7 +415,7 @@ func TestUpdaterCheckOnly(t *testing.T) {
 	rg.publish("2.0.0", testPub(t), bin, sig, true)
 
 	dir := t.TempDir()
-	current := writeBin(t, dir, "rmmway-agent", []byte("old-bytes"))
+	current := writeBin(t, dir, "ourway-rmm-agent", []byte("old-bytes"))
 	installed := 0
 	u := New(Config{
 		BaseURL:        rg.ts.URL,

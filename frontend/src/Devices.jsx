@@ -205,7 +205,7 @@ function b64(s) {
 // B-2: "dispatch to a group" — ONE capability-gated command fanned out to
 // every device carrying a tag. The server re-checks the session's capability
 // (403) and mints a per-device token per pushed command (500-device cap).
-const DEFAULT_SCRIPT = "#!/bin/sh\necho RMMWay group script\nuptime";
+const DEFAULT_SCRIPT = "#!/bin/sh\necho OurWay RMM group script\nuptime";
 
 function GroupDispatchModal({ token, initialTag, onUnauthorized, onClose }) {
   const [tag, setTag] = useState(initialTag || "");
@@ -389,8 +389,8 @@ function StatusPill({ online, lastSeen }) {
 // The install scripts are fetched from the public repo. Override
 // INSTALL_BASE (e.g. a self-hosted mirror) to point the one-liner elsewhere.
 const INSTALL_BASE =
-  (typeof window !== "undefined" && window.__RMMWAY_INSTALL_BASE__) ||
-  "https://raw.githubusercontent.com/welcometotheweb/rmmway/main/scripts";
+  (typeof window !== "undefined" && window.__OURWAY_RMM_INSTALL_BASE__) ||
+  "https://raw.githubusercontent.com/welcometotheweb/ourway-rmm/main/scripts";
 const INSTALL_SH = `${INSTALL_BASE}/install.sh`;
 const INSTALL_PS1 = `${INSTALL_BASE}/install.ps1`;
 
@@ -488,7 +488,7 @@ function AddDeviceModal({ token, onUnauthorized, onClose }) {
           </button>
         </div>
         <p className="muted">
-          Run this on the machine you want to monitor. It installs the RMMWay
+          Run this on the machine you want to monitor. It installs the OurWay RMM
           agent and enrolls it — the device appears in the list the moment it
           connects.
         </p>

@@ -174,7 +174,7 @@ export default function Palette({
             setTimeout(onClose, 400);
           } else if (item.id === "run-script") {
             const script =
-              "#!/bin/sh\necho rmmway-ping $(hostname) $(date -u +%FT%TZ)";
+              "#!/bin/sh\necho ourway-rmm-ping $(hostname) $(date -u +%FT%TZ)";
             await api.dispatch(token, target.id, {
               action: "run_script",
               lang: "sh",

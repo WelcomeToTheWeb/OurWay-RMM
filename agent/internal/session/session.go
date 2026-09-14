@@ -5,7 +5,7 @@
 // frames; close stops it. Phase 1 ships JPEG over the existing mTLS Stream
 // (the server relays only the latest frame per session, drop-old).
 //
-// Capture backends are per-OS (see capture_*.go). RMMWAY_SESSION_SOURCE
+// Capture backends are per-OS (see capture_*.go). OURWAY_RMM_SESSION_SOURCE
 // selects a non-default backend; "test" forces the synthetic animated
 // backend so the whole pipeline is e2e-testable on headless machines and in
 // CI.
@@ -19,7 +19,7 @@ import (
 	"sync"
 	"time"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // Default/MaxFPS bound the SessionControl.open fps hint (0 = default).
@@ -56,7 +56,7 @@ type Capturer interface {
 
 // DriverConfig wires a Driver. SendFrame ships one SessionFrame uplink
 // frame (the uplink's PushSessionFrame); NewCapturer is injectable for
-// tests (nil = the RMMWAY_SESSION_SOURCE / per-OS default).
+// tests (nil = the OURWAY_RMM_SESSION_SOURCE / per-OS default).
 type DriverConfig struct {
 	SendFrame   func(ctx context.Context, f *agentv1.SessionFrame) error
 	NewCapturer func() (Capturer, error)
@@ -361,10 +361,10 @@ func (e errCapturer) Capture(context.Context) (*Frame, error) {
 }
 func (e errCapturer) Close() error { return nil }
 
-// NewCapturer picks the backend: RMMWAY_SESSION_SOURCE overrides the
+// NewCapturer picks the backend: OURWAY_RMM_SESSION_SOURCE overrides the
 // per-OS default ("test" = synthetic animated frames).
 func NewCapturer() (Capturer, error) {
-	if src := os.Getenv("RMMWAY_SESSION_SOURCE"); src == "test" {
+	if src := os.Getenv("OURWAY_RMM_SESSION_SOURCE"); src == "test" {
 		return newTestCapturer(), nil
 	}
 	return defaultCapturer()

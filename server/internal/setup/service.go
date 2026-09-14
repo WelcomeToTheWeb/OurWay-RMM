@@ -11,7 +11,7 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
-	smtpoutbox "github.com/welcometotheweb/rmmway/server/internal/smtp"
+	smtpoutbox "github.com/welcometotheweb/ourway-rmm/server/internal/smtp"
 )
 
 // Reissuer re-issues the org root CA under the given organization name
@@ -280,10 +280,10 @@ func (s *Service) TestSMTP(ctx context.Context, cfg smtpoutbox.Config, to string
 	}
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
-	body := "This is a test message from the RMMWay SMTP outbox.\n" +
+	body := "This is a test message from the OurWay RMM SMTP outbox.\n" +
 		"If you can read this, the outbox is configured correctly and\n" +
 		"the server can send mail through " + cfg.Host + ":" + fmt.Sprint(cfg.Port) + ".\n"
-	return s.send(ctx, cfg, to, "RMMWay: SMTP outbox test", body)
+	return s.send(ctx, cfg, to, "OurWay RMM: SMTP outbox test", body)
 }
 
 // HashPassword hashes a password with PBKDF2-SHA256 (100k iterations,

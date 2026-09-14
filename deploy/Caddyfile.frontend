@@ -1,4 +1,4 @@
-# RMMWay frontend (A-1 + A-1 BYO). Serves the prebuilt SPA from /srv/rmmway.
+# OurWay RMM frontend (A-1 + A-1 BYO). Serves the prebuilt SPA from /srv/ourway-rmm.
 #
 # It ALSO reverse-proxies the operator API (/api, /agent, /healthz) to the Go
 # server. In the bundled Caddy edge this is redundant (the edge sends /api/*
@@ -23,7 +23,7 @@
 	# Everything else: the prebuilt operator SPA (with the /index.html
 	# fallback for client-side routes).
 	handle {
-		root * /srv/rmmway
+		root * /srv/ourway-rmm
 		try_files {path} /index.html
 		file_server
 	}

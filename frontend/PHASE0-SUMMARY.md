@@ -31,7 +31,7 @@ Completed 2026-07-19. Build green; all 11 jsdom UI smokes green.
 
 - `App.jsx`: topbar rebuilt on kit (nav, human-readable health chip, theme
   toggle). Theme = `data-theme` on `<html>`, persisted in localStorage
-  `rmmway-theme`, default follows `prefers-color-scheme`
+  `ourway-rmm-theme`, default follows `prefers-color-scheme`
 - `Login.jsx` + `Alerts.jsx` migrated onto kit components; every class the
   setup-wizard/sse smokes assert on is preserved
 - `styles.css` is now 8 `@import` lines; every pre-existing class/selector

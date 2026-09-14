@@ -1,26 +1,26 @@
-name: rmmway
+name: ourway-rmm
 
 services:
   timescale:
     image: timescale/timescaledb:latest-pg16
-    container_name: rmmway-timescale
+    container_name: ourway-rmm-timescale
     environment:
-      POSTGRES_DB: rmmway
-      POSTGRES_USER: rmmway
-      POSTGRES_PASSWORD: rmmway
+      POSTGRES_DB: ourway-rmm
+      POSTGRES_USER: ourway-rmm
+      POSTGRES_PASSWORD: ourway-rmm
     ports:
       - "5432:5432"
     volumes:
       - timescale-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rmmway -d rmmway"]
+      test: ["CMD-SHELL", "pg_isready -U ourway-rmm -d ourway-rmm"]
       interval: 5s
       timeout: 3s
       retries: 20
 
   nats:
     image: nats:2.11-alpine
-    container_name: rmmway-nats
+    container_name: ourway-rmm-nats
     command: ["--jetstream", "--store_dir", "/data"]
     ports:
       - "4222:4222"   # client
@@ -35,7 +35,7 @@ services:
 
   redis:
     image: redis:7
-    container_name: rmmway-redis
+    container_name: ourway-rmm-redis
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6379:6379"
@@ -49,11 +49,11 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: rmmway-minio
+    container_name: ourway-rmm-minio
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
-      MINIO_ROOT_USER: rmmway
-      MINIO_ROOT_PASSWORD: rmmway-dev-secret
+      MINIO_ROOT_USER: ourway-rmm
+      MINIO_ROOT_PASSWORD: ourway-rmm-dev-secret
     ports:
       - "9000:9000"   # S3 API
       - "9001:9001"   # console
@@ -67,9 +67,9 @@ services:
 
   meilisearch:
     image: getmeili/meilisearch:v1.12
-    container_name: rmmway-meilisearch
+    container_name: ourway-rmm-meilisearch
     environment:
-      MEILI_MASTER_KEY: rmmway-dev-master-key
+      MEILI_MASTER_KEY: ourway-rmm-dev-master-key
     ports:
       - "7700:7700"
     volumes:
@@ -85,7 +85,7 @@ services:
   # on local disk — the config lives in ./loki (see loki-local-config.yaml).
   loki:
     image: grafana/loki:3.5.4
-    container_name: rmmway-loki
+    container_name: ourway-rmm-loki
     command: ["-config.file=/etc/loki/loki-local-config.yaml"]
     ports:
       - "3100:3100"   # HTTP push + query API

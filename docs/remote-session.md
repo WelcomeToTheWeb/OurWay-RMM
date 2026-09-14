@@ -1,7 +1,7 @@
 # Remote Session Protocol
 
 The remote session feature enables two-way remote control of devices through
-the RMMWay agent. This document describes the architecture, protocol, and
+the OurWay RMM agent. This document describes the architecture, protocol, and
 environment configuration.
 
 ## Architecture
@@ -33,7 +33,7 @@ Browser Viewer ←─ SSE frames ── Server Relay ── gRPC Stream ── A
 
 ## Protocol
 
-### Frame Types (proto/rmmway/agent/v1/agent.proto)
+### Frame Types (proto/ourway-rmm/agent/v1/agent.proto)
 
 #### Uplink: SessionFrame
 
@@ -122,7 +122,7 @@ message KeyboardEvent {
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `RMMWAY_SESSION_SOURCE` | (platform default) | Capture backend override. Use `"test"` for synthetic animated frames (useful for headless testing). |
+| `OURWAY_RMM_SESSION_SOURCE` | (platform default) | Capture backend override. Use `"test"` for synthetic animated frames (useful for headless testing). |
 
 ## Platform-Specific Implementation
 
@@ -163,7 +163,7 @@ Uses AppleScript/CGEvent via `osascript`:
 
 ### Integration Testing
 
-- Set `RMMWAY_SESSION_SOURCE=test` to use the synthetic animated backend
+- Set `OURWAY_RMM_SESSION_SOURCE=test` to use the synthetic animated backend
 - The test backend produces deterministic animated frames that can be verified
 - Works on any platform (pure Go, no cgo)
 

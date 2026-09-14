@@ -10,7 +10,7 @@ import (
 
 	"golang.org/x/sys/windows/svc"
 
-	"github.com/welcometotheweb/rmmway/agent/internal/logship"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/logship"
 )
 
 // serviceName is the Windows service the installer registers. It MUST match the

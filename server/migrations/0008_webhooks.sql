@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS webhook_events (
     seq        bigserial PRIMARY KEY,
     -- alert | inventory | automation | other (derived from the bus subject).
     category   text NOT NULL,
-    -- the bus subject (e.g. rmmway.events.alert) — the event's concrete type.
+    -- the bus subject (e.g. ourway-rmm.events.alert) — the event's concrete type.
     type       text NOT NULL,
     device_id  text NOT NULL DEFAULT '',
     at         timestamptz NOT NULL,

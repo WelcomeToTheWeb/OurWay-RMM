@@ -55,7 +55,7 @@ export default function Login() {
 		<div className="login-wrap">
 			<form className="login card" onSubmit={submit}>
 				<header className="login-head">
-					<div className="brand">RMMWay</div>
+					<div className="brand">OurWay RMM</div>
 					<p className="muted">Sign in to continue</p>
 				</header>
 				<Field

@@ -24,9 +24,9 @@
 //     database (migrated, device registered) and come back identical
 //     (count + spot values + range).
 //
-// Usage: RMMWAY_PG_DSN=... go run ./cmd/e2e/export
+// Usage: OURWAY_RMM_PG_DSN=... go run ./cmd/e2e/export
 // (needs a Timescale-capable Postgres where the user can CREATE DATABASE;
-// locally: RMMWAY_PG_DSN=postgres://postgres@localhost:5432/postgres)
+// locally: OURWAY_RMM_PG_DSN=postgres://postgres@localhost:5432/postgres)
 package main
 
 import (
@@ -45,9 +45,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/export"
-	"github.com/welcometotheweb/rmmway/server/internal/httpapi"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/export"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/httpapi"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 func die(f string, a ...any) {
@@ -82,7 +82,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
-	dsn := os.Getenv("RMMWAY_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_PG_DSN")
 	if dsn == "" {
 		dsn = "postgres://postgres@localhost:5432/postgres"
 	}
@@ -121,7 +121,7 @@ func main() {
 			Metrics: export.NewPostgresMetrics(pool),
 			Rollups: export.NewPostgresRollups(pool),
 			Alerts:  export.NewPostgresAlerts(pool),
-			Version: "rmmway-server/e2e",
+			Version: "ourway-rmm-server/e2e",
 		}),
 	})
 	srvURL := serveAPI(apiSrv)
@@ -155,7 +155,7 @@ func main() {
 	check(resp.StatusCode == http.StatusOK, "export = %d, want 200", resp.StatusCode)
 	check(resp.Header.Get("Content-Type") == "application/zip",
 		"content-type = %q, want application/zip", resp.Header.Get("Content-Type"))
-	check(strings.HasPrefix(resp.Header.Get("Content-Disposition"), "attachment; filename=\"rmmway-export-"+devID),
+	check(strings.HasPrefix(resp.Header.Get("Content-Disposition"), "attachment; filename=\"ourway-rmm-export-"+devID),
 		"content-disposition = %q", resp.Header.Get("Content-Disposition"))
 	bundle, err := io.ReadAll(resp.Body)
 	resp.Body.Close()
@@ -357,13 +357,13 @@ func insertAlerts(ctx context.Context, pool *pgxpool.Pool, devID string) {
 
 // scratchDB creates a fresh migrated Timescale DB (needs CREATE DATABASE).
 func scratchDB(ctx context.Context, dsn string) (admin *pgxpool.Pool, pool *pgxpool.Pool, name string, cleanup func()) {
-	admin, pool, name = makeScratch(ctx, dsn, "rmmway_export_e2e_")
+	admin, pool, name = makeScratch(ctx, dsn, "ourway-rmm_export_e2e_")
 	cleanup = func() { dropScratch(admin, name) }
 	return
 }
 
 func scratchDB2(ctx context.Context, dsn string) (*pgxpool.Pool, string, func()) {
-	admin, pool, name := makeScratch(ctx, dsn, "rmmway_export_reimport_")
+	admin, pool, name := makeScratch(ctx, dsn, "ourway-rmm_export_reimport_")
 	cleanup := func() { dropScratch(admin, name) }
 	return pool, name, cleanup
 }
@@ -378,7 +378,7 @@ func makeScratch(ctx context.Context, dsn, prefix string) (*pgxpool.Pool, *pgxpo
 		die("admin pool: %v", err)
 	}
 	if err := admin.Ping(ctx); err != nil {
-		die("postgres not reachable: %v (try RMMWAY_PG_DSN=postgres://postgres@localhost:5432/postgres)", err)
+		die("postgres not reachable: %v (try OURWAY_RMM_PG_DSN=postgres://postgres@localhost:5432/postgres)", err)
 	}
 	name := prefix + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+name); err != nil {

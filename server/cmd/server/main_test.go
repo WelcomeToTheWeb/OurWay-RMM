@@ -24,7 +24,7 @@ func TestMtlsSANs_AllInterfacesBindsCoverHostLANIPs(t *testing.T) {
 // A-1: explicitly configured extra names (production domain, public IP) are
 // added on top of the local defaults.
 func TestMtlsSANs_ExplicitEnvSANs(t *testing.T) {
-	t.Setenv("RMMWAY_GRPC_MTLS_SANs", "rmm.example.com,203.0.113.9")
+	t.Setenv("OURWAY_RMM_GRPC_MTLS_SANs", "rmm.example.com,203.0.113.9")
 	sans := mtlsSANs(":50052")
 	for _, want := range []string{"localhost", "127.0.0.1", "rmm.example.com", "203.0.113.9"} {
 		if !containsString(sans, want) {
@@ -47,23 +47,23 @@ func TestMtlsSANs_NamedBindStripsPort(t *testing.T) {
 	}
 }
 
-// RMMWAY_PUBLIC_URL is the authoritative public dial target: its host is
+// OURWAY_RMM_PUBLIC_URL is the authoritative public dial target: its host is
 // ALWAYS included in the mTLS SANs (no need to also set
-// RMMWAY_GRPC_MTLS_SANs or RMMWAY_DOMAIN).
+// OURWAY_RMM_GRPC_MTLS_SANs or OURWAY_RMM_DOMAIN).
 func TestMtlsSANs_PublicURLEnvarSeedsSANs(t *testing.T) {
-	t.Setenv("RMMWAY_PUBLIC_URL", "https://rmm.example.com")
+	t.Setenv("OURWAY_RMM_PUBLIC_URL", "https://rmm.example.com")
 	sans := mtlsSANs(":50052")
 	if !containsString(sans, "rmm.example.com") {
-		t.Errorf("mtlsSANs = %v; missing the RMMWAY_PUBLIC_URL host rmm.example.com", sans)
+		t.Errorf("mtlsSANs = %v; missing the OURWAY_RMM_PUBLIC_URL host rmm.example.com", sans)
 	}
 }
 
-// RMMWAY_PUBLIC_URL with an IP address also works.
+// OURWAY_RMM_PUBLIC_URL with an IP address also works.
 func TestMtlsSANs_PublicURLIP(t *testing.T) {
-	t.Setenv("RMMWAY_PUBLIC_URL", "https://203.0.113.10")
+	t.Setenv("OURWAY_RMM_PUBLIC_URL", "https://203.0.113.10")
 	sans := mtlsSANs(":50052")
 	if !containsString(sans, "203.0.113.10") {
-		t.Errorf("mtlsSANs = %v; missing the RMMWAY_PUBLIC_URL IP 203.0.113.10", sans)
+		t.Errorf("mtlsSANs = %v; missing the OURWAY_RMM_PUBLIC_URL IP 203.0.113.10", sans)
 	}
 }
 

@@ -73,19 +73,19 @@ jobs:
       timescale:
         image: timescale/timescaledb:latest-pg16
         env:
-          POSTGRES_DB: rmmway
-          POSTGRES_USER: rmmway
-          POSTGRES_PASSWORD: rmmway
+          POSTGRES_DB: ourway-rmm
+          POSTGRES_USER: ourway-rmm
+          POSTGRES_PASSWORD: ourway-rmm
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U rmmway -d rmmway"
+          --health-cmd "pg_isready -U ourway-rmm -d ourway-rmm"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
       nats:
         # JetStream stream the W5-2 flow engine + W6-2 webhook framework run
-        # over (the e2e deletes/recreates the RMMWAY_EVENTS stream per run).
+        # over (the e2e deletes/recreates the OURWAY_RMM_EVENTS stream per run).
         image: nats:2.10-alpine
         ports:
           - 4222:4222
@@ -96,13 +96,13 @@ jobs:
           --health-timeout 5s
           --health-retries 20
     env:
-      RMMWAY_MEILI_TEST_ENDPOINT: http://localhost:7700
-      RMMWAY_MEILI_TEST_KEY: ci-master-key
+      OURWAY_RMM_MEILI_TEST_ENDPOINT: http://localhost:7700
+      OURWAY_RMM_MEILI_TEST_KEY: ci-master-key
       # Enables the live-Postgres tests (each skips itself when unset):
       # migrations, baseline, alerts, heal state machine, client export.
-      RMMWAY_TEST_PG_DSN: postgres://rmmway:rmmway@localhost:5432/rmmway
+      OURWAY_RMM_TEST_PG_DSN: postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm
       # NATS/JetStream for the W5-2/W6-2 e2e (real event bus).
-      RMMWAY_NATS_URL: nats://localhost:4222
+      OURWAY_RMM_NATS_URL: nats://localhost:4222
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -135,7 +135,7 @@ jobs:
         # re-import it into a fresh database.
         working-directory: server
         env:
-          RMMWAY_PG_DSN: postgres://rmmway:rmmway@localhost:5432/rmmway
+          OURWAY_RMM_PG_DSN: postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm
         run: go run ./cmd/e2e/export
       - name: "trust e2e (W4-4 MILESTONE: a skeptic verifies a signed release + SBOM, and exports a client + confirms it's theirs)"
         # Closes Block 2. Self-contained: Part A cross-builds the real agent,
@@ -150,7 +150,7 @@ jobs:
         # Parquet reader, tamper-reject).
         working-directory: server
         env:
-          RMMWAY_PG_DSN: postgres://rmmway:rmmway@localhost:5432/rmmway
+          OURWAY_RMM_PG_DSN: postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm
         run: go run ./cmd/e2e/trust
       - name: "webhook e2e (W6-2: a user-defined endpoint gets signed alert/inventory/automation events, with retries + replay + SSE)"
         # Real ingest (enroll -> inventory) + real flow engine (trigger->notify
@@ -161,8 +161,8 @@ jobs:
         # (500,500 -> 200), replay (cursor reset re-drives), and the SSE stream.
         working-directory: server
         env:
-          RMMWAY_PG_DSN: postgres://rmmway:rmmway@localhost:5432/rmmway
-          RMMWAY_NATS_URL: nats://localhost:4222
+          OURWAY_RMM_PG_DSN: postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm
+          OURWAY_RMM_NATS_URL: nats://localhost:4222
         run: go run ./cmd/e2e/webhook
       - name: "automation e2e (W6-3 MILESTONE: one condition -> alert -> self-heal confirm -> ticket -> webhook, all audited)"
         # Closes Block 3 = Phase 1 MVP. A SINGLE condition (one device whose
@@ -177,8 +177,8 @@ jobs:
         # webhook_events journal) and ties them to the one condition.
         working-directory: server
         env:
-          RMMWAY_PG_DSN: postgres://rmmway:rmmway@localhost:5432/rmmway
-          RMMWAY_NATS_URL: nats://localhost:4222
+          OURWAY_RMM_PG_DSN: postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm
+          OURWAY_RMM_NATS_URL: nats://localhost:4222
         run: go run ./cmd/e2e/automation
 
   # Gap #9 (W0): one-click onboarding e2e — the REAL installer against a REAL
@@ -197,13 +197,13 @@ jobs:
       timescale:
         image: timescale/timescaledb:latest-pg16
         env:
-          POSTGRES_DB: rmmway
-          POSTGRES_USER: rmmway
-          POSTGRES_PASSWORD: rmmway
+          POSTGRES_DB: ourway-rmm
+          POSTGRES_USER: ourway-rmm
+          POSTGRES_PASSWORD: ourway-rmm
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U rmmway -d rmmway"
+          --health-cmd "pg_isready -U ourway-rmm -d ourway-rmm"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -218,12 +218,12 @@ jobs:
           --health-timeout 5s
           --health-retries 20
     env:
-      RMMWAY_PG_DSN: postgres://rmmway:rmmway@localhost:5432/rmmway
-      RMMWAY_NATS_URL: nats://localhost:4222
+      OURWAY_RMM_PG_DSN: postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm
+      OURWAY_RMM_NATS_URL: nats://localhost:4222
       # The installer derives the agent's mTLS dial target from --server
       # (localhost -> localhost:50052); the mTLS cert must carry a
       # "localhost" SAN for the agent's hostname verification to pass.
-      RMMWAY_GRPC_MTLS_SANs: localhost
+      OURWAY_RMM_GRPC_MTLS_SANs: localhost
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -237,21 +237,21 @@ jobs:
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
             -trimpath \
             -ldflags "-s -w -X main.version=0.0.0-e2e -X main.commit=$(git rev-parse --short HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            -o dist/rmmway-agent-linux-amd64 ./cmd/agent
-          ./dist/rmmway-agent-linux-amd64 --version
+            -o dist/ourway-rmm-agent-linux-amd64 ./cmd/agent
+          ./dist/ourway-rmm-agent-linux-amd64 --version
       - name: Serve a local "release" dir (binary + SHA256SUMS) on 127.0.0.1:8088
         run: |
           set -euo pipefail
-          (cd agent/dist && sha256sum rmmway-agent-linux-amd64 > SHA256SUMS && cat SHA256SUMS)
-          python3 -m http.server 8088 --bind 127.0.0.1 --directory agent/dist > /tmp/rmmway-filesrv.log 2>&1 &
+          (cd agent/dist && sha256sum ourway-rmm-agent-linux-amd64 > SHA256SUMS && cat SHA256SUMS)
+          python3 -m http.server 8088 --bind 127.0.0.1 --directory agent/dist > /tmp/ourway-rmm-filesrv.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:8088/SHA256SUMS > /dev/null && break; sleep 1; done
           curl -sf http://127.0.0.1:8088/SHA256SUMS
       - name: Boot the server from source (fresh Timescale — migrations on boot)
         working-directory: server
         run: |
           set -euo pipefail
-          go build -o /tmp/rmmway-server ./cmd/server
-          /tmp/rmmway-server > /tmp/rmmway-server.log 2>&1 &
+          go build -o /tmp/ourway-rmm-server ./cmd/server
+          /tmp/ourway-rmm-server > /tmp/ourway-rmm-server.log 2>&1 &
           # /healthz is 503 while any probe is degraded (this lean job has no
           # redis/minio/meili), so wait for the login API to answer 200 —
           # that means the server is fully booted (migrations + PKI included).
@@ -260,8 +260,8 @@ jobs:
             [ "$code" = "200" ] && break
             sleep 1
           done
-          [ "$code" = "200" ] || { echo "server did not boot"; tail -50 /tmp/rmmway-server.log; exit 1; }
-          tail -20 /tmp/rmmway-server.log
+          [ "$code" = "200" ] || { echo "server did not boot"; tail -50 /tmp/ourway-rmm-server.log; exit 1; }
+          tail -20 /tmp/ourway-rmm-server.log
       - name: Mint the operator token + one-time bootstrap code
         run: |
           set -euo pipefail
@@ -278,17 +278,17 @@ jobs:
           echo "DEVICE_ID=$DEVID" >> "$GITHUB_ENV"
       - name: Run the REAL installer (one pasted line; systemd unit on the runner)
         env:
-          RMMWAY_DOWNLOAD_BASE: http://127.0.0.1:8088
+          OURWAY_RMM_DOWNLOAD_BASE: http://127.0.0.1:8088
         run: |
           set -euo pipefail
           ./scripts/install.sh \
             --server http://localhost:8080 \
             --bootstrap "$BOOTSTRAP_TOKEN" \
             --version 0.0.0-e2e
-          echo "--- /etc/rmmway/agent.env (token redacted) ---"
-          sed 's/^RMMWAY_BOOTSTRAP_TOKEN=.*/RMMWAY_BOOTSTRAP_TOKEN=<redacted>/' /etc/rmmway/agent.env
+          echo "--- /etc/ourway-rmm/agent.env (token redacted) ---"
+          sed 's/^OURWAY_RMM_BOOTSTRAP_TOKEN=.*/OURWAY_RMM_BOOTSTRAP_TOKEN=<redacted>/' /etc/ourway-rmm/agent.env
           echo "--- unit state ---"
-          systemctl is-active rmmway-agent.service || true
+          systemctl is-active ourway-rmm-agent.service || true
       - name: Assert the device is online and metrics flow (<= 60 s)
         run: |
           set -euo pipefail
@@ -306,9 +306,9 @@ jobs:
           done
           if [ "$ok" != "yes" ]; then
             echo "FAIL: device $DEVICE_ID online + metrics flowing within 60 s"
-            echo "== server log =="; tail -50 /tmp/rmmway-server.log
-            echo "== agent unit =="; systemctl status rmmway-agent.service --no-pager || true
-            journalctl -u rmmway-agent --no-pager 2>/dev/null | tail -40 || true
+            echo "== server log =="; tail -50 /tmp/ourway-rmm-server.log
+            echo "== agent unit =="; systemctl status ourway-rmm-agent.service --no-pager || true
+            journalctl -u ourway-rmm-agent --no-pager 2>/dev/null | tail -40 || true
             exit 1
           fi
           echo "PASS: the installer enrolled the device and metrics flow (gap #9 closed)"
@@ -335,9 +335,9 @@ jobs:
           file agent/dist/*
       - name: "Verify static (linux/amd64): ldd + version"
         run: |
-          file agent/dist/rmmway-agent-linux-amd64
-          ldd agent/dist/rmmway-agent-linux-amd64 2>&1 | grep -Ei 'not a dynamic|statically linked'
-          ./agent/dist/rmmway-agent-linux-amd64 --version
+          file agent/dist/ourway-rmm-agent-linux-amd64
+          ldd agent/dist/ourway-rmm-agent-linux-amd64 2>&1 | grep -Ei 'not a dynamic|statically linked'
+          ./agent/dist/ourway-rmm-agent-linux-amd64 --version
       # W4-1: CycloneDX SBOM for every agent binary (pinned syft via script).
       - name: Generate agent SBOMs (CycloneDX, W4-1)
         run: |
@@ -347,14 +347,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rmmway-agent
+          name: ourway-rmm-agent
           path: agent/dist/*
           retention-days: 7
       - name: Upload agent SBOMs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rmmway-sboms
+          name: ourway-rmm-sboms
           path: agent/dist/*.cdx.json
           retention-days: 7
 
@@ -394,9 +394,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           # GHCR repo names must be lowercase; github.repository keeps the
-          # owner's case (WelcomeToTheWeb/rmmway). Hardcoded lowercase to
+          # owner's case (WelcomeToTheWeb/ourway-rmm). Hardcoded lowercase to
           # keep the expression simple (the repo name is stable).
-          images: ghcr.io/welcometotheweb/rmmway
+          images: ghcr.io/welcometotheweb/ourway-rmm
           tags: |
             type=sha
             type=raw,value=latest,enable={{is_default_branch}}
@@ -420,34 +420,34 @@ jobs:
         run: |
           ./scripts/install-syft.sh
           bin/syft docker-archive:server-image.tar \
-            -o cyclonedx-json=dist/rmmway-server.cdx.json -q
-          ls -lh dist/rmmway-server.cdx.json
+            -o cyclonedx-json=dist/ourway-rmm-server.cdx.json -q
+          ls -lh dist/ourway-rmm-server.cdx.json
       - name: Upload image SBOM
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rmmway-server-sbom
-          path: dist/rmmway-server.cdx.json
+          name: ourway-rmm-server-sbom
+          path: dist/ourway-rmm-server.cdx.json
           retention-days: 7
       # W3-4: sign every pushed server image with cosign/Sigstore (keyless,
-      # GitHub OIDC). Verify with: cosign verify ghcr.io/welcometotheweb/rmmway@<digest>
+      # GitHub OIDC). Verify with: cosign verify ghcr.io/welcometotheweb/ourway-rmm@<digest>
       - name: Install cosign
         if: github.ref == 'refs/heads/main'
         uses: sigstore/cosign-installer@v3
       - name: Sign image (keyless Sigstore)
         if: github.ref == 'refs/heads/main'
-        run: cosign sign --yes "ghcr.io/welcometotheweb/rmmway@${{ steps.build.outputs.digest }}"
+        run: cosign sign --yes "ghcr.io/welcometotheweb/ourway-rmm@${{ steps.build.outputs.digest }}"
       # W4-1: attach the image SBOM to the pushed digest in GHCR so it
       # travels with the image (cosign download sbom <image> to retrieve).
       - name: Attach SBOM to image (GHCR)
         if: github.ref == 'refs/heads/main'
         run: >
-          cosign attach sbom --sbom dist/rmmway-server.cdx.json --type cyclonedx
-          "ghcr.io/welcometotheweb/rmmway@${{ steps.build.outputs.digest }}"
+          cosign attach sbom --sbom dist/ourway-rmm-server.cdx.json --type cyclonedx
+          "ghcr.io/welcometotheweb/ourway-rmm@${{ steps.build.outputs.digest }}"
       - name: Verify signature (self-check)
         if: github.ref == 'refs/heads/main'
         run: |
           cosign verify \
             --certificate-identity-regexp "https://github.com/${GITHUB_REPOSITORY}/.*" \
             --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-            "ghcr.io/welcometotheweb/rmmway@${{ steps.build.outputs.digest }}"
+            "ghcr.io/welcometotheweb/ourway-rmm@${{ steps.build.outputs.digest }}"

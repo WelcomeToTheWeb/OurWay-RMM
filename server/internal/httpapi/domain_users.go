@@ -13,9 +13,9 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
-	"github.com/welcometotheweb/rmmway/server/internal/setup"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
-	"github.com/welcometotheweb/rmmway/server/internal/users"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/setup"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/users"
 )
 
 // ---- unified operator login (gap #3, wave 2, lane B) ------------------------

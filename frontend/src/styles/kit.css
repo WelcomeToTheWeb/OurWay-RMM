@@ -756,10 +756,10 @@ label.check input {
   border: 2px solid var(--border);
   border-top-color: var(--accent);
   border-radius: 50%;
-  animation: rmmway-spin 0.8s linear infinite;
+  animation: ourway-rmm-spin 0.8s linear infinite;
   vertical-align: -2px;
 }
-@keyframes rmmway-spin {
+@keyframes ourway-rmm-spin {
   to {
     transform: rotate(360deg);
   }

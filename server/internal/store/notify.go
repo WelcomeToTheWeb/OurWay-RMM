@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/notify"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/notify"
 )
 
 // NotificationPolicy defines routing rules for notification categories.

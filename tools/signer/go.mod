@@ -1,4 +1,4 @@
-module github.com/welcometotheweb/rmmway/tools/signer
+module github.com/welcometotheweb/ourway-rmm/tools/signer
 
 go 1.27.0
 

@@ -21,8 +21,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/welcometotheweb/rmmway/server/internal/setup"
-	"github.com/welcometotheweb/rmmway/server/internal/smtp"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/setup"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/smtp"
 )
 
 // setupGate passes the request through while the server is uninitialized
@@ -197,7 +197,7 @@ func (s *Server) handleSetupSMTPTest(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "to": to})
 }
 
-// handlePublicURL returns the configured public operator URL (RMMWAY_PUBLIC_URL).
+// handlePublicURL returns the configured public operator URL (OURWAY_RMM_PUBLIC_URL).
 // Open (no auth) — the Add Device UI reads this to prefill the server URL field.
 //
 // GET /api/public-url

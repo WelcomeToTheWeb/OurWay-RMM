@@ -227,7 +227,7 @@ func TestShipperTailsAndShipsBothSinks(t *testing.T) {
 		!strings.Contains(loki.lines[2], "uplink stream ended") {
 		t.Fatalf("loki line order/content: %v", loki.lines)
 	}
-	if loki.labels["device_id"] != "dev-1" || loki.labels["job"] != "rmmway-agent" {
+	if loki.labels["device_id"] != "dev-1" || loki.labels["job"] != "ourway-rmm-agent" {
 		t.Fatalf("loki labels = %v", loki.labels)
 	}
 	loki.mu.Unlock()

@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // newDispatchServer builds a Server with a capturing dispatcher: records the
@@ -114,18 +114,18 @@ func TestDispatchCapabilityGate(t *testing.T) {
 			*calls = append(*calls, dispatchCall{device: deviceID, action: action})
 			return "cmd-1", nil
 		},
-		AdminCaps: []string{"rmmway.run_script"},
+		AdminCaps: []string{"ourway-rmm.run_script"},
 	})
 	_, body := login(t, s, "admin", "s3cret")
 	tok, _ := body["token"].(string)
 
 	// The login response advertises the session's capabilities.
 	caps, _ := body["capabilities"].([]any)
-	if len(caps) != 1 || caps[0] != "rmmway.run_script" {
+	if len(caps) != 1 || caps[0] != "ourway-rmm.run_script" {
 		t.Fatalf("login capabilities: %v", body["capabilities"])
 	}
 
-	// reboot: the session lacks rmmway.reboot -> 403, dispatcher untouched.
+	// reboot: the session lacks ourway-rmm.reboot -> 403, dispatcher untouched.
 	code, out := postDispatch(t, s, tok, "/api/devices/dev-abc/commands", dispatchRequest{Action: "reboot"})
 	if code != http.StatusForbidden {
 		t.Fatalf("reboot without cap: got %d, want 403 (%v)", code, out)

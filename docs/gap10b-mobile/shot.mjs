@@ -64,7 +64,7 @@ async function main() {
     page.click('button[type="submit"]'),
   ]);
   await page.waitForFunction(() =>
-    window.localStorage.getItem("rmmway.operator.token"),
+    window.localStorage.getItem("ourway-rmm.operator.token"),
   );
 
   // ---- 390px -------------------------------------------------------------

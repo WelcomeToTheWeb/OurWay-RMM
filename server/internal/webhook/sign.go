@@ -1,4 +1,4 @@
-// Package webhook exposes the RMMWay NATS event bus as signed HTTP
+// Package webhook exposes the OurWay RMM NATS event bus as signed HTTP
 // webhooks + a live Server-Sent-Events stream (W6-2).
 //
 // It is a thin, Postgres-backed consumer of the event bus: every event that

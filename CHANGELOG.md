@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to RMMWay will be documented in this file.
+All notable changes to OurWay RMM will be documented in this file.
 
 ## [1.2.0] - 2026-09-14
 
@@ -9,7 +9,7 @@ All notable changes to RMMWay will be documented in this file.
 - **Process management** — list running processes with CPU/memory stats, filter by name, and kill processes by PID
 - **Service management** — list system services with status, and control services (start/stop/restart)
 - Remote control capabilities now support process and service operations across Linux, Windows, and macOS
-- New W3-3 capability tokens for process/service management (rmmway.list_processes, rmmway.kill_process, rmmway.list_services, rmmway.service_control)
+- New W3-3 capability tokens for process/service management (ourway-rmm.list_processes, ourway-rmm.kill_process, ourway-rmm.list_services, ourway-rmm.service_control)
 - Updated release compose files to reference v1.2.0 images
 
 ## [1.0.1] - 2026-09-10
@@ -65,5 +65,5 @@ All notable changes to RMMWay will be documented in this file.
 - Webhooks, SSE events, client export
 - Settings and profile pages
 
-[1.0.0]: https://github.com/welcometotheweb/rmmway/releases/tag/v1.0.0
-[0.1.0]: https://github.com/welcometotheweb/rmmway/releases/tag/v0.1.0
+[1.0.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.0.0
+[0.1.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v0.1.0

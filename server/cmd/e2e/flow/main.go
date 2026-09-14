@@ -7,7 +7,7 @@
 //
 //   - the real gRPC ingest service (JWT, enroll, dispatch, W3-3 capability
 //     tokens) on a plain listener,
-//   - a NATS/JetStream stream (RMMWAY_EVENTS) that carries every flow hop,
+//   - a NATS/JetStream stream (OURWAY_RMM_EVENTS) that carries every flow hop,
 //   - the real flow engine consuming that stream,
 //   - the ingest OnCommandResult hook publishing command.result hops to the
 //     same stream,
@@ -21,7 +21,7 @@
 // ends quietly); agent B stays full (re-reports 95 -> the check holds ->
 // the notify node fires exactly once).
 //
-// Usage: RMMWAY_PG_DSN=... RMMWAY_NATS_URL=... go run ./cmd/e2e/flow
+// Usage: OURWAY_RMM_PG_DSN=... OURWAY_RMM_NATS_URL=... go run ./cmd/e2e/flow
 package main
 
 import (
@@ -44,12 +44,12 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/flow"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 func die(f string, a ...any) {
@@ -74,7 +74,7 @@ type logWriter struct{}
 
 func (logWriter) Write(b []byte) (int, error) { fmt.Printf("%s", b); return len(b), nil }
 
-const streamName = "RMMWAY_EVENTS"
+const streamName = "OURWAY_RMM_EVENTS"
 
 // resetStream drops the JetStream stream (and its durable consumer) so a
 // re-run starts clean instead of rebinding a stale consumer.
@@ -101,11 +101,11 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Second)
 	defer cancel()
 
-	dsn := os.Getenv("RMMWAY_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_PG_DSN")
 	if dsn == "" {
-		dsn = "postgres://rmmway:rmmway@localhost:5432/rmmway?sslmode=disable"
+		dsn = "postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm?sslmode=disable"
 	}
-	natsURL := os.Getenv("RMMWAY_NATS_URL")
+	natsURL := os.Getenv("OURWAY_RMM_NATS_URL")
 	if natsURL == "" {
 		natsURL = "nats://localhost:4222"
 	}
@@ -123,7 +123,7 @@ func main() {
 	if err := admin.Ping(ctx); err != nil {
 		die("postgres not reachable: %v", err)
 	}
-	dbName := "rmmway_flow_e2e_" + time.Now().Format("20060102150405")
+	dbName := "ourway-rmm_flow_e2e_" + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		die("create scratch db: %v", err)
 	}

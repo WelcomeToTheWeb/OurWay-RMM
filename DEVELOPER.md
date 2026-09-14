@@ -1,7 +1,7 @@
-# RMMWay — Developer Guide
+# OurWay RMM — Developer Guide
 
 Deployment and usage docs live in [`README.md`](README.md). This file is for
-people who build, test, or extend RMMWay. Coordination happens in the gap-closure plan — [`TEAM-PLAN.md`](TEAM-PLAN.md) (claim a lane/wave before coding).
+people who build, test, or extend OurWay RMM. Coordination happens in the gap-closure plan — [`TEAM-PLAN.md`](TEAM-PLAN.md) (claim a lane/wave before coding).
 
 ## Repo layout
 
@@ -48,23 +48,23 @@ minted account is the primary login).
 
 | Var | Default |
 | --- | --- |
-| `RMMWAY_PG_DSN` | `postgres://rmmway:***@localhost:5432/rmmway?sslmode=disable` |
-| `RMMWAY_MEILI_ENDPOINT` / `RMMWAY_MEILI_KEY` | `http://localhost:7700` / `` (dev instance) |
-| `RMMWAY_JWT_SECRET` | random per boot (tokens rotate on restart — dev only) |
-| `RMMWAY_ADMIN_USER` / `RMMWAY_ADMIN_PASSWORD` | `admin` / `admin` (env fallback) |
-| `RMMWAY_HTTP_ADDR` / `RMMWAY_GRPC_ADDR` | `:8080` / `:50051` |
-| `RMMWAY_BASELINE_INTERVAL` | `5m` |
-| `RMMWAY_ALERT_AUTO_RESOLVE` | `on` |
-| `RMMWAY_LOKI_URL` (agent) | e.g. `http://localhost:3100` |
-| `RMMWAY_RELEASES_DIR` (server) | unset = no auto-updates served |
-| `RMMWAY_AUTO_UPDATE` / `RMMWAY_UPDATE_INTERVAL` (agent) | `on` / `15m` |
-| `RMMWAY_SERVICES` (agent) | unset = no service monitoring; comma list of OS service names (capped at 50) → per-service `service.status` 0/1 samples, e.g. `nginx,postgresql` |
-| `RMMWAY_TOP_PROCS` (agent) | `10` — top-N `process.cpu_percent` / `process.memory_rss_bytes` families (cap 50; invalid values fall back to the default) |
-| `RMMWAY_CERT_DIRS` (agent) | `/etc/ssl/certs` — comma list of dirs scanned for `cert.days_to_expiry`; absent dirs are skipped silently |
-| `RMMWAY_CERT_SCAN_CAP` (agent) | `200` — max files inspected per heartbeat across all cert dirs (hard cap 1000) |
-| `RMMWAY_EVENTLOG` (agent) | `on` — tail the OS event log (journalctl / wevtutil / log show) and ship it as LogBatch over the uplink; `off` disables |
-| `RMMWAY_EVENTLOG_INTERVAL` (agent) | `60s` — event-log poll cadence |
-| `RMMWAY_EVENTLOG_LIMIT` (agent) | `50` — max entries per event-log poll (hard cap 500) |
+| `OURWAY_RMM_PG_DSN` | `postgres://ourway-rmm:***@localhost:5432/ourway-rmm?sslmode=disable` |
+| `OURWAY_RMM_MEILI_ENDPOINT` / `OURWAY_RMM_MEILI_KEY` | `http://localhost:7700` / `` (dev instance) |
+| `OURWAY_RMM_JWT_SECRET` | random per boot (tokens rotate on restart — dev only) |
+| `OURWAY_RMM_ADMIN_USER` / `OURWAY_RMM_ADMIN_PASSWORD` | `admin` / `admin` (env fallback) |
+| `OURWAY_RMM_HTTP_ADDR` / `OURWAY_RMM_GRPC_ADDR` | `:8080` / `:50051` |
+| `OURWAY_RMM_BASELINE_INTERVAL` | `5m` |
+| `OURWAY_RMM_ALERT_AUTO_RESOLVE` | `on` |
+| `OURWAY_RMM_LOKI_URL` (agent) | e.g. `http://localhost:3100` |
+| `OURWAY_RMM_RELEASES_DIR` (server) | unset = no auto-updates served |
+| `OURWAY_RMM_AUTO_UPDATE` / `OURWAY_RMM_UPDATE_INTERVAL` (agent) | `on` / `15m` |
+| `OURWAY_RMM_SERVICES` (agent) | unset = no service monitoring; comma list of OS service names (capped at 50) → per-service `service.status` 0/1 samples, e.g. `nginx,postgresql` |
+| `OURWAY_RMM_TOP_PROCS` (agent) | `10` — top-N `process.cpu_percent` / `process.memory_rss_bytes` families (cap 50; invalid values fall back to the default) |
+| `OURWAY_RMM_CERT_DIRS` (agent) | `/etc/ssl/certs` — comma list of dirs scanned for `cert.days_to_expiry`; absent dirs are skipped silently |
+| `OURWAY_RMM_CERT_SCAN_CAP` (agent) | `200` — max files inspected per heartbeat across all cert dirs (hard cap 1000) |
+| `OURWAY_RMM_EVENTLOG` (agent) | `on` — tail the OS event log (journalctl / wevtutil / log show) and ship it as LogBatch over the uplink; `off` disables |
+| `OURWAY_RMM_EVENTLOG_INTERVAL` (agent) | `60s` — event-log poll cadence |
+| `OURWAY_RMM_EVENTLOG_LIMIT` (agent) | `50` — max entries per event-log poll (hard cap 500) |
 
 ## Test & e2e matrix
 
@@ -135,7 +135,7 @@ curl -s 'http://localhost:3100/loki/api/v1/query_range?query={device_id="dev-…
 curl -s localhost:8080/admin/devices/dev-…/events?limit=50
 
 # verify data landed in Timescale
-docker exec rmmway-timescale psql -U rmmway -d rmmway \
+docker exec ourway-rmm-timescale psql -U ourway-rmm -d ourway-rmm \
   -c "SELECT count(*) FROM metrics WHERE device_id='dev-…';"
 ```
 
@@ -149,7 +149,7 @@ Notes:
 - The Vite dev server proxies `/api/*` to `:8080`, so the browser only talks
   to `:5173`. The frontend polls `/api/devices` every 5 s and logs the
   operator out if the token becomes invalid (e.g. a server restart rotated
-  `RMMWAY_JWT_SECRET`).
+  `OURWAY_RMM_JWT_SECRET`).
 - Enroll round-trip (what the installer drives): `POST /api/bootstrap`
   (auth-gated) → `{"bootstrap_token","device_id"}`; the agent proves the
   token via `POST /agent/enroll` (open, machine caller) and receives
@@ -213,7 +213,7 @@ another lane's files. Full plan, lane scopes, waves, and milestones:
   is regenerated in the same PR.
 - **Nav items** — A/B request them from C via a 1-line PR to `App.jsx`.
 - **Login fallback** — `handleLogin` (httpapi.go) checks the `admin_users`
-  DB row first; the `RMMWAY_ADMIN_USER/PASSWORD` env pair is a fallback
+  DB row first; the `OURWAY_RMM_ADMIN_USER/PASSWORD` env pair is a fallback
   only for usernames with NO DB row. Changing a password from the settings
   page (C #10a) mints/updates that row, so from then on the env pair no
   longer signs in for that user.

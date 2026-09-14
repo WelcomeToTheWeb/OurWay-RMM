@@ -11,7 +11,7 @@
 //
 //  1. ALERT FIRES   (W2-4) — the baseline anomaly for disk.used_percent is
 //     folded into the deduped alert inbox by the real reconciler: one open
-//     alert row (audited in `alerts`) + a rmmway.events.alert event on the bus.
+//     alert row (audited in `alerts`) + a ourway-rmm.events.alert event on the bus.
 //  2. SELF-HEAL RUNS + CONFIRMS (W5-1) — the seeded `disk.full` playbook
 //     detects the 95%, dispatches its real "free space" RunScript (W3-3
 //     capability token verified by the fake agent against the pinned org
@@ -25,7 +25,7 @@
 //     (trigger disk>90 -> open-ticket script -> notify) is triggered by the
 //     SAME condition and runs OVER the bus: the open-ticket script is
 //     dispatched + executed (SUCCEEDED), then the notify node fires — that
-//     rmmway.events.flow.notify event is the opened ticket. Audited: the
+//     ourway-rmm.events.flow.notify event is the opened ticket. Audited: the
 //     flow_runs row reaches `succeeded` and flow_events is the hop trail.
 //  4. WEBHOOK FIRES (W6-2) — the webhook framework (a SEPARATE durable
 //     consumer on the same stream) journals every event with a monotonic seq
@@ -40,7 +40,7 @@
 // prints a single summary showing that the one 95%-disk condition produced
 // all four, each independently audited.
 //
-// Usage: RMMWAY_PG_DSN=... RMMWAY_NATS_URL=... go run ./cmd/e2e/automation
+// Usage: OURWAY_RMM_PG_DSN=... OURWAY_RMM_NATS_URL=... go run ./cmd/e2e/automation
 package main
 
 import (
@@ -68,16 +68,16 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/baseline"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/flow"
-	"github.com/welcometotheweb/rmmway/server/internal/heal"
-	"github.com/welcometotheweb/rmmway/server/internal/httpapi"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
-	"github.com/welcometotheweb/rmmway/server/internal/webhook"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/baseline"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/heal"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/httpapi"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/webhook"
 )
 
 func die(f string, a ...any) {
@@ -102,7 +102,7 @@ type logWriter struct{}
 
 func (logWriter) Write(b []byte) (int, error) { fmt.Printf("%s", b); return len(b), nil }
 
-const streamName = "RMMWAY_EVENTS"
+const streamName = "OURWAY_RMM_EVENTS"
 
 // resetStream drops the JetStream stream (and its durable consumers) so a
 // re-run starts clean instead of rebinding a stale consumer.
@@ -224,7 +224,7 @@ type envelope struct {
 // eventKinds is what the endpoint has received (verified), keyed by the
 // payload's own `action`/category.
 type eventKinds struct {
-	alert    bool // category alert (rmmway.events.alert)
+	alert    bool // category alert (ourway-rmm.events.alert)
 	selfheal bool // action selfheal (resolved self-heal)
 	ticket   bool // action notify from the disk-full-ticket flow
 }
@@ -233,11 +233,11 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
 
-	dsn := os.Getenv("RMMWAY_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_PG_DSN")
 	if dsn == "" {
-		dsn = "postgres://rmmway:rmmway@localhost:5432/rmmway?sslmode=disable"
+		dsn = "postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm?sslmode=disable"
 	}
-	natsURL := os.Getenv("RMMWAY_NATS_URL")
+	natsURL := os.Getenv("OURWAY_RMM_NATS_URL")
 	if natsURL == "" {
 		natsURL = "nats://localhost:4222"
 	}
@@ -256,7 +256,7 @@ func main() {
 	if err := admin.Ping(ctx); err != nil {
 		die("postgres not reachable: %v", err)
 	}
-	dbName := "rmmway_auto_e2e_" + time.Now().Format("20060102150405")
+	dbName := "ourway-rmm_auto_e2e_" + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		die("create scratch db: %v", err)
 	}
@@ -457,7 +457,7 @@ func main() {
 	_ = waitFor(func() bool {
 		return kinds(recv.seen(), secret).alert
 	}, 5*time.Second, "alert event to reach the endpoint")
-	info("alert FIRED: open alert row in the inbox + rmmway.events.alert on the bus -> endpoint")
+	info("alert FIRED: open alert row in the inbox + ourway-rmm.events.alert on the bus -> endpoint")
 
 	// ---- STEP 2: SELF-HEAL RUNS + CONFIRMS (W5-1) -------------------------
 	step("step 2: self-heal runs + confirms (disk.full playbook)")
@@ -504,7 +504,7 @@ func main() {
 	// ---- STEP 3: TICKET OPENED (W5-2) --------------------------------------
 	step("step 3: ticket opened (automation flow runs over NATS)")
 	const ticketScript = `#!/bin/sh
-# rmmway automation: open an incident ticket for the full-disk event
+# ourway-rmm automation: open an incident ticket for the full-disk event
 echo "open ticket: full-disk incident on fileserver-01"
 exit 0`
 	f, err := flowSt.CreateFlow(ctx, "disk-full-ticket", "W6-3: one condition -> open an incident ticket",
@@ -529,7 +529,7 @@ exit 0`
 	_ = waitFor(func() bool {
 		return kinds(recv.seen(), secret).ticket
 	}, 10*time.Second, "ticket (notify) event to reach the endpoint")
-	info("ticket OPENED: flow run %d succeeded; notify node fired rmmway.events.flow.notify -> endpoint", run.ID)
+	info("ticket OPENED: flow run %d succeeded; notify node fired ourway-rmm.events.flow.notify -> endpoint", run.ID)
 
 	// ---- STEP 4: WEBHOOK FIRES (W6-2) --------------------------------------
 	step("step 4: webhook fires (endpoint receives alert + self-heal + ticket, signed)")

@@ -160,8 +160,8 @@ function publishEvent(category, type, deviceID, event) {
   seq += 1;
   const env = {
     id: seq,
-    version: "rmmway-event/v1",
-    source: "rmmway",
+    version: "ourway-rmm-event/v1",
+    source: "ourway-rmm",
     category,
     type,
     device_id: deviceID,
@@ -278,7 +278,7 @@ state.results.push({
 });
 publishEvent(
   "command",
-  "rmmway.events.command.result",
+  "ourway-rmm.events.command.result",
   "dev-alpha",
   { type: "command.result", command_id: "cmd-4", status: 3, device_id: "dev-alpha" }
 );

@@ -59,7 +59,7 @@ func (c *pagerDutyChannel) Send(ctx context.Context, req SendRequest) error {
 			Summary:   req.Message,
 			Severity:  severity,
 			Timestamp: time.Now().UTC().Format(time.RFC3339),
-			Source:    "rmmway",
+			Source:    "ourway-rmm",
 		},
 	}
 	body, err := json.Marshal(payload)
@@ -73,7 +73,7 @@ func (c *pagerDutyChannel) Test(ctx context.Context) error {
 	return c.Send(ctx, SendRequest{
 		Category: "test",
 		Title:    "Test notification",
-		Message:  "This is a test notification from the RMMWay notification system.",
+		Message:  "This is a test notification from the OurWay RMM notification system.",
 	})
 }
 

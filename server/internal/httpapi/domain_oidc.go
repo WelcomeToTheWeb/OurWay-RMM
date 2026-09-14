@@ -22,9 +22,9 @@ import (
 	"strings"
 
 	oidcProvider "github.com/coreos/go-oidc/v3/oidc"
-	"github.com/welcometotheweb/rmmway/server/internal/oidc"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
-	"github.com/welcometotheweb/rmmway/server/internal/users"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/oidc"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/users"
 	"golang.org/x/oauth2"
 )
 
@@ -250,7 +250,7 @@ func (s *Server) handleOIDCCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Issue RMMWay session JWT
+	// Issue OurWay RMM session JWT
 	tok, err := users.MintSessionJWT(s.jwtSecret, s.tokenLifetime, users.SessionClaims{
 		Role:     user.Role,
 		Username: user.Username,

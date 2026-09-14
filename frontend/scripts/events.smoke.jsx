@@ -97,10 +97,10 @@ const DEVICES = [
   },
 ];
 const SUBJECTS = [
-  ["alert", "rmmway.events.alert"],
-  ["inventory", "rmmway.events.device"],
-  ["automation", "rmmway.events.command.result"],
-  ["other", "rmmway.events.flow.step"],
+  ["alert", "ourway-rmm.events.alert"],
+  ["inventory", "ourway-rmm.events.device"],
+  ["automation", "ourway-rmm.events.command.result"],
+  ["other", "ourway-rmm.events.flow.step"],
 ];
 const BASE_TS = Date.UTC(2026, 7, 25, 12, 0, 0);
 
@@ -135,7 +135,7 @@ function busEvent(i, category, type, dev) {
       },
     };
   }
-  if (category === "automation" && type === "rmmway.events.command.result") {
+  if (category === "automation" && type === "ourway-rmm.events.command.result") {
     return {
       ...base,
       command_id: "cmd-" + i,
@@ -156,8 +156,8 @@ for (let i = 1; i <= 500; i++) {
   const dev = DEVICES[(i - 1) % 2];
   journal.push({
     id: i,
-    version: "rmmway-event/v1",
-    source: "rmmway",
+    version: "ourway-rmm-event/v1",
+    source: "ourway-rmm",
     category,
     type,
     device_id: dev.id,
@@ -173,8 +173,8 @@ function publishEvent(category, type, dev, event) {
   liveSeq += 1;
   const env = {
     id: liveSeq,
-    version: "rmmway-event/v1",
-    source: "rmmway",
+    version: "ourway-rmm-event/v1",
+    source: "ourway-rmm",
     category,
     type,
     device_id: dev.id,
@@ -474,9 +474,9 @@ const callsBefore = fetchLog.length;
 await act(async () => {
   publishEvent(
     "alert",
-    "rmmway.events.alert",
+    "ourway-rmm.events.alert",
     DEVICES[0],
-    busEvent(501, "alert", "rmmway.events.alert", DEVICES[0]),
+    busEvent(501, "alert", "ourway-rmm.events.alert", DEVICES[0]),
   );
 });
 await waitUntil(

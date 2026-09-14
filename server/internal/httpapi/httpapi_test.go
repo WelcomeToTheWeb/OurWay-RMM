@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 func newTestServer(t *testing.T) (*Server, *store.MemoryDeviceStore) {
@@ -69,7 +69,7 @@ func doAuthed(t *testing.T, s *Server, method, path, token string) int {
 
 func TestOperatorJWTRoundTrip(t *testing.T) {
 	secret := []byte("test-secret")
-	tok, err := ingest.MintOperatorJWT(secret, time.Hour, []string{"rmmway.run_script"})
+	tok, err := ingest.MintOperatorJWT(secret, time.Hour, []string{"ourway-rmm.run_script"})
 	if err != nil {
 		t.Fatalf("mint: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestOperatorJWTRoundTrip(t *testing.T) {
 	if !ok {
 		t.Fatal("valid operator token rejected")
 	}
-	if len(capList) != 1 || capList[0] != "rmmway.run_script" {
+	if len(capList) != 1 || capList[0] != "ourway-rmm.run_script" {
 		t.Fatalf("caps claim not round-tripped: %v", capList)
 	}
 	// A token minted without capabilities parses with an empty set
@@ -94,7 +94,7 @@ func TestOperatorJWTRoundTrip(t *testing.T) {
 		t.Fatal("token verified under the wrong secret")
 	}
 	// Expired token must not verify.
-	expired, err := ingest.MintOperatorJWT(secret, -time.Minute, []string{"rmmway.reboot"})
+	expired, err := ingest.MintOperatorJWT(secret, -time.Minute, []string{"ourway-rmm.reboot"})
 	if err != nil {
 		t.Fatalf("mint expired: %v", err)
 	}
@@ -655,7 +655,7 @@ func TestBulkCommandCapabilityGate(t *testing.T) {
 		JWTSecret:      []byte("test-secret"),
 		AdminUser:      "admin",
 		AdminPassword:  "s3cret",
-		AdminCaps:      []string{caps.CapRunScript}, // session lacks rmmway.reboot
+		AdminCaps:      []string{caps.CapRunScript}, // session lacks ourway-rmm.reboot
 		Dispatch:       func(deviceID string, action any) (string, error) { called++; return "cmd", nil },
 		MintBootstrap:  func() (string, string) { return "bt", "dev-xyz" },
 		LoginRateLimit: &rateLimit,
@@ -669,7 +669,7 @@ func TestBulkCommandCapabilityGate(t *testing.T) {
 	if code != http.StatusForbidden {
 		t.Fatalf("reboot bulk: got %d, want 403: %v", code, body)
 	}
-	if err, _ := body["error"].(string); !strings.Contains(err, "rmmway.reboot") {
+	if err, _ := body["error"].(string); !strings.Contains(err, "ourway-rmm.reboot") {
 		t.Fatalf("403 error = %q, want capability mention", err)
 	}
 	// run_script is granted -> allowed through to dispatch.

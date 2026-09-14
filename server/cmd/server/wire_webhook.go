@@ -7,8 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/flow"
-	"github.com/welcometotheweb/rmmway/server/internal/webhook"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/webhook"
 )
 
 // wireWebhook builds + starts the webhook + event-stream framework (W6-2):
@@ -25,7 +25,7 @@ func wireWebhook(hasPG bool, flowBus flow.Bus, pgPool *pgxpool.Pool) (*webhook.S
 		// A SEPARATE durable consumer on the same stream: the flow engine
 		// ("flow-engine") and the webhook framework ("webhook-engine") each
 		// must see every event, so they can't share one consumer.
-		whb, err := flow.NewNatsBus(context.Background(), env("RMMWAY_NATS_URL", "nats://localhost:4222"), "RMMWAY_EVENTS", "webhook-engine")
+		whb, err := flow.NewNatsBus(context.Background(), env("OURWAY_RMM_NATS_URL", "nats://localhost:4222"), "OURWAY_RMM_EVENTS", "webhook-engine")
 		if err != nil {
 			log.Printf("WARN: nats webhook bus unavailable (%v) — webhooks disabled", err)
 		} else {

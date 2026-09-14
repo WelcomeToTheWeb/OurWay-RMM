@@ -30,7 +30,7 @@ func (c *emailChannel) Send(ctx context.Context, req SendRequest) error {
 	username, _ := c.cfg.Config["username"].(string)
 	password, _ := c.cfg.Config["password"].(string)
 
-	subject := "[RMMWay] " + req.Title
+	subject := "[OurWay RMM] " + req.Title
 	body := req.Message + "\n\n" + fmt.Sprintf("Sent at %s", time.Now().UTC().Format(time.RFC3339))
 	return c.smtpSend(ctx, host, port, from, to, username, password, subject, body)
 }
@@ -39,6 +39,6 @@ func (c *emailChannel) Test(ctx context.Context) error {
 	return c.Send(ctx, SendRequest{
 		Category: "test",
 		Title:    "Test notification",
-		Message:  "This is a test notification from the RMMWay notification system.",
+		Message:  "This is a test notification from the OurWay RMM notification system.",
 	})
 }

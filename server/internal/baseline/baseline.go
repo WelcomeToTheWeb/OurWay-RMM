@@ -1,4 +1,4 @@
-// Package baseline is the RMMWay dynamic baselining engine (W2-3).
+// Package baseline is the OurWay RMM dynamic baselining engine (W2-3).
 //
 // Per-metric rolling baselines keyed by day-of-week + hour: each
 // observation is scored against the same (dow, hour) slot's history with a

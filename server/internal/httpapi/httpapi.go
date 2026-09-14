@@ -4,7 +4,7 @@
 //
 // Auth model: a human operator logs in with a username + password
 // (single admin account, configured via env) and receives a short-lived
-// operator JWT (subject "operator", issuer "rmmway"). BOTH /api/* and
+// operator JWT (subject "operator", issuer "ourway-rmm"). BOTH /api/* and
 // /admin/* routes are gated on that token (C1: /admin/* was open for
 // machine callers, but the one caller that mattered — minting enroll
 // tokens — is an operator action the UI does via /api/bootstrap; leaving
@@ -31,22 +31,22 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/export"
-	"github.com/welcometotheweb/rmmway/server/internal/flow"
-	"github.com/welcometotheweb/rmmway/server/internal/heal"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
-	"github.com/welcometotheweb/rmmway/server/internal/maintenance"
-	"github.com/welcometotheweb/rmmway/server/internal/notify"
-	"github.com/welcometotheweb/rmmway/server/internal/oidc"
-	"github.com/welcometotheweb/rmmway/server/internal/releases"
-	"github.com/welcometotheweb/rmmway/server/internal/reports"
-	"github.com/welcometotheweb/rmmway/server/internal/sessionrelay"
-	"github.com/welcometotheweb/rmmway/server/internal/setup"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
-	"github.com/welcometotheweb/rmmway/server/internal/users"
-	"github.com/welcometotheweb/rmmway/server/internal/webhook"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/export"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/heal"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/maintenance"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/notify"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/oidc"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/releases"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/reports"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/sessionrelay"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/setup"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/users"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/webhook"
 )
 
 // pbkdf2 params for hashing the operator password (per boot).
@@ -131,7 +131,7 @@ type Server struct {
 	// in domain_users.go). Always built; the Users store may be nil.
 	rbac *users.RBAC
 	// publicURL (if set) is the configured public operator URL
-	// (RMMWAY_PUBLIC_URL). The Add Device UI reads this via
+	// (OURWAY_RMM_PUBLIC_URL). The Add Device UI reads this via
 	// GET /api/public-url to prefill the server URL field.
 	publicURL string
 
@@ -226,7 +226,7 @@ type Config struct {
 	// NotifySender (gap #6) creates channel instances for sending.
 	// Nil = channels cannot send (test-fire unavailable).
 	NotifySender *notify.Sender
-	// PublicURL (if set) is the operator's public URL (RMMWAY_PUBLIC_URL).
+	// PublicURL (if set) is the operator's public URL (OURWAY_RMM_PUBLIC_URL).
 	// Exposed via GET /api/public-url so the Add Device UI can prefill the
 	// server URL with the configured public target instead of guessing
 	// window.location.origin (wrong when behind a reverse proxy).
@@ -251,7 +251,7 @@ func New(cfg Config) *Server {
 		cfg.TokenLifetime = 12 * time.Hour
 	}
 	if len(cfg.JWTSecret) == 0 {
-		cfg.JWTSecret = []byte("rmmway-dev-secret-change-me")
+		cfg.JWTSecret = []byte("ourway-rmm-dev-secret-change-me")
 	}
 	if cfg.AdminUser == "" {
 		cfg.AdminUser = "admin"
@@ -386,7 +386,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// A-2: the wizard-minted root admin (database-backed, survives restarts)
-	// is checked FIRST; the RMMWAY_ADMIN_USER/PASSWORD env pair remains a
+	// is checked FIRST; the OURWAY_RMM_ADMIN_USER/PASSWORD env pair remains a
 	// fallback (dev mode, and the pre-setup window on a fresh server).
 	if s.setup != nil && s.setup.CheckCredentials(r.Context(), in.Username, in.Password) {
 		tok, err := ingest.MintOperatorJWT(s.jwtSecret, s.tokenLifetime, s.adminCaps)

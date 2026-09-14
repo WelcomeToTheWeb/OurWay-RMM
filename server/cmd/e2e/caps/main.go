@@ -1,7 +1,7 @@
 // Command caps is the W3-3 definition-of-done harness: "a command requiring
 // a capability the agent lacks is refused even with a valid mTLS channel."
 //
-// It boots an IN-PROCESS rmmway server (fresh org root, capability issuer,
+// It boots an IN-PROCESS ourway-rmm server (fresh org root, capability issuer,
 // plain + mTLS gRPC listeners, operator HTTP API) and two devices that each
 // hold a real mTLS identity issued by that org root. The devices' fake
 // agents mirror the real agent's W3-3 behavior: verify the command's
@@ -11,7 +11,7 @@
 //
 //  1. run_script to A via the operator API (session holds the capability)
 //     -> token verifies -> EXECUTED, SUCCEEDED recorded.
-//  2. reboot to A -> the operator session LACKS rmmway.reboot -> 403,
+//  2. reboot to A -> the operator session LACKS ourway-rmm.reboot -> 403,
 //     nothing dispatched (the human-layer session/capability gate).
 //  3. reboot to B with a token minted for device A (misbound — a
 //     cross-device replay) over B's fully valid mTLS channel -> REFUSED,
@@ -43,12 +43,12 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/httpapi"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/httpapi"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 func die(f string, a ...any) {
@@ -390,13 +390,13 @@ func main() {
 	// capability the session lacks (the 403 gate under test).
 	r, stop := bootServer(10*time.Second, []string{caps.CapRunScript})
 	defer stop()
-	info("server up: plain=%s mtls=%s http=%s (cap TTL %s, admin caps [rmmway.run_script])",
+	info("server up: plain=%s mtls=%s http=%s (cap TTL %s, admin caps [ourway-rmm.run_script])",
 		r.plain, r.mtls, r.httpAddr, r.issuer.TTL())
 
 	// C1: every /admin/* + /api/* call needs the operator token, so mint it
 	// before the first gated call (the /admin/bootstrap mint in enrollDevice).
 	opTok := login(r.httpAddr, "admin", "admin")
-	info("operator session minted (caps: [rmmway.run_script])")
+	info("operator session minted (caps: [ourway-rmm.run_script])")
 
 	step("enroll device A + open its mTLS stream (valid mTLS channel)")
 	devA, jwtA, leafA, keyA, rootA := r.enrollDevice(ctx, opTok, "caps-e2e-a")
@@ -496,7 +496,7 @@ func main() {
 	info("PASS: GET /admin/devices/%s/commands shows the SUCCEEDED result for %s", devA, cmdA)
 
 	// ---- 2. operator session gate: 403 without the capability ------------
-	step("2. reboot to A -> 403 (session lacks rmmway.reboot; nothing dispatched)")
+	step("2. reboot to A -> 403 (session lacks ourway-rmm.reboot; nothing dispatched)")
 	code, out = dispatch(r.httpAddr, opTok, devA, map[string]any{"action": "reboot"})
 	if code != 403 {
 		die("expected 403, got %d (%v)", code, out)
@@ -504,7 +504,7 @@ func main() {
 	if agentA.countRan() != 1 {
 		die("403 path must not execute, A ran %d times", agentA.countRan())
 	}
-	info("PASS: session without rmmway.reboot got 403: %v", out["error"])
+	info("PASS: session without ourway-rmm.reboot got 403: %v", out["error"])
 
 	// ---- 3. THE DoD: misbound token over a fully valid mTLS channel -------
 	step("3. reboot to B with a token minted for device A (cross-device replay) -> REFUSED, NOT executed")

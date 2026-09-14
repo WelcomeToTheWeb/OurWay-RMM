@@ -28,7 +28,7 @@ const RIG = join(REPO, "docs", "ui-revamp", "rig", "serve.js");
 const DIST = join(REPO, "frontend", "dist");
 const PORT = Number(process.env.PORT || 8231);
 const BASE = `http://127.0.0.1:${PORT}`;
-const TOKEN_KEY = "rmmway.operator.token";
+const TOKEN_KEY = "ourway-rmm.operator.token";
 const TOKEN = "evidence-token"; // the rig's /api/login token
 
 const rig = spawn(process.execPath, [RIG], {

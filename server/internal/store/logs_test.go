@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // TestLogEventsReplaySafeInTempDB is the W6-1 server-side proof against a
@@ -17,12 +17,12 @@ import (
 // batch (reconnect replay) is a no-op (dedup by entry id), and the
 // per-device read is newest-first with a level filter.
 //
-// Requires RMMWAY_TEST_PG_DSN (or the default local dev stack DSN);
+// Requires OURWAY_RMM_TEST_PG_DSN (or the default local dev stack DSN);
 // skipped otherwise. Runs against a scratch database (dev data untouched).
 func TestLogEventsReplaySafeInTempDB(t *testing.T) {
-	dsn := os.Getenv("RMMWAY_TEST_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_TEST_PG_DSN")
 	if dsn == "" {
-		t.Skip("RMMWAY_TEST_PG_DSN not set — skipping Postgres log-events test")
+		t.Skip("OURWAY_RMM_TEST_PG_DSN not set — skipping Postgres log-events test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -39,7 +39,7 @@ func TestLogEventsReplaySafeInTempDB(t *testing.T) {
 	if err := admin.Ping(ctx); err != nil {
 		t.Skipf("postgres not reachable: %v", err)
 	}
-	dbName := "rmmway_logtest_" + time.Now().Format("20060102150405")
+	dbName := "ourway-rmm_logtest_" + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		t.Fatalf("create db: %v", err)
 	}

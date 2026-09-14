@@ -148,11 +148,11 @@ func Send(ctx context.Context, cfg Config, to, subject, textBody string) error {
 // as their own address).
 func SendTest(ctx context.Context, cfg Config, to string) error {
 	now := time.Now().UTC()
-	body := "This is a test message from the RMMWay SMTP outbox.\n" +
+	body := "This is a test message from the OurWay RMM SMTP outbox.\n" +
 		"If you can read this, the outbox is configured correctly and\n" +
 		"the server can send mail through " + cfg.Host + ":" + strconv.Itoa(cfg.Port) + ".\n" +
 		"\nSent at " + now.Format(time.RFC3339) + "\n"
-	return Send(ctx, cfg, to, "RMMWay: SMTP outbox test", body)
+	return Send(ctx, cfg, to, "OurWay RMM: SMTP outbox test", body)
 }
 
 // dial opens the SMTP connection per the port-derived security mode and
@@ -208,7 +208,7 @@ func buildMessage(from, to, subject, textBody string) string {
 	b.WriteString("To: " + to + "\r\n")
 	b.WriteString("Subject: " + subject + "\r\n")
 	b.WriteString("Date: " + now.Format("Mon, 02 Jan 2006 15:04:05 -0700") + "\r\n")
-	b.WriteString("Message-ID: <" + strconv.FormatInt(now.UnixNano(), 36) + "@rmmway>\r\n")
+	b.WriteString("Message-ID: <" + strconv.FormatInt(now.UnixNano(), 36) + "@ourway-rmm>\r\n")
 	b.WriteString("MIME-Version: 1.0\r\n")
 	b.WriteString("Content-Type: text/plain; charset=utf-8\r\n")
 	b.WriteString("Content-Transfer-Encoding: 8bit\r\n")
@@ -276,7 +276,7 @@ func (s *Sink) handle(c net.Conn) {
 	w := func(code int, msg string) {
 		_, _ = fmt.Fprintf(c, "%d %s\r\n", code, msg)
 	}
-	w(220, "rmmway-sink ESMTP")
+	w(220, "ourway-rmm-sink ESMTP")
 	inData := false
 	var data strings.Builder
 	for {
@@ -301,9 +301,9 @@ func (s *Sink) handle(c net.Conn) {
 		cmd := strings.ToUpper(line)
 		switch {
 		case strings.HasPrefix(cmd, "EHLO"):
-			_, _ = fmt.Fprintf(c, "250-rmmway-sink hello\r\n250-AUTH PLAIN\r\n250 ok\r\n")
+			_, _ = fmt.Fprintf(c, "250-ourway-rmm-sink hello\r\n250-AUTH PLAIN\r\n250 ok\r\n")
 		case strings.HasPrefix(cmd, "HELO"):
-			w(250, "rmmway-sink hello")
+			w(250, "ourway-rmm-sink hello")
 		case strings.HasPrefix(cmd, "AUTH "):
 			w(235, "authenticated")
 		case strings.HasPrefix(cmd, "MAIL FROM"):

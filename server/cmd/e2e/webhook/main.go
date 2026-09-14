@@ -5,12 +5,12 @@
 // categories through their real producers onto a REAL NATS/JetStream bus:
 //
 //   - inventory: a fake agent ENROLLS (real gRPC ingest, real org CA) -> the
-//     ingest OnDeviceEvent hook publishes a rmmway.events.device event;
+//     ingest OnDeviceEvent hook publishes a ourway-rmm.events.device event;
 //   - automation: a real flow engine runs a trigger -> notify chain on a
-//     synthetic trigger -> the flow Notifier publishes a rmmway.events.
+//     synthetic trigger -> the flow Notifier publishes a ourway-rmm.events.
 //     flow.notify event;
 //   - alert: the real alert-store reconciler is driven with an anomaly -> it
-//     fires a rmmway.events.alert event.
+//     fires a ourway-rmm.events.alert event.
 //
 // The webhook framework (server/internal/webhook) subscribes to that bus,
 // journals every event with a monotonic seq, and delivers HMAC-signed webhooks
@@ -24,7 +24,7 @@
 //  3. REPLAY: resetting an endpoint's cursor re-drives the journal range;
 //  4. SSE: GET /events/stream streams the events live (text/event-stream).
 //
-// Usage: RMMWAY_PG_DSN=... RMMWAY_NATS_URL=... go run ./cmd/e2e/webhook
+// Usage: OURWAY_RMM_PG_DSN=... OURWAY_RMM_NATS_URL=... go run ./cmd/e2e/webhook
 package main
 
 import (
@@ -51,15 +51,15 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/baseline"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/flow"
-	"github.com/welcometotheweb/rmmway/server/internal/httpapi"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
-	"github.com/welcometotheweb/rmmway/server/internal/webhook"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/baseline"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/httpapi"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/webhook"
 )
 
 func die(f string, a ...any) {
@@ -84,7 +84,7 @@ type logWriter struct{}
 
 func (logWriter) Write(b []byte) (int, error) { fmt.Printf("%s", b); return len(b), nil }
 
-const streamName = "RMMWAY_EVENTS"
+const streamName = "OURWAY_RMM_EVENTS"
 
 func resetStream(ctx context.Context, natsURL string) error {
 	nc, err := nats.Connect(natsURL, nats.Timeout(5*time.Second))
@@ -201,11 +201,11 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	dsn := os.Getenv("RMMWAY_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_PG_DSN")
 	if dsn == "" {
-		dsn = "postgres://rmmway:rmmway@localhost:5432/rmmway?sslmode=disable"
+		dsn = "postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm?sslmode=disable"
 	}
-	natsURL := os.Getenv("RMMWAY_NATS_URL")
+	natsURL := os.Getenv("OURWAY_RMM_NATS_URL")
 	if natsURL == "" {
 		natsURL = "nats://localhost:4222"
 	}
@@ -224,7 +224,7 @@ func main() {
 	if err := admin.Ping(ctx); err != nil {
 		die("postgres not reachable: %v", err)
 	}
-	dbName := "rmmway_webhook_e2e_" + time.Now().Format("20060102150405")
+	dbName := "ourway-rmm_webhook_e2e_" + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		die("create scratch db: %v", err)
 	}

@@ -1,6 +1,6 @@
-# RMMWay Release Process
+# OurWay RMM Release Process
 
-This document describes the process for creating and publishing an RMMWay
+This document describes the process for creating and publishing an OurWay RMM
 release. Follow these steps for every release, including patches.
 
 ## Prerequisites
@@ -20,7 +20,7 @@ release. Follow these steps for every release, including patches.
 # Edit server/cmd/server/main.go: change "0.1.0" to the new version
 
 # Update .env.prod.example
-# Edit .env.prod.example: update RMMWAY_VERSION
+# Edit .env.prod.example: update OURWAY_RMM_VERSION
 
 # Write release notes
 # Edit docs/releases/vX.Y.Z.md with feature summary
@@ -67,9 +67,9 @@ MINISIGN_PASS=password VERSION=X.Y.Z make sign
 make verify-sigs
 
 # Sign Docker image with cosign
-docker build -t rmmway:${VERSION} -f server/Dockerfile .
-docker push ghcr.io/welcometotheweb/rmmway:${VERSION}
-cosign sign --key env:AWS_PRIVATE_KEY ghcr.io/welcometotheweb/rmmway:${VERSION}
+docker build -t ourway-rmm:${VERSION} -f server/Dockerfile .
+docker push ghcr.io/welcometotheweb/ourway-rmm:${VERSION}
+cosign sign --key env:AWS_PRIVATE_KEY ghcr.io/welcometotheweb/ourway-rmm:${VERSION}
 ```
 
 ### 5. Generate SBOMs
@@ -112,7 +112,7 @@ Every release must include:
 
 ## Versioning
 
-RMMWay follows semantic versioning:
+OurWay RMM follows semantic versioning:
 
 - **Major** (1.0.0): Breaking API changes
 - **Minor** (1.1.0): New features, backward-compatible

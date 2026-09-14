@@ -1,4 +1,4 @@
-/* RMMWay UI — single stylesheet entry (imported by main.jsx).
+/* OurWay RMM UI — single stylesheet entry (imported by main.jsx).
    The styles themselves live in src/styles/, split for maintainability:
      fonts.css   self-hosted @font-face (Inter + JetBrains Mono)
      tokens.css  design tokens; dark default + [data-theme="light"] overrides

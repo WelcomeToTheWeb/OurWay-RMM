@@ -15,7 +15,7 @@ Keyword:
 User: 
 Computer: host.example.com
 Description: 
-The rmmway-agent service was stopped.
+The ourway-rmm-agent service was stopped.
 
 Log Name: System
 Source: Disk
@@ -44,7 +44,7 @@ func TestParseWevtutilText(t *testing.T) {
 	if e0.GetLevel() != "INFO" {
 		t.Errorf("Information → INFO, got %s", e0.GetLevel())
 	}
-	if e0.GetMsg() != "The rmmway-agent service was stopped." {
+	if e0.GetMsg() != "The ourway-rmm-agent service was stopped." {
 		t.Errorf("desc: %q", e0.GetMsg())
 	}
 	if e0.GetAttrs()["event_id"] != "7036" {

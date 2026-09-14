@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"time"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/sessionrelay"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/sessionrelay"
 )
 
 // handleSessionStart opens a remote session on a device.

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/maintenance"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/maintenance"
 )
 
 // ---- maintenance windows + snooze ------------------------------------------

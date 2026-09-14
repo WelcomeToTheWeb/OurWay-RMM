@@ -1,13 +1,13 @@
-# RMMWay one-line bootstrap installer (W1-3) - Windows.
+# OurWay RMM one-line bootstrap installer (W1-3) - Windows.
 #
-#   iwr -useb https://raw.githubusercontent.com/welcometotheweb/rmmway/main/scripts/install.ps1 | iex
+#   iwr -useb https://raw.githubusercontent.com/welcometotheweb/ourway-rmm/main/scripts/install.ps1 | iex
 #
 # With arguments (recommended):
-#   iwr -useb https://raw.githubusercontent.com/welcometotheweb/rmmway/main/scripts/install.ps1 -OutFile install.ps1
+#   iwr -useb https://raw.githubusercontent.com/welcometotheweb/ourway-rmm/main/scripts/install.ps1 -OutFile install.ps1
 #   powershell -ExecutionPolicy Bypass -File install.ps1 -Server https://rmm.example.com -Bootstrap <TOKEN>
 #
 # What it does: detect arch (amd64), download the static agent from the GitHub
-# release, install to %ProgramFiles%\RMMWay\ (or %LOCALAPPDATA%\RmmWay when not
+# release, install to %ProgramFiles%\OurWay RMM\ (or %LOCALAPPDATA%\RmmWay when not
 # elevated), write a 0600-style ACL'd config, and register a Windows Service
 # via sc.exe.
 #
@@ -22,7 +22,7 @@ param(
     [string]$Server = "",
     [string]$Bootstrap = "",
     [string]$Version = "latest",
-    [string]$Repo = "welcometotheweb/rmmway"
+    [string]$Repo = "welcometotheweb/ourway-rmm"
 )
 
 $ErrorActionPreference = "Stop"
@@ -42,7 +42,7 @@ if ($Version -eq "latest") {
     $Version = $rel.tag_name
     Log "resolved latest: $Version"
 }
-$asset = "rmmway-agent-windows-$arch.exe"
+$asset = "ourway-rmm-agent-windows-$arch.exe"
 $url   = "$rawdl/$Version/$asset"
 Log "asset: $url"
 
@@ -50,17 +50,17 @@ Log "asset: $url"
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if ($isAdmin) {
-    $installDir = "C:\Program Files\RMMWay"
-    $bin        = "$installDir\rmmway-agent.exe"
+    $installDir = "C:\Program Files\OurWay RMM"
+    $bin        = "$installDir\ourway-rmm-agent.exe"
 } else {
     $installDir = "$env:LOCALAPPDATA\RmmWay"
-    $bin        = "$installDir\rmmway-agent.exe"
+    $bin        = "$installDir\ourway-rmm-agent.exe"
     Log "not elevated - installing to $installDir"
 }
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 
 # --- download (temp first, atomic move) -------------------------------------
-$tmp = Join-Path $env:TEMP ("rmmway-agent-" + [guid]::NewGuid().ToString("N") + ".exe")
+$tmp = Join-Path $env:TEMP ("ourway-rmm-agent-" + [guid]::NewGuid().ToString("N") + ".exe")
 Log "downloading agent ..."
 try {
     Invoke-WebRequest -Uri $url -OutFile $tmp -UseBasicParsing
@@ -86,14 +86,14 @@ Log "verified: $verOut"
 # minisign tool and remains the gold standard; the checksum is a cheap guard.)
 try {
     $sumsText = (Invoke-WebRequest -Uri "$rawdl/$Version/SHA256SUMS" -UseBasicParsing).Content
-    $wantLine = ($sumsText -split "`n") | Where-Object { $_ -match [regex]::Escape("rmmway-agent-windows-$arch.exe") } | Select-Object -First 1
+    $wantLine = ($sumsText -split "`n") | Where-Object { $_ -match [regex]::Escape("ourway-rmm-agent-windows-$arch.exe") } | Select-Object -First 1
     if ($wantLine) {
         $want = ($wantLine -split "\s+")[0].Trim()
         $hasher = [System.Security.Cryptography.SHA256]::Create()
         $got = [BitConverter]::ToString($hasher.ComputeHash([System.IO.File]::ReadAllBytes($tmp))).ToLower().Replace("-", "")
         if ($want -cne $got) {
             Remove-Item $tmp -ErrorAction SilentlyContinue
-            Die "SHA256 mismatch for rmmway-agent-windows-$arch.exe: release says $want, download is $got. The release asset does not match its published sums (unsigned hot-swap?) - not installing. Ask the operator to cut a fresh signed release."
+            Die "SHA256 mismatch for ourway-rmm-agent-windows-$arch.exe: release says $want, download is $got. The release asset does not match its published sums (unsigned hot-swap?) - not installing. Ask the operator to cut a fresh signed release."
         }
         Log "sha256 verified: $got"
     } else {
@@ -115,10 +115,10 @@ if (-not $isAdmin -and ($env:PATH -notmatch [regex]::Escape($installDir))) {
 # --- write config (restricted ACL) ------------------------------------------
 $cfg  = Join-Path $installDir "agent.env"
 # NB: the device id is minted at enroll - the agent does not read an
-# RMMWAY_DEVICE_ID key, so writing one here only invites drift.
+# OURWAY_RMM_DEVICE_ID key, so writing one here only invites drift.
 $lines = @(
-    "RMMWAY_SERVER={0}"          -f $(if ($Server) { $Server } else { "https://rmm.local" })
-    "RMMWAY_BOOTSTRAP_TOKEN={0}" -f $Bootstrap
+    "OURWAY_RMM_SERVER={0}"          -f $(if ($Server) { $Server } else { "https://rmm.local" })
+    "OURWAY_RMM_BOOTSTRAP_TOKEN={0}" -f $Bootstrap
 )
 Set-Content -Path $cfg -Value $lines -Encoding ascii
 # Restrict the config to the current user + Administrators (the token lives here).

@@ -1,7 +1,7 @@
 # Remote Control Expansion Plan
 
 ## Overview
-Expand RMMWay's remote management capabilities with six new feature modules. Each feature follows the existing architecture: gRPC protocol definition, server HTTP API, agent-side execution, and React frontend integration.
+Expand OurWay RMM's remote management capabilities with six new feature modules. Each feature follows the existing architecture: gRPC protocol definition, server HTTP API, agent-side execution, and React frontend integration.
 
 ## Feature Modules
 

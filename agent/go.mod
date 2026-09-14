@@ -1,8 +1,8 @@
-module github.com/welcometotheweb/rmmway/agent
+module github.com/welcometotheweb/ourway-rmm/agent
 
 go 1.26.0
 
-require github.com/welcometotheweb/rmmway/proto/gen v0.0.0
+require github.com/welcometotheweb/ourway-rmm/proto/gen v0.0.0
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -27,4 +27,4 @@ require (
 	google.golang.org/protobuf v1.36.12 // indirect
 )
 
-replace github.com/welcometotheweb/rmmway/proto/gen => ../proto/gen
+replace github.com/welcometotheweb/ourway-rmm/proto/gen => ../proto/gen

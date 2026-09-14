@@ -9,9 +9,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/flow"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
 )
 
 // busFlowNotifier is the flow-engine -> bus bridge (W5-2/W6-2): every node
@@ -43,12 +43,12 @@ func wireFlowBus(hasPG bool) flow.Bus {
 	if !hasPG {
 		return nil
 	}
-	fb, err := flow.NewNatsBus(context.Background(), env("RMMWAY_NATS_URL", "nats://localhost:4222"), "RMMWAY_EVENTS", "flow-engine")
+	fb, err := flow.NewNatsBus(context.Background(), env("OURWAY_RMM_NATS_URL", "nats://localhost:4222"), "OURWAY_RMM_EVENTS", "flow-engine")
 	if err != nil {
 		log.Printf("WARN: nats event bus unavailable (%v) — flow engine disabled", err)
 		return nil
 	}
-	log.Println("nats event bus ready (stream RMMWAY_EVENTS)")
+	log.Println("nats event bus ready (stream OURWAY_RMM_EVENTS)")
 	return fb
 }
 
@@ -74,7 +74,7 @@ func wireFlowEngine(hasPG bool, flowBus flow.Bus, pgPool *pgxpool.Pool, svc *ing
 		}
 		flowEngine = flow.New(flow.NewStore(pgPool), flowBus, remediate, svc.Dispatcher().Result,
 			busFlowNotifier{log: log.New(os.Stderr, "flow: ", 0), pub: publishEvent},
-			flowInterval("RMMWAY_FLOW_SWEEP", 5*time.Second), flowInterval("RMMWAY_FLOW_SAMPLE", 60*time.Second))
+			flowInterval("OURWAY_RMM_FLOW_SWEEP", 5*time.Second), flowInterval("OURWAY_RMM_FLOW_SAMPLE", 60*time.Second))
 		flowEngine = flowEngine.WithLogger(log.New(os.Stderr, "flow: ", 0))
 		if err := flowEngine.Start(context.Background()); err != nil {
 			log.Printf("WARN: flow engine start failed (%v) — flows disabled", err)

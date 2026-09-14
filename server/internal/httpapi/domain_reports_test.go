@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/welcometotheweb/rmmway/server/internal/reports"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/reports"
 )
 
 // setupReportsServer creates a test server with an in-memory reports store.

@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/baseline"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/baseline"
 )
 
 // TestBaselineSchemaSourceAndSink verifies, against a scratch database:
@@ -17,12 +17,12 @@ import (
 //   - PostgresBaselineSource returns hourly means grouped per series,
 //   - PostgresAnomalySink upserts (idempotent per series-hour).
 //
-// Requires RMMWAY_TEST_PG_DSN; skipped otherwise (same pattern as
+// Requires OURWAY_RMM_TEST_PG_DSN; skipped otherwise (same pattern as
 // TestMigrateAppliesInitInTempDB).
 func TestBaselineSchemaSourceAndSink(t *testing.T) {
-	dsn := os.Getenv("RMMWAY_TEST_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_TEST_PG_DSN")
 	if dsn == "" {
-		t.Skip("RMMWAY_TEST_PG_DSN not set — skipping baseline Postgres test")
+		t.Skip("OURWAY_RMM_TEST_PG_DSN not set — skipping baseline Postgres test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -40,7 +40,7 @@ func TestBaselineSchemaSourceAndSink(t *testing.T) {
 		t.Skipf("postgres not reachable: %v", err)
 	}
 	suffix := time.Now().Format("20060102150405")
-	dbName := "rmmway_test_" + suffix
+	dbName := "ourway-rmm_test_" + suffix
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		t.Fatalf("create db: %v", err)
 	}

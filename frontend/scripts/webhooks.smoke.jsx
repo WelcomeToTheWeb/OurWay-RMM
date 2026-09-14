@@ -110,7 +110,7 @@ const ENDPOINTS = [
   {
     id: 1,
     name: "ops-pager",
-    url: "https://ops.example.com/hooks/rmmway",
+    url: "https://ops.example.com/hooks/ourway-rmm",
     categories: ["alert"],
     enabled: true,
     max_attempts: 5,
@@ -336,7 +336,7 @@ await act(async () => {
 });
 await waitUntil(() => rowFor("ops-pager"), "the ops-pager endpoint row");
 const pager = rowFor("ops-pager");
-if (!pager.textContent.includes("https://ops.example.com/hooks/rmmway")) {
+if (!pager.textContent.includes("https://ops.example.com/hooks/ourway-rmm")) {
   throw new Error("the endpoint URL is not rendered");
 }
 if (!pager.textContent.includes("event # 40"))

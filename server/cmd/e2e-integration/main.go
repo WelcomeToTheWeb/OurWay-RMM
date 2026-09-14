@@ -1,4 +1,4 @@
-// Command e2e-integration tests the full RMMWay user journey across all 3 lanes:
+// Command e2e-integration tests the full OurWay RMM user journey across all 3 lanes:
 // Lane A (agents), Lane B (server domain), Lane C (surfaces & ops).
 //
 // Journey:
@@ -29,7 +29,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 func die(f string, a ...any) {
@@ -48,7 +48,7 @@ func info(f string, a ...any) {
 func main() {
 	grpcAddr := "127.0.0.1:50051"
 	httpAddr := "http://127.0.0.1:8080"
-	pgDSN := "postgres://rmmway:rmmway@localhost:5432/rmmway?sslmode=disable"
+	pgDSN := "postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm?sslmode=disable"
 
 	if len(os.Args) > 1 {
 		grpcAddr = os.Args[1]

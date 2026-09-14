@@ -18,7 +18,7 @@ import { Banner, EmptyState } from "./ui/index.js";
 const PAGE_SIZE = 200;
 // The server's journal taxonomy (webhook.AllCategories): an unknown category
 // is a 400. Command results are journaled as "automation" (the bus subject
-// rmmway.events.command.result maps there), not "command".
+// ourway-rmm.events.command.result maps there), not "command".
 const CATEGORIES = ["alert", "inventory", "automation", "other"];
 
 function fmtAt(iso) {
@@ -284,7 +284,7 @@ export default function Events({
               className="search events-type"
               value={type}
               onChange={(e) => setType(e.target.value)}
-              placeholder="e.g. rmmway.events.alert"
+              placeholder="e.g. ourway-rmm.events.alert"
             />
           </label>
           <button className="btn" onClick={applyFilters} disabled={loading}>

@@ -4,7 +4,7 @@
 // The server signs every dispatched command with a short-lived capability
 // token: a compact ES256 JWT under the ORG ROOT CA key, bound to one device
 // (sub), one capability (cap) and one command id (cmd/jti), expiring after
-// the server's RMMWAY_CAP_TTL (default 10m). The agent verifies the token
+// the server's OURWAY_RMM_CAP_TTL (default 10m). The agent verifies the token
 // with the org root it already pins from enroll (W3-1 — the same trust
 // anchor that makes its mTLS channel valid) and REFUSES the command
 // (CommandResult.status=REFUSED, not executed) unless the token is
@@ -27,24 +27,24 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // Capability names (mirror of server/internal/caps).
 const (
-	CapRunScript = "rmmway.run_script"
-	CapReboot    = "rmmway.reboot"
+	CapRunScript = "ourway-rmm.run_script"
+	CapReboot    = "ourway-rmm.reboot"
 	// gap #1a: file transfer.
-	CapFilePull = "rmmway.file_pull"
-	CapFilePush = "rmmway.file_push"
+	CapFilePull = "ourway-rmm.file_pull"
+	CapFilePush = "ourway-rmm.file_push"
 	// Process/service management.
-	CapListProcesses  = "rmmway.list_processes"
-	CapKillProcess    = "rmmway.kill_process"
-	CapListServices   = "rmmway.list_services"
-	CapServiceControl = "rmmway.service_control"
+	CapListProcesses  = "ourway-rmm.list_processes"
+	CapKillProcess    = "ourway-rmm.kill_process"
+	CapListServices   = "ourway-rmm.list_services"
+	CapServiceControl = "ourway-rmm.service_control"
 
 	// TokenIssuer is the `iss` claim of every capability token.
-	TokenIssuer = "rmmway"
+	TokenIssuer = "ourway-rmm"
 )
 
 // Claims is the capability-token claim set (sub = device, cap, cmd/jti).

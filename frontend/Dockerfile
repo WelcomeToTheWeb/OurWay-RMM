@@ -1,4 +1,4 @@
-# RMMWay frontend (A-1). Multi-stage: build the SPA with node, serve it with
+# OurWay RMM frontend (A-1). Multi-stage: build the SPA with node, serve it with
 # a minimal nonroot Caddy. The image serves the STATIC SPA and also
 # reverse-proxies /api, /agent and /healthz to the Go server (see
 # deploy/Caddyfile.frontend) so bring-your-own-reverse-proxy mode works when a
@@ -13,6 +13,6 @@ COPY frontend/ ./
 RUN npm run build
 
 FROM caddy:2.11-alpine
-COPY --from=build /app/dist /srv/rmmway
+COPY --from=build /app/dist /srv/ourway-rmm
 COPY deploy/Caddyfile.frontend /etc/caddy/Caddyfile
 EXPOSE 8080

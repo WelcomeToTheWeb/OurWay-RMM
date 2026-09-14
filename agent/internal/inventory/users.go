@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // UserAccount is an alias for the proto type for convenience.

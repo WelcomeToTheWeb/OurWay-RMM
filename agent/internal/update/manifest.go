@@ -10,7 +10,7 @@ import (
 // Asset is one platform's build in a release manifest.
 type Asset struct {
 	// Filename is the name of the binary inside the releases directory
-	// (e.g. "rmmway-agent-linux-amd64"). Its signature is Filename+".minisig".
+	// (e.g. "ourway-rmm-agent-linux-amd64"). Its signature is Filename+".minisig".
 	Filename string `json:"filename"`
 	// SHA256 is the lowercase-hex sha256 of the binary. Empty = not checked
 	// (the minisign signature is the primary gate).
@@ -18,7 +18,7 @@ type Asset struct {
 }
 
 // Manifest is what the server serves at GET /agent/releases/latest (W4-2).
-// It is read by the server from RMMWAY_RELEASES_DIR/release.json.
+// It is read by the server from OURWAY_RMM_RELEASES_DIR/release.json.
 //
 // PublicKey is the FULL minisign public key file (both lines) that signed
 // this release. The agent compares it to its pinned key before trusting

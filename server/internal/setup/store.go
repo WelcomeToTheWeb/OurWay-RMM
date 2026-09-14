@@ -23,7 +23,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/smtp"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/smtp"
 )
 
 // Sentinel errors the API layer maps onto status codes.

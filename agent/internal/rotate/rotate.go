@@ -22,7 +22,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // Refresher is the generated client's RefreshLeaf method (satisfied by
@@ -62,7 +62,7 @@ type Config struct {
 	MaxBackoff time.Duration
 	// RotateAfter forces the first rotation this long after process start,
 	// regardless of the cert's remaining life (0 = disabled). The e2e
-	// milestone sets it via RMMWAY_ROTATE_AFTER so a ~1h leaf rotates in
+	// milestone sets it via OURWAY_RMM_ROTATE_AFTER so a ~1h leaf rotates in
 	// seconds and the rotation is observed live without waiting an hour.
 	// It applies to the first rotation only; afterwards the normal
 	// threshold governs.

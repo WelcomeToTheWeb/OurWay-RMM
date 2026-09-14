@@ -19,12 +19,12 @@ import (
 // continuous aggregate rolls up").
 //
 // Runs against a scratch database so dev data is never touched. Requires
-// RMMWAY_TEST_PG_DSN (or the default local dev stack DSN) to be
+// OURWAY_RMM_TEST_PG_DSN (or the default local dev stack DSN) to be
 // reachable; skipped otherwise.
 func TestMigrateAppliesInitInTempDB(t *testing.T) {
-	dsn := os.Getenv("RMMWAY_TEST_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_TEST_PG_DSN")
 	if dsn == "" {
-		t.Skip("RMMWAY_TEST_PG_DSN not set — skipping Postgres migration test")
+		t.Skip("OURWAY_RMM_TEST_PG_DSN not set — skipping Postgres migration test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -43,7 +43,7 @@ func TestMigrateAppliesInitInTempDB(t *testing.T) {
 		t.Skipf("postgres not reachable: %v", err)
 	}
 	suffix := time.Now().Format("20060102150405")
-	dbName := "rmmway_test_" + suffix
+	dbName := "ourway-rmm_test_" + suffix
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		t.Fatalf("create db: %v", err)
 	}

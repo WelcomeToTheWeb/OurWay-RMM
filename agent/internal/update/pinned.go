@@ -16,7 +16,7 @@
 // The secret key is never shipped to the agent; only the public half is.
 // Key rotation = re-embed the new public key + rebuild/redeploy the agent
 // (see the "Release signing" section of the README). The pinned key can be
-// overridden at runtime with RMMWAY_UPDATE_PUBKEY (a minisign .pub file),
+// overridden at runtime with OURWAY_RMM_UPDATE_PUBKEY (a minisign .pub file),
 // which is also the path the e2e/CI harnesses take to exercise the flow
 // with a throwaway key.
 package update
@@ -31,7 +31,7 @@ var embeddedPub string
 func PinnedPublicKey() string { return embeddedPub }
 
 // PublicKey resolves the key the agent should treat as pinned: the
-// RMMWAY_UPDATE_PUBKEY override (a path to a minisign .pub file) wins,
+// OURWAY_RMM_UPDATE_PUBKEY override (a path to a minisign .pub file) wins,
 // otherwise the embedded key. An unreadable override is an error — a
 // misconfigured trust anchor must not silently fall back to another key.
 func PublicKey(overridePath string) (string, error) {

@@ -2,7 +2,7 @@
 // filter to a specific tag and execute a single command that fans out to
 // all matched agents."
 //
-// It boots an IN-PROCESS rmmway server (fresh org root, capability issuer,
+// It boots an IN-PROCESS ourway-rmm server (fresh org root, capability issuer,
 // plain + mTLS gRPC listeners, operator HTTP API) and three devices with
 // real mTLS identities. Two of them run fake agents mirroring the real
 // agent's W3-3 command path (verify the per-command capability token
@@ -18,7 +18,7 @@
 //     offline=[C]; BOTH agents verify their own capability token and run
 //     exactly once -> SUCCEEDED.
 //  3. bulk to a tag nobody carries -> 404.
-//  4. bulk reboot to the group -> 403 (the session lacks rmmway.reboot;
+//  4. bulk reboot to the group -> 403 (the session lacks ourway-rmm.reboot;
 //     nothing is dispatched).
 //
 // Usage: go run ./cmd/e2e/groups
@@ -43,12 +43,12 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/httpapi"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/httpapi"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 func die(f string, a ...any) {
@@ -397,11 +397,11 @@ func main() {
 	// Admin session holds ONLY run_script: the reboot fan-out must 403.
 	r, stop := bootServer(30*time.Second, []string{caps.CapRunScript})
 	defer stop()
-	info("server up: plain=%s mtls=%s http=%s (admin caps [rmmway.run_script])",
+	info("server up: plain=%s mtls=%s http=%s (admin caps [ourway-rmm.run_script])",
 		r.plain, r.mtls, r.httpAddr)
 
 	opTok := login(r.httpAddr, "admin", "admin")
-	info("operator session minted (caps: [rmmway.run_script])")
+	info("operator session minted (caps: [ourway-rmm.run_script])")
 
 	step("enroll three devices; A + B stream over mTLS, C stays offline")
 	enroll := func(hostname string) (devID, jwt string, leaf, key, rootPEM []byte) {
@@ -557,7 +557,7 @@ func main() {
 	info("PASS: no devices carry the tag -> 404: %v", out["error"])
 
 	// ---- 4. capability gate --------------------------------------------------
-	step("4. bulk REBOOT to the group -> 403 (session lacks rmmway.reboot; nothing dispatched)")
+	step("4. bulk REBOOT to the group -> 403 (session lacks ourway-rmm.reboot; nothing dispatched)")
 	code, out = bulk(r.httpAddr, opTok, map[string]any{"action": "reboot", "tag": "web"})
 	if code != 403 {
 		die("expected 403, got %d (%v)", code, out)
@@ -565,7 +565,7 @@ func main() {
 	if agentA.countRan() != 1 || agentB.countRan() != 1 {
 		die("403 must not dispatch anything (A=%d B=%d)", agentA.countRan(), agentB.countRan())
 	}
-	info("PASS: session without rmmway.reboot got 403: %v — the group is untouched", out["error"])
+	info("PASS: session without ourway-rmm.reboot got 403: %v — the group is untouched", out["error"])
 
 	step("PASS: B-2 DoD — the operator filters to a tag group and ONE command fans out to every matched agent, capability-gated, with per-device tokens")
 }

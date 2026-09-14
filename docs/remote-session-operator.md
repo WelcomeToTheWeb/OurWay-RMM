@@ -1,6 +1,6 @@
 # Remote Session — Operator Guide
 
-RMMWay remote sessions provide live screen viewing of managed devices.
+OurWay RMM remote sessions provide live screen viewing of managed devices.
 Phase 1 (v1.0.0) supports view-only sessions; phase 2 adds two-way
 mouse/keyboard input.
 

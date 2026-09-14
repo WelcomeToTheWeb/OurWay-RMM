@@ -6,7 +6,7 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/welcometotheweb/rmmway/agent/internal/logship"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/logship"
 )
 
 // isWindowsService is always false off-Windows: the agent runs as an ordinary

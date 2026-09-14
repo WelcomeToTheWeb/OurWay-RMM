@@ -1,4 +1,4 @@
-// Package ingest implements the RMMWay agent ingest service (W1-5):
+// Package ingest implements the OurWay RMM agent ingest service (W1-5):
 // JWT auth, enroll, metric receive, command dispatch.
 //
 // Storage lives behind the interfaces in internal/store so W1-6
@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // ---- command dispatch -------------------------------------------------------

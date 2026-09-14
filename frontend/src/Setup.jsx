@@ -102,7 +102,7 @@ export default function Setup({ onDone }) {
     <div className="login-wrap">
       <form className="wizard card" onSubmit={submit}>
         <header className="login-head">
-          <div className="brand">RMMWay</div>
+          <div className="brand">OurWay RMM</div>
           <p className="muted">First boot — initialize this server</p>
         </header>
 
@@ -178,7 +178,7 @@ export default function Setup({ onDone }) {
               </div>
               <label className="field">
                 <span>From address</span>
-                <input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="rmmway@example.com" spellCheck={false} />
+                <input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="ourway-rmm@example.com" spellCheck={false} />
               </label>
               <div className="wiz-row">
                 <label className="field">

@@ -2,7 +2,7 @@ package webhook
 
 // Tests for the W6-2 webhook + event-stream framework. Pure tests (HMAC,
 // category, envelope, Deliver) run always; the journal/sweep/cursor/replay/
-// retry tests are live-Postgres and skip when RMMWAY_TEST_PG_DSN is not
+// retry tests are live-Postgres and skip when OURWAY_RMM_TEST_PG_DSN is not
 // reachable (same convention as the store/heal/flow live tests). The bus is
 // the in-process memBus so no NATS broker is needed.
 
@@ -22,17 +22,17 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/flow"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // ---- scratch database -------------------------------------------------------
 
 func scratchPool(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	dsn := os.Getenv("RMMWAY_TEST_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_TEST_PG_DSN")
 	if dsn == "" {
-		t.Skip("RMMWAY_TEST_PG_DSN not set — skipping webhook Postgres test")
+		t.Skip("OURWAY_RMM_TEST_PG_DSN not set — skipping webhook Postgres test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -51,7 +51,7 @@ func scratchPool(t *testing.T) *pgxpool.Pool {
 	}
 	rnd := make([]byte, 4)
 	_, _ = rand.Read(rnd)
-	dbName := "rmmway_wh_test_" + time.Now().Format("20060102150405") + "_" + hex.EncodeToString(rnd)
+	dbName := "ourway-rmm_wh_test_" + time.Now().Format("20060102150405") + "_" + hex.EncodeToString(rnd)
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		t.Fatalf("create db: %v", err)
 	}
@@ -100,7 +100,7 @@ func TestDeliverSignsRequest(t *testing.T) {
 	defer srv.Close()
 
 	svc := &Service{client: srv.Client()}
-	ev := Event{Seq: 123, Category: CategoryAlert, Type: "rmmway.events.alert",
+	ev := Event{Seq: 123, Category: CategoryAlert, Type: "ourway-rmm.events.alert",
 		DeviceID: "dev-9", At: time.Now().UTC(), Data: []byte(`{"action":"fired"}`)}
 	ok, err := svc.Deliver(context.Background(), Endpoint{URL: srv.URL, Secret: secret, TimeoutMS: 5000}, ev)
 	if err != nil {
@@ -109,7 +109,7 @@ func TestDeliverSignsRequest(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected 200 to count as delivered")
 	}
-	if gotID != "123" || gotEvent != "rmmway.events.alert" || gotTS == "" {
+	if gotID != "123" || gotEvent != "ourway-rmm.events.alert" || gotTS == "" {
 		t.Fatalf("bad headers: id=%q event=%q ts=%q", gotID, gotEvent, gotTS)
 	}
 	okv, verr := Verify([]byte(secret), gotSig, gotBody)
@@ -185,13 +185,13 @@ func TestLiveFanoutByCategory(t *testing.T) {
 
 	at := time.Now().UTC()
 	// An alert event: both the "all" and "alerts" subscribers should get it.
-	_ = bus.Publish(ctx, "rmmway.events.alert", &flow.Event{
-		Type: "rmmway.events.alert", DeviceID: "dev-1", Message: "fired",
+	_ = bus.Publish(ctx, "ourway-rmm.events.alert", &flow.Event{
+		Type: "ourway-rmm.events.alert", DeviceID: "dev-1", Message: "fired",
 		Data: map[string]any{"action": "fired"}, At: at,
 	})
 	// An automation event: only the "all" subscriber should get it.
-	_ = bus.Publish(ctx, "rmmway.events.flow.notify", &flow.Event{
-		Type: "rmmway.events.flow.notify", DeviceID: "dev-1", Message: "n",
+	_ = bus.Publish(ctx, "ourway-rmm.events.flow.notify", &flow.Event{
+		Type: "ourway-rmm.events.flow.notify", DeviceID: "dev-1", Message: "n",
 		Data: map[string]any{"action": "notify"}, At: at,
 	})
 
@@ -232,7 +232,7 @@ func TestLiveFanoutByDeviceAndType(t *testing.T) {
 	all, cancelAll := svc.AddLiveFilter(ctx, Filter{})
 	dev1, cancelDev1 := svc.AddLiveFilter(ctx, Filter{Device: "dev-1"})
 	dev1Alerts, cancelDev1A := svc.AddLiveFilter(ctx, Filter{Device: "dev-1", Category: CategoryAlert})
-	dev2Device, cancelDev2D := svc.AddLiveFilter(ctx, Filter{Device: "dev-2", Type: "rmmway.events.device"})
+	dev2Device, cancelDev2D := svc.AddLiveFilter(ctx, Filter{Device: "dev-2", Type: "ourway-rmm.events.device"})
 	defer func() { cancelAll(); cancelDev1(); cancelDev1A(); cancelDev2D() }()
 
 	at := time.Now().UTC()
@@ -241,9 +241,9 @@ func TestLiveFanoutByDeviceAndType(t *testing.T) {
 			Type: subject, DeviceID: dev, At: at, Data: map[string]any{"action": "x"},
 		})
 	}
-	pub("rmmway.events.alert", "dev-1")  // alert on dev-1
-	pub("rmmway.events.device", "dev-2") // device/online on dev-2
-	pub("rmmway.events.alert", "dev-3")  // alert on dev-3
+	pub("ourway-rmm.events.alert", "dev-1")  // alert on dev-1
+	pub("ourway-rmm.events.device", "dev-2") // device/online on dev-2
+	pub("ourway-rmm.events.alert", "dev-3")  // alert on dev-3
 
 	expect := func(ch <-chan Event, n int, label string) {
 		t.Helper()
@@ -354,9 +354,9 @@ func TestJournalAndDelivery(t *testing.T) {
 	}
 
 	// Two alert events + one automation event (the endpoint must not get it).
-	publishTestEvent(t, h, "rmmway.events.alert", "dev-1", "fired")
-	publishTestEvent(t, h, "rmmway.events.alert", "dev-1", "fired")
-	publishTestEvent(t, h, "rmmway.events.flow.notify", "dev-1", "notify")
+	publishTestEvent(t, h, "ourway-rmm.events.alert", "dev-1", "fired")
+	publishTestEvent(t, h, "ourway-rmm.events.alert", "dev-1", "fired")
+	publishTestEvent(t, h, "ourway-rmm.events.flow.notify", "dev-1", "notify")
 
 	// Deliver one event per sweep.
 	sweepN(t, h, 4)
@@ -407,7 +407,7 @@ func TestRetryAndDeadLetter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create endpoint: %v", err)
 	}
-	publishTestEvent(t, h, "rmmway.events.alert", "dev-1", "fired")
+	publishTestEvent(t, h, "ourway-rmm.events.alert", "dev-1", "fired")
 
 	// Each sweep retries one event; the backoff is cleared by sweepN so the
 	// attempt counter accumulates across sweeps until max_attempts (3) ->
@@ -459,9 +459,9 @@ func TestReplayRedrives(t *testing.T) {
 	ep, _ := st.CreateEndpoint(ctx, "ep", srv.URL, "s", []string{}, 5, 5000, 0) // all categories
 
 	// Journal 3 events and deliver them all.
-	publishTestEvent(t, h, "rmmway.events.alert", "d", "a1")
-	publishTestEvent(t, h, "rmmway.events.alert", "d", "a2")
-	publishTestEvent(t, h, "rmmway.events.alert", "d", "a3")
+	publishTestEvent(t, h, "ourway-rmm.events.alert", "d", "a1")
+	publishTestEvent(t, h, "ourway-rmm.events.alert", "d", "a2")
+	publishTestEvent(t, h, "ourway-rmm.events.alert", "d", "a3")
 	for i := 0; i < 3; i++ {
 		sweepN(t, h, 1)
 	}
@@ -493,8 +493,8 @@ func TestNewEndpointStartsAtCurrentMax(t *testing.T) {
 	h := newHarness(t)
 	ctx := context.Background()
 	// Journal 2 events BEFORE the endpoint exists.
-	publishTestEvent(t, h, "rmmway.events.alert", "d", "a1")
-	publishTestEvent(t, h, "rmmway.events.alert", "d", "a2")
+	publishTestEvent(t, h, "ourway-rmm.events.alert", "d", "a1")
+	publishTestEvent(t, h, "ourway-rmm.events.alert", "d", "a2")
 	st := h.svc.Store()
 	if mx, _ := st.MaxSeq(ctx); mx != 2 {
 		t.Fatalf("precondition: max seq = %d, want 2", mx)
@@ -514,7 +514,7 @@ func TestNewEndpointStartsAtCurrentMax(t *testing.T) {
 	if len(pend) != 0 {
 		t.Fatalf("no events should be pending for a fresh endpoint, got %d", len(pend))
 	}
-	publishTestEvent(t, h, "rmmway.events.alert", "d", "a3")
+	publishTestEvent(t, h, "ourway-rmm.events.alert", "d", "a3")
 	pend, _ = st.PendingEvents(ctx, ep.ID, ep.LastSeq, 10)
 	if len(pend) != 1 {
 		t.Fatalf("one new event should be pending, got %d", len(pend))

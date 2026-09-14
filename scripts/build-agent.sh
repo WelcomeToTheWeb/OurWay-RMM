@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# W1-1: cross-compile the RMMWay agent as static binaries.
+# W1-1: cross-compile the OurWay RMM agent as static binaries.
 #
 # Targets: linux/darwin/windows × amd64/arm64. (Windows arm64 is required:
-# install.ps1 maps PROCESSOR_ARCHITECTURE=ARM64 to rmmway-agent-windows-arm64.exe.)
-# Output: agent/dist/rmmway-agent-<os>-<arch>[.exe]
+# install.ps1 maps PROCESSOR_ARCHITECTURE=ARM64 to ourway-rmm-agent-windows-arm64.exe.)
+# Output: agent/dist/ourway-rmm-agent-<os>-<arch>[.exe]
 #
 # Flags: CGO_ENABLED=0 (pure-Go static — no libc dependency), -trimpath,
 # stripped, version/commit/date stamped via -ldflags.
@@ -25,8 +25,8 @@ LDFLAGS="-s -w \
 build() {
   local goos=$1 goarch=$2 name
   case "$goos" in
-    windows) name="rmmway-agent-${goos}-${goarch}.exe" ;;
-    *)        name="rmmway-agent-${goos}-${goarch}" ;;
+    windows) name="ourway-rmm-agent-${goos}-${goarch}.exe" ;;
+    *)        name="ourway-rmm-agent-${goos}-${goarch}" ;;
   esac
   echo "==> ${goos}/${goarch} -> agent/dist/${name}"
   (cd agent && CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build \

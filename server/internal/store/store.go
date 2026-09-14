@@ -23,7 +23,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // ErrNotFound is returned by DeviceStore.Get for unknown device ids.
@@ -338,14 +338,14 @@ func Migrate(ctx context.Context, db *pgxpool.Pool, dir string) (applied int, er
 		return 0, fmt.Errorf("acquire migration connection: %w", err)
 	}
 	defer conn.Release()
-	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock(hashtext('rmmway_migrations'))`); err != nil {
+	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock(hashtext('ourway-rmm_migrations'))`); err != nil {
 		return 0, fmt.Errorf("take migration lock: %w", err)
 	}
 	// Best-effort explicit unlock (the lock also drops when the connection
 	// returns to the pool / closes).
 	defer func() {
 		_, _ = conn.Exec(context.WithoutCancel(context.Background()),
-			`SELECT pg_advisory_unlock(hashtext('rmmway_migrations'))`)
+			`SELECT pg_advisory_unlock(hashtext('ourway-rmm_migrations'))`)
 	}()
 
 	if _, err = conn.Exec(ctx, `CREATE TABLE IF NOT EXISTS schema_migrations (

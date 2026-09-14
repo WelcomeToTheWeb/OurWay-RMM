@@ -17,16 +17,16 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/sessionrelay"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/sessionrelay"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // Config holds ingest service settings.
 type Config struct {
-	// JWTSecret signs/verifies agent JWTs (HS256). From RMMWAY_JWT_SECRET.
+	// JWTSecret signs/verifies agent JWTs (HS256). From OURWAY_RMM_JWT_SECRET.
 	JWTSecret []byte
 	// JWTLifetime is how long a minted agent JWT is valid (default 720h).
 	JWTLifetime time.Duration
@@ -70,7 +70,7 @@ type Config struct {
 
 func (c *Config) withDefaults() {
 	if len(c.JWTSecret) == 0 {
-		c.JWTSecret = []byte("rmmway-dev-secret-change-me")
+		c.JWTSecret = []byte("ourway-rmm-dev-secret-change-me")
 	}
 	if c.JWTLifetime <= 0 {
 		c.JWTLifetime = 720 * time.Hour
@@ -218,7 +218,7 @@ func (s *Service) mintJWT(deviceID string) (string, error) {
 			Subject:   deviceID,
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.cfg.JWTLifetime)),
-			Issuer:    "rmmway",
+			Issuer:    "ourway-rmm",
 		},
 	}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString(s.cfg.JWTSecret)
@@ -277,7 +277,7 @@ func bearerFromMD(ctx context.Context) (string, error) {
 // JWTInterceptor enforces agent JWTs on every unary RPC except Enroll.
 // Exported so cmd/server can wire it into the gRPC server.
 func (s *Service) JWTInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	if info.FullMethod == "/rmmway.agent.v1.AgentService/Enroll" {
+	if info.FullMethod == "/ourway-rmm.agent.v1.AgentService/Enroll" {
 		return handler(ctx, req)
 	}
 	tok, err := bearerFromMD(ctx)
@@ -322,8 +322,8 @@ func DeviceIDFromContext(ctx context.Context) (string, bool) {
 const (
 	// OperatorSubject is the JWT subject of every operator token.
 	OperatorSubject = "operator"
-	// JWTIssuer identifies RMMWay-issued tokens to the verifier.
-	JWTIssuer = "rmmway"
+	// JWTIssuer identifies OurWay RMM-issued tokens to the verifier.
+	JWTIssuer = "ourway-rmm"
 )
 
 // OperatorJWT is the operator variant of JWTClaims.

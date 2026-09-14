@@ -58,11 +58,11 @@ func defaultProcSampler(ctx context.Context) ([]ProcStat, error) {
 	return out, nil
 }
 
-// maxTopProcs caps RMMWAY_TOP_PROCS so an env typo cannot fan out into an
+// maxTopProcs caps OURWAY_RMM_TOP_PROCS so an env typo cannot fan out into an
 // unbounded number of per-process samples per heartbeat.
 const maxTopProcs = 50
 
-// defaultTopProcs is the top-N when RMMWAY_TOP_PROCS is unset.
+// defaultTopProcs is the top-N when OURWAY_RMM_TOP_PROCS is unset.
 const defaultTopProcs = 10
 
 // procPrev is one name's previous sample for CPU-rate derivation.

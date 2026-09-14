@@ -1,6 +1,6 @@
-# RMMWay Load Test Harness
+# OurWay RMM Load Test Harness
 
-Simulates N synthetic agents connecting to a running RMMWay server and
+Simulates N synthetic agents connecting to a running OurWay RMM server and
 sending heartbeats, metric batches, and occasional alert-triggering anomalies.
 
 ## Usage

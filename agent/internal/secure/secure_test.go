@@ -163,7 +163,7 @@ func startTLSListener(t *testing.T, clientCAs *x509.CertPool, serverCert tls.Cer
 // a leaf from a DIFFERENT root (a "random" / external CA) is rejected by the
 // server, which only trusts its own org root as client CA.
 func TestMTLSValidLeafAcceptedRandomRejected(t *testing.T) {
-	org := newTestCA(t, "RMMWay Org Root CA (test)")
+	org := newTestCA(t, "OurWay RMM Org Root CA (test)")
 	rogue := newTestCA(t, "Some Other Org CA")
 
 	// A server cert the client verifies against the org root.
@@ -171,7 +171,7 @@ func TestMTLSValidLeafAcceptedRandomRejected(t *testing.T) {
 	srvSerial, _ := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	srvDer, err := x509.CreateCertificate(rand.Reader, &x509.Certificate{
 		SerialNumber: srvSerial,
-		Subject:      pkix.Name{CommonName: "rmmway-server"},
+		Subject:      pkix.Name{CommonName: "ourway-rmm-server"},
 		DNSNames:     []string{"127.0.0.1"},
 		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1")},
 		NotBefore:    time.Now().Add(-time.Hour),
@@ -241,14 +241,14 @@ func TestTransportCredentialsIncompleteIdentity(t *testing.T) {
 // leaf it was presented. After identity.SwapLeaf, round 2 presents a
 // DIFFERENT (the new) leaf, still verifying against the pinned org root.
 func TestLeafSwappedBetweenHandshakes(t *testing.T) {
-	org := newTestCA(t, "RMMWay Org Root CA (test)")
+	org := newTestCA(t, "OurWay RMM Org Root CA (test)")
 
 	// A server cert signed by the org root (the client verifies against it).
 	srvKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	srvSerial, _ := rand.Int(rand.Reader, new(big.Int).Lsh(big.NewInt(1), 128))
 	srvDer, err := x509.CreateCertificate(rand.Reader, &x509.Certificate{
 		SerialNumber: srvSerial,
-		Subject:      pkix.Name{CommonName: "rmmway-server"},
+		Subject:      pkix.Name{CommonName: "ourway-rmm-server"},
 		NotBefore:    time.Now().Add(-time.Hour),
 		NotAfter:     time.Now().Add(time.Hour),
 		KeyUsage:     x509.KeyUsageDigitalSignature,

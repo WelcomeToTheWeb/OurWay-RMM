@@ -43,7 +43,7 @@ LD_LIBRARY_PATH=... node rig/shoot.js http://127.0.0.1:8123/ evidence/ before
 LD_LIBRARY_PATH=... node rig/shoot.js http://127.0.0.1:8124/ evidence/ after
 ```
 
-`rig/serve.js` serves any built `dist/` plus a fake RMMWay API (devices,
+`rig/serve.js` serves any built `dist/` plus a fake OurWay RMM API (devices,
 bucketed metrics series, commands, agent log events, alerts, healthz with a
 version). `rig/shoot.js` signs in, expands the first device, waits for the
 chart, and captures topbar / detail / full page in both themes.

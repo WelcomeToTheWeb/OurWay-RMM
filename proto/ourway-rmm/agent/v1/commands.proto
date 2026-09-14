@@ -5,18 +5,18 @@
 // Capability tokens (W3-3): every dispatched action carries a short-lived
 // capability token (capability_token, a compact JWT signed ES256 by the org
 // root CA — the same trust anchor the agent pins from enroll). A token is
-// bound to ONE device (sub), ONE capability (cap: rmmway.run_script /
-// rmmway.reboot) and ONE command id (cmd/jti), and expires after a short
-// window (server RMMWAY_CAP_TTL, default 10m). The agent verifies signature
+// bound to ONE device (sub), ONE capability (cap: ourway-rmm.run_script /
+// ourway-rmm.reboot) and ONE command id (cmd/jti), and expires after a short
+// window (server OURWAY_RMM_CAP_TTL, default 10m). The agent verifies signature
 // + device + capability + expiry against its pinned org root BEFORE acting;
 // any failure is answered with CommandResult.status=REFUSED and the command
 // is not executed. The channel being a valid mTLS+JWT session is not enough
 // on its own — the agent can't act beyond the minted scope.
 syntax = "proto3";
 
-package rmmway.agent.v1;
+package ourway_rmm.agent.v1;
 
-option go_package = "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1";
+option go_package = "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1";
 
 // Command is one requested action. The agent acknowledges receipt with a
 // CommandResult(status=RECEIVED), executes, then sends a final
@@ -63,7 +63,7 @@ message RunScript {
 }
 
 // Reboot restarts the agent host. High-impact: gated by the W3-3 capability
-// token (cap=rmmway.reboot) exactly like run_script.
+// token (cap=ourway-rmm.reboot) exactly like run_script.
 message Reboot {
   int32 delay_s = 1;    // 0 = immediate
   string capability_token = 2;
@@ -73,11 +73,11 @@ message Reboot {
 // The agent reads path in 256 KiB blocks and ships each as a FileChunk
 // frame (command_id correlation, 0-based seq, eof on the final chunk),
 // then reports SUCCEEDED (stdout_tail = "<bytes> bytes") or FAILED.
-// Capability: rmmway.file_pull.
+// Capability: ourway-rmm.file_pull.
 message FilePull {
   // Absolute path on the agent host.
   string path = 1;
-  // W3-3: capability token (cap=rmmway.file_pull).
+  // W3-3: capability token (cap=ourway-rmm.file_pull).
   string capability_token = 2;
 }
 
@@ -86,7 +86,7 @@ message FilePull {
 // files, the server caps this) or as FileChunk downlink frames (a chunked
 // push dispatches the command first and streams the blocks immediately
 // after; the agent blocks on the eof chunk). mode is an octal string
-// ("0644"); empty = the platform default. Capability: rmmway.file_push.
+// ("0644"); empty = the platform default. Capability: ourway-rmm.file_push.
 message FilePush {
   string path = 1;
   // Inline content (base64). Empty = the push is chunked (FileChunk frames
@@ -94,45 +94,45 @@ message FilePush {
   string content_b64 = 2;
   // Octal mode, e.g. "0644" (applied when non-empty and parseable).
   string mode = 3;
-  // W3-3: capability token (cap=rmmway.file_push).
+  // W3-3: capability token (cap=ourway-rmm.file_push).
   string capability_token = 4;
 }
 
 // CollectInventory (gap #4) triggers deep inventory collection on the
 // agent. The agent collects hardware, software, services, and user account
 // information and reports it back as an InventoryReport frame. Capability:
-// rmmway.collect_inventory.
+// ourway-rmm.collect_inventory.
 message CollectInventory {
-  // W3-3: capability token (cap=rmmway.collect_inventory).
+  // W3-3: capability token (cap=ourway-rmm.collect_inventory).
   string capability_token = 1;
 }
 
 // PatchQuery (gap #4) queries available patches on the agent. On Windows,
 // this uses the Windows Update API (WUAPI) to check for available updates.
 // Results are reported as a PatchStatus frame with a PatchQueryResult.
-// Capability: rmmway.patch_query.
+// Capability: ourway-rmm.patch_query.
 message PatchQuery {
   // Optional: filter by severity ("critical", "important", etc.).
   // Empty = all severities.
   string severity_filter = 1;
-  // W3-3: capability token (cap=rmmway.patch_query).
+  // W3-3: capability token (cap=ourway-rmm.patch_query).
   string capability_token = 2;
 }
 
 // PatchApprove (gap #4) approves specific patches for installation.
 // Approvals are staged; patch_apply actually installs them. Capability:
-// rmmway.patch_approve.
+// ourway-rmm.patch_approve.
 message PatchApprove {
   // List of patch IDs to approve (from a previous patch_query result).
   repeated string patch_ids = 1;
-  // W3-3: capability token (cap=rmmway.patch_approve).
+  // W3-3: capability token (cap=ourway-rmm.patch_approve).
   string capability_token = 2;
 }
 
 // PatchApply (gap #4) installs the approved patches. On Windows, this uses
 // the Windows Update API to download and install approved updates. Results
 // are reported as PatchStatus frames with PatchApplyProgress. Capability:
-// rmmway.patch_apply.
+// ourway-rmm.patch_apply.
 message PatchApply {
   // List of patch IDs to apply (from a previous patch_approve).
   // Empty = apply all approved patches.
@@ -141,42 +141,42 @@ message PatchApply {
   bool schedule_reboot = 2;
   // Reboot delay in seconds (applied if schedule_reboot and required).
   uint32 reboot_delay_seconds = 3;
-  // W3-3: capability token (cap=rmmway.patch_apply).
+  // W3-3: capability token (cap=ourway-rmm.patch_apply).
   string capability_token = 4;
 }
 
 // ListProcesses queries all running processes on the agent. Results are
 // reported back via CommandResult with stdout_tail containing JSON
-// process list. Capability: rmmway.list_processes.
+// process list. Capability: ourway-rmm.list_processes.
 message ListProcesses {
   // Optional: filter by process name substring (case-insensitive).
   string name_filter = 1;
-  // W3-3: capability token (cap=rmmway.list_processes).
+  // W3-3: capability token (cap=ourway-rmm.list_processes).
   string capability_token = 2;
 }
 
 // KillProcess terminates a running process by PID. Capability:
-// rmmway.kill_process.
+// ourway-rmm.kill_process.
 message KillProcess {
   int32 pid = 1;
   // Force kill (SIGKILL on Unix, TERMINATE on Windows).
   bool force = 2;
-  // W3-3: capability token (cap=rmmway.kill_process).
+  // W3-3: capability token (cap=ourway-rmm.kill_process).
   string capability_token = 3;
 }
 
 // ListServices queries all services on the agent. Results are reported back
 // via CommandResult with stdout_tail containing JSON service list.
-// Capability: rmmway.list_services.
+// Capability: ourway-rmm.list_services.
 message ListServices {
   // Optional: filter by service name substring (case-insensitive).
   string name_filter = 1;
-  // W3-3: capability token (cap=rmmway.list_services).
+  // W3-3: capability token (cap=ourway-rmm.list_services).
   string capability_token = 2;
 }
 
 // ServiceControl manages a service (start/stop/restart). Capability:
-// rmmway.service_control.
+// ourway-rmm.service_control.
 message ServiceControl {
   string service_name = 1;
   enum Action {
@@ -186,7 +186,7 @@ message ServiceControl {
     RESTART = 3;
   }
   Action action = 2;
-  // W3-3: capability token (cap=rmmway.service_control).
+  // W3-3: capability token (cap=ourway-rmm.service_control).
   string capability_token = 3;
 }
 

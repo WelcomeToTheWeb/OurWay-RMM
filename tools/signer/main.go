@@ -1,4 +1,4 @@
-// Command rmmway-signer signs and verifies RMMWay release artifacts with
+// Command ourway-rmm-signer signs and verifies OurWay RMM release artifacts with
 // minisign (W3-4). It is a thin CLI over github.com/jedisct1/go-minisign,
 // which also provides the format interop guarantee: keys and signatures
 // produced here are readable by the reference minisign(1) CLI (and vice
@@ -6,9 +6,9 @@
 //
 // Usage:
 //
-//	rmmway-signer keygen -dir keys -pass <pwd> [-force]
-//	rmmway-signer sign   -k keys/minisign.key -pass <pwd> -c "rmmway release v0.4.0" <files...>
-//	rmmway-signer verify -p keys/minisign.pub <files...>
+//	ourway-rmm-signer keygen -dir keys -pass <pwd> [-force]
+//	ourway-rmm-signer sign   -k keys/minisign.key -pass <pwd> -c "ourway-rmm release v0.4.0" <files...>
+//	ourway-rmm-signer verify -p keys/minisign.pub <files...>
 //
 // The passphrase may be given with -pass or via the MINISIGN_PASS
 // environment variable (CI: GitHub secret). Signatures are written next to
@@ -72,7 +72,7 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: rmmway-signer <keygen|sign|verify> [flags]")
+	fmt.Fprintln(os.Stderr, "usage: ourway-rmm-signer <keygen|sign|verify> [flags]")
 }
 
 // generateKeyPair builds a minisign key pair in the C reference file
@@ -209,7 +209,7 @@ func cmdKeygen(args []string) error {
 		return err
 	}
 	fmt.Printf("wrote %s (0600 — keep secret) and %s\n", keyPath, pubPath)
-	fmt.Printf("verify files signed with this key using:\n  rmmway-signer verify -p %s <files...>\n", pubPath)
+	fmt.Printf("verify files signed with this key using:\n  ourway-rmm-signer verify -p %s <files...>\n", pubPath)
 	return nil
 }
 

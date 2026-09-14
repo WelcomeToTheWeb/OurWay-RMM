@@ -15,7 +15,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // ---- synthetic CA + leaves (same shape as secure_test's testCA) ----

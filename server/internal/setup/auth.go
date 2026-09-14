@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/users"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/users"
 )
 
 // ---- unified operator login (gap #3, wave 2, lane B) ------------------------
@@ -61,7 +61,7 @@ type UserCredential struct {
 	TotpSecret string // base32; "" = not enrolled
 }
 
-// EnvPairCheck verifies the RMMWAY_ADMIN_USER/PASSWORD bootstrap pair. The
+// EnvPairCheck verifies the OURWAY_RMM_ADMIN_USER/PASSWORD bootstrap pair. The
 // API layer supplies it (it holds the per-boot salt + hash and does the
 // timing-safe compare); nil disables the env fallback entirely.
 type EnvPairCheck func(username, password string) bool

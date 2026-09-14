@@ -8,7 +8,7 @@
 //      web-01? …");
 //   4. confirming fetches GET /api/devices/<id>/export, shows the
 //      "Preparing…" state, then triggers a browser download of a ZIP
-//      named <hostname>-rmmway-export-<date>.zip whose bytes are exactly
+//      named <hostname>-ourway-rmm-export-<date>.zip whose bytes are exactly
 //      the bundle;
 //   5. the downloaded bundle unzips to manifest.json, device.json,
 //      metrics.parquet, metrics_1m.parquet, alerts.json (>=5 files) and
@@ -165,7 +165,7 @@ const DEVICES = [
 
 const deviceJson = u8(
   JSON.stringify({
-    schema: "rmmway.device/v1",
+    schema: "ourway-rmm.device/v1",
     device: { id: "dev-web-01", hostname: "web-01", os: "linux", arch: "amd64", agent_version: "0.1.0", interfaces: ["10.0.0.11"], first_seen: "2026-07-01T00:00:00Z", last_seen: "2026-08-25T11:59:00Z" },
     config: { metric_interval_s: 15, heartbeat_interval_s: 30, tags: ["web"] },
   })
@@ -188,10 +188,10 @@ const files = {
   "alerts.json": alertsJson,
 };
 const manifest = {
-  format: "rmmway-client-export",
+  format: "ourway-rmm-client-export",
   format_version: 1,
   exported_at: "2026-08-25T11:55:00Z",
-  generated_by: "rmmway server 0.1.0",
+  generated_by: "ourway-rmm server 0.1.0",
   device: { id: "dev-web-01", hostname: "web-01" },
   files: [
     { name: "manifest.json", size: 0, description: "self-describing bundle manifest — verify every other file against it" },
@@ -237,7 +237,7 @@ async function fakeFetch(path, init = {}) {
       status: 200,
       headers: {
         "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="rmmway-export-dev-web-01-20260825-115500.zip"`,
+        "Content-Disposition": `attachment; filename="ourway-rmm-export-dev-web-01-20260825-115500.zip"`,
       },
     });
   }
@@ -319,7 +319,7 @@ await waitUntil(
   () => fetchLog.some((c) => c === "GET /api/devices/dev-web-01/export"),
   "the export fetch"
 );
-const expectedName = `web-01-rmmway-export-${new Date().toISOString().slice(0, 10)}.zip`;
+const expectedName = `web-01-ourway-rmm-export-${new Date().toISOString().slice(0, 10)}.zip`;
 await waitUntil(() => window.anchorDownloads.length === 1, "the browser download");
 await waitUntil(() => text().includes("Downloaded"), "the success banner");
 const dl = window.anchorDownloads[0];
@@ -358,5 +358,5 @@ if (!parquetMagic(extracted["metrics.parquet"]) || !parquetMagic(extracted["metr
 console.log("ok 5: the downloaded bundle unzips to " + names.join(", ") + " and the manifest's SHA-256 + size for every data file match the actual contents (self-verifying); both Parquet files carry the PAR1 magic");
 
 for (const es of [...liveStreams]) es.close();
-console.log("\nD-6 client export UI DoD PASS: export button in the device detail, confirmation naming the device, Preparing… state, ZIP download named <hostname>-rmmway-export-<date>.zip, and a manifest that verifies every file.");
+console.log("\nD-6 client export UI DoD PASS: export button in the device detail, confirmation naming the device, Preparing… state, ZIP download named <hostname>-ourway-rmm-export-<date>.zip, and a manifest that verifies every file.");
 process.exit(0);

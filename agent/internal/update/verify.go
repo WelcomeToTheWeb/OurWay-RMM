@@ -16,7 +16,7 @@ var readfile = os.ReadFile
 // VerifySignature checks that binPath is signed (prehashed minisign) for
 // the public key in pubKey (a minisign .pub file's contents). sigPath is
 // the <binPath>.minisig file. It returns the signature's untrusted comment
-// (the "rmmway release vX.Y.Z" tag CI stamps in) on success. Any mismatch —
+// (the "ourway-rmm release vX.Y.Z" tag CI stamps in) on success. Any mismatch —
 // wrong key, tampered bytes, malformed signature — is an error.
 func VerifySignature(pubKey, binPath, sigPath string) (comment string, err error) {
 	pk, err := minisign.DecodePublicKey(pubKey)

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/webhook"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/webhook"
 )
 
 // streamFilterFromQuery reads the subscription filter from the query string:

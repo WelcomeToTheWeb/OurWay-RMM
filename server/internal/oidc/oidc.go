@@ -8,7 +8,7 @@
 //  1. POST /api/oidc/login -> redirect to OIDC provider
 //  2. User authenticates at provider
 //  3. Provider redirects back to /api/oidc/callback?code=...&state=...
-//  4. Server exchanges code for tokens, validates ID token, issues RMMWay session JWT
+//  4. Server exchanges code for tokens, validates ID token, issues OurWay RMM session JWT
 //
 // Users are auto-provisioned on first OIDC login.
 package oidc

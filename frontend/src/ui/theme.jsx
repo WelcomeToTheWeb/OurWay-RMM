@@ -1,11 +1,11 @@
 // Theme state: dark default, light via [data-theme="light"] on
-// documentElement, persisted to localStorage("rmmway-theme").
+// documentElement, persisted to localStorage("ourway-rmm-theme").
 // index.html applies the saved theme before first paint; this module keeps
 // React in sync and provides the top-bar toggle.
 import { useCallback, useState } from "react";
 import { Icon } from "./Icon.jsx";
 
-const KEY = "rmmway-theme";
+const KEY = "ourway-rmm-theme";
 
 function currentTheme() {
 	const t = document.documentElement.getAttribute("data-theme");

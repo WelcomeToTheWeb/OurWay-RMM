@@ -117,8 +117,8 @@ function publishEvent(category, type, deviceID, event) {
   seq += 1;
   const env = {
     id: seq,
-    version: "rmmway-event/v1",
-    source: "rmmway",
+    version: "ourway-rmm-event/v1",
+    source: "ourway-rmm",
     category,
     type,
     device_id: deviceID,
@@ -210,10 +210,10 @@ state.device.online = false;
 state.device.last_seen = new Date(Date.now() - 120000).toISOString();
 publishEvent(
   "inventory",
-  "rmmway.events.device",
+  "ourway-rmm.events.device",
   state.device.id,
   {
-    type: "rmmway.events.device",
+    type: "ourway-rmm.events.device",
     device_id: state.device.id,
     message: "offline device",
     data: { action: "offline", device_id: state.device.id, reason: "stale last_seen" },
@@ -251,7 +251,7 @@ await waitUntil(
 console.log("ok 5: both sessions on the alerts inbox (empty)");
 
 // The reconciler fired a baseline anomaly -> the alert store publishes an
-// rmmway.events.alert envelope with action "fired". The fake backend now
+// ourway-rmm.events.alert envelope with action "fired". The fake backend now
 // holds one open alert (what GET /api/alerts would return on re-pull).
 const t1 = Date.now();
 state.openCount = 1;
@@ -274,10 +274,10 @@ state.alerts = [
 ];
 publishEvent(
   "alert",
-  "rmmway.events.alert",
+  "ourway-rmm.events.alert",
   state.device.id,
   {
-    type: "rmmway.events.alert",
+    type: "ourway-rmm.events.alert",
     device_id: state.device.id,
     message: "fired alert cpu.utilization_percent",
     data: {

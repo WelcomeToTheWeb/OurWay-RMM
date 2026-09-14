@@ -10,7 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // TestPostgresExportLive verifies, against a scratch Timescale database:
@@ -19,12 +19,12 @@ import (
 //   - the Parquet sections re-open with the standard reader at the right
 //     row counts, and the since/until window bounds the raw section.
 //
-// Requires RMMWAY_TEST_PG_DSN (a Timescale-capable Postgres); skipped
+// Requires OURWAY_RMM_TEST_PG_DSN (a Timescale-capable Postgres); skipped
 // otherwise — same convention as the other live-Postgres tests.
 func TestPostgresExportLive(t *testing.T) {
-	dsn := os.Getenv("RMMWAY_TEST_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_TEST_PG_DSN")
 	if dsn == "" {
-		t.Skip("RMMWAY_TEST_PG_DSN not set — skipping export Postgres test")
+		t.Skip("OURWAY_RMM_TEST_PG_DSN not set — skipping export Postgres test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -41,7 +41,7 @@ func TestPostgresExportLive(t *testing.T) {
 	if err := admin.Ping(ctx); err != nil {
 		t.Skipf("postgres not reachable: %v", err)
 	}
-	dbName := "rmmway_export_test_" + time.Now().Format("20060102150405")
+	dbName := "ourway-rmm_export_test_" + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		t.Fatalf("create db: %v", err)
 	}
@@ -112,7 +112,7 @@ func TestPostgresExportLive(t *testing.T) {
 		Metrics: NewPostgresMetrics(db),
 		Rollups: NewPostgresRollups(db),
 		Alerts:  NewPostgresAlerts(db),
-		Version: "rmmway-server/test",
+		Version: "ourway-rmm-server/test",
 	})
 	var buf bytes.Buffer
 	if _, err := s.Export(ctx, dev.ID, time.Time{}, time.Time{}, true, &buf); err != nil {

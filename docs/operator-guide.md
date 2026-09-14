@@ -1,6 +1,6 @@
-# RMMWay Operator Guide
+# OurWay RMM Operator Guide
 
-This guide covers operating an RMMWay installation in production:
+This guide covers operating an OurWay RMM installation in production:
 installation, configuration, device enrollment, client management,
 alerting, reporting, patch management, and maintenance.
 
@@ -35,8 +35,8 @@ alerting, reporting, patch management, and maintenance.
 
 ```sh
 # Clone the repo
-git clone https://github.com/welcometotheweb/rmmway
-cd rmmway
+git clone https://github.com/welcometotheweb/ourway-rmm
+cd ourway-rmm
 
 # Copy and edit the production environment file
 cp .env.prod.example .env.prod
@@ -46,7 +46,7 @@ cp .env.prod.example .env.prod
 make prod
 ```
 
-The server will be accessible at the URL you configured in `RMMWAY_PUBLIC_URL`.
+The server will be accessible at the URL you configured in `OURWAY_RMM_PUBLIC_URL`.
 
 ### First-Boot Setup
 
@@ -76,14 +76,14 @@ All configuration is via environment variables in `.env.prod`. Key variables:
 
 | Variable | Purpose | Example |
 | -------- | ------- | ------- |
-| `RMMWAY_PUBLIC_URL` | Public operator URL | `https://rmm.example.com` |
-| `RMMWAY_JWT_SECRET` | JWT signing secret | `openssl rand -hex 32` |
-| `RMMWAY_PG_PASSWORD` | Postgres password | `openssl rand -hex 16` |
-| `RMMWAY_MEILI_MASTER_KEY` | Meilisearch key | `openssl rand -hex 16` |
-| `RMMWAY_MINIO_PASSWORD` | MinIO password | `openssl rand -hex 16` |
-| `RMMWAY_ADMIN_USER` | Admin username | `admin` |
-| `RMMWAY_ADMIN_PASSWORD` | Admin password | `openssl rand -hex 16` |
-| `RMMWAY_AGENT_MTLS_PORT` | Agent mTLS port | `50052` |
+| `OURWAY_RMM_PUBLIC_URL` | Public operator URL | `https://rmm.example.com` |
+| `OURWAY_RMM_JWT_SECRET` | JWT signing secret | `openssl rand -hex 32` |
+| `OURWAY_RMM_PG_PASSWORD` | Postgres password | `openssl rand -hex 16` |
+| `OURWAY_RMM_MEILI_MASTER_KEY` | Meilisearch key | `openssl rand -hex 16` |
+| `OURWAY_RMM_MINIO_PASSWORD` | MinIO password | `openssl rand -hex 16` |
+| `OURWAY_RMM_ADMIN_USER` | Admin username | `admin` |
+| `OURWAY_RMM_ADMIN_PASSWORD` | Admin password | `openssl rand -hex 16` |
+| `OURWAY_RMM_AGENT_MTLS_PORT` | Agent mTLS port | `50052` |
 
 ### Agent Configuration
 
@@ -91,12 +91,12 @@ Agents are configured via environment variables or a config file:
 
 | Variable | Purpose | Example |
 | -------- | ------- | ------- |
-| `RMMWAY_SERVER` | Server URL | `https://rmm.example.com` |
-| `RMMWAY_AGENT_MTLS_PORT` | mTLS port | `50052` |
-| `RMMWAY_HEARTBEAT_INTERVAL` | Heartbeat interval | `60s` |
-| `RMMWAY_METRICS_INTERVAL` | Metric collection interval | `60s` |
-| `RMMWAY_SERVICES` | Services to monitor | `nginx,postgresql` |
-| `RMMWAY_AUTO_UPDATE` | Enable auto-updates | `on` |
+| `OURWAY_RMM_SERVER` | Server URL | `https://rmm.example.com` |
+| `OURWAY_RMM_AGENT_MTLS_PORT` | mTLS port | `50052` |
+| `OURWAY_RMM_HEARTBEAT_INTERVAL` | Heartbeat interval | `60s` |
+| `OURWAY_RMM_METRICS_INTERVAL` | Metric collection interval | `60s` |
+| `OURWAY_RMM_SERVICES` | Services to monitor | `nginx,postgresql` |
+| `OURWAY_RMM_AUTO_UPDATE` | Enable auto-updates | `on` |
 
 ---
 
@@ -111,7 +111,7 @@ Agents are configured via environment variables or a config file:
 
 ```sh
 # Linux example
-curl -fsSL https://rmm.example.com/install.sh | RMMWAY_SERVER=https://rmm.example.com RMMWAY_TOKEN=<token> bash
+curl -fsSL https://rmm.example.com/install.sh | OURWAY_RMM_SERVER=https://rmm.example.com OURWAY_RMM_TOKEN=<token> bash
 ```
 
 ### Bootstrap Token API
@@ -365,10 +365,10 @@ curl -s "https://rmm.example.com/api/devices/<device-id>/events?level=error"
 
 ```sh
 # Vacuum TimescaleDB
-docker compose exec timescale psql -U rmmway -d rmmway -c "VACUUM ANALYZE;"
+docker compose exec timescale psql -U ourway-rmm -d ourway-rmm -c "VACUUM ANALYZE;"
 
 # Retention policy (delete metrics older than 90 days)
-docker compose exec timescale psql -U rmmway -d rmmway -c \
+docker compose exec timescale psql -U ourway-rmm -d ourway-rmm -c \
   "SELECT add_retention_policy('metrics', INTERVAL '90 days');"
 ```
 
@@ -380,18 +380,18 @@ docker compose exec timescale psql -U rmmway -d rmmway -c \
 
 ```sh
 # Backup TimescaleDB
-docker compose exec timescale pg_dump -U rmmway rmmway > rmmway-backup.sql
+docker compose exec timescale pg_dump -U ourway-rmm ourway-rmm > ourway-rmm-backup.sql
 
 # Restore
-cat rmmway-backup.sql | docker compose exec -T timescale psql -U rmmway rmmway
+cat ourway-rmm-backup.sql | docker compose exec -T timescale psql -U ourway-rmm ourway-rmm
 ```
 
 ### File Storage Backup
 
 ```sh
 # Backup MinIO (using mc)
-mc alias set local http://localhost:9000 rmmway rmmway-dev-secret
-mc cp --recursive local/rmmway-backup ./minio-backup
+mc alias set local http://localhost:9000 ourway-rmm ourway-rmm-dev-secret
+mc cp --recursive local/ourway-rmm-backup ./minio-backup
 ```
 
 ### Complete Backup
@@ -399,8 +399,8 @@ mc cp --recursive local/rmmway-backup ./minio-backup
 ```sh
 # Backup all volumes
 docker compose down
-tar -czf rmmway-full-backup.tar.gz rmmway-timescale-data rmmway-nats-data \
-  rmmway-redis-data rmmway-minio-data rmmway-meili-data rmmway-loki-data
+tar -czf ourway-rmm-full-backup.tar.gz ourway-rmm-timescale-data ourway-rmm-nats-data \
+  ourway-rmm-redis-data ourway-rmm-minio-data ourway-rmm-meili-data ourway-rmm-loki-data
 docker compose up -d
 ```
 
@@ -411,7 +411,7 @@ docker compose up -d
 ### TLS Configuration
 
 The bundled Caddy edge automatically obtains Let's Encrypt certificates.
-Ensure `RMMWAY_PUBLIC_URL` is set correctly for DNS challenge validation.
+Ensure `OURWAY_RMM_PUBLIC_URL` is set correctly for DNS challenge validation.
 
 ### Firewall Rules
 

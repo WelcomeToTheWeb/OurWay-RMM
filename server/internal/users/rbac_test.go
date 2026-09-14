@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 var rbacTestSecret = []byte("rbac-test-secret")
@@ -66,7 +66,7 @@ func TestRBACSessionFromRequest(t *testing.T) {
 	}
 
 	// Legacy JWT (no role claim): grandfathered admin.
-	legacyTok, err := MintSessionJWT(rbacTestSecret, time.Hour, SessionClaims{Username: "old", Caps: []string{"rmmway.run_script"}})
+	legacyTok, err := MintSessionJWT(rbacTestSecret, time.Hour, SessionClaims{Username: "old", Caps: []string{"ourway-rmm.run_script"}})
 	if err != nil {
 		t.Fatalf("mint legacy: %v", err)
 	}

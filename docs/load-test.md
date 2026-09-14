@@ -1,9 +1,9 @@
-# RMMWay Load Test Report
+# OurWay RMM Load Test Report
 
 ## Overview
 
 This document describes the methodology, infrastructure, and expected results of the
-RMMWay 5,000-device synthetic load test, part of the M5 integration milestone.
+OurWay RMM 5,000-device synthetic load test, part of the M5 integration milestone.
 
 ## Methodology
 
@@ -58,7 +58,7 @@ The test targets the production-equivalent stack:
 
 ### Prerequisites
 
-- Live RMMWay server with backing services (TimescaleDB, NATS, Redis, MinIO, Meilisearch)
+- Live OurWay RMM server with backing services (TimescaleDB, NATS, Redis, MinIO, Meilisearch)
 - Go 1.24+ toolchain
 - Access to server's HTTP API (default `:8080`) and gRPC port (default `:50051`)
 
@@ -171,7 +171,7 @@ Based on architecture analysis and previous testing:
 
 ## Conclusion
 
-The RMMWay architecture scales to 5,000 synthetic devices with standard
+The OurWay RMM architecture scales to 5,000 synthetic devices with standard
 Postgres/NATS/Redis configurations. Heartbeat latency remains sub-100ms,
 metric throughput is comfortable at 250 inserts/sec, and alert generation
 is accurate. At 10x scale (50k devices), connection pooling and read

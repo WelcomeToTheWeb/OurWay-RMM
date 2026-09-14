@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // Reader is one platform's OS event log access.
@@ -224,7 +224,7 @@ func (t *Tail) poll(ctx context.Context) {
 // same OS event (agent restart, overlapping poll windows) produce the same
 // id, so the server-side dedup key (device_id, id) absorbs replays.
 func entryID(source string, parts ...string) string {
-	h := sha256.Sum256([]byte("rmmway-osevent|" + source + "|" + strings.Join(parts, "|")))
+	h := sha256.Sum256([]byte("ourway-rmm-osevent|" + source + "|" + strings.Join(parts, "|")))
 	return hex.EncodeToString(h[:])
 }
 

@@ -18,19 +18,19 @@
 //	                             no sample, not an error)
 //	smart.reallocated_sectors    <device> (SMART attribute 5 raw value)
 //	process.cpu_percent          <process name> (top N by CPU%, per-name
-//	                             aggregate; N = RMMWAY_TOP_PROCS, default
+//	                             aggregate; N = OURWAY_RMM_TOP_PROCS, default
 //	                             10, cap 50 — first heartbeat after start
 //	                             has no delta and omits this family)
 //	process.memory_rss_bytes     <process name> (top N, RSS bytes)
 //	cert.days_to_expiry          <cert file path> (per PEM certificate found
-//	                             under RMMWAY_CERT_DIRS, default
+//	                             under OURWAY_RMM_CERT_DIRS, default
 //	                             /etc/ssl/certs, scan capped at
-//	                             RMMWAY_CERT_SCAN_CAP — negative when
+//	                             OURWAY_RMM_CERT_SCAN_CAP — negative when
 //	                             already expired)
 //	net.bytes_total            <iface> (total rx+tx bytes since boot, per
 //	                           interface — loopback excluded)
 //	system.uptime_seconds      ""
-//	service.status             <service name> (per RMMWAY_SERVICES entry:
+//	service.status             <service name> (per OURWAY_RMM_SERVICES entry:
 //	                           1.0 = running, 0.0 = stopped)
 //
 // Implementation: gopsutil/v4 (pure-Go on Linux — reads /proc directly, so
@@ -56,7 +56,7 @@ import (
 	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/shirou/gopsutil/v4/net"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // Collector samples all core metric families once.
@@ -83,7 +83,7 @@ var ErrServiceUnknown = errors.New("service unknown")
 // The default sampler is per-OS (see service_<os>.go); tests inject a fake.
 type ServiceSampler func(ctx context.Context, name string) (float64, error)
 
-// maxMonitoredServices caps the RMMWAY_SERVICES allowlist so one
+// maxMonitoredServices caps the OURWAY_RMM_SERVICES allowlist so one
 // misspelled "a,b,c,d" is not a way to mint an unbounded sample fan-out
 // into the metrics hypertable.
 const maxMonitoredServices = 50
@@ -107,27 +107,27 @@ type defaultCollector struct {
 }
 
 // NewCollector returns the production collector (real gopsutil CPU window;
-// the RMMWAY_SERVICES allowlist read from the environment drives the
+// the OURWAY_RMM_SERVICES allowlist read from the environment drives the
 // service.status family). Every call site that builds a collector (the
 // heartbeat push and the one-shot "collect" command) goes through here, so
 // the env var is honored in both.
 func NewCollector() Collector {
 	return &defaultCollector{
 		cpu:      cpu.Percent,
-		services: parseServiceList(os.Getenv("RMMWAY_SERVICES")),
+		services: parseServiceList(os.Getenv("OURWAY_RMM_SERVICES")),
 		service:  defaultServiceSampler,
 		load:     defaultLoadSampler,
 		diskIO:   defaultDiskIOSampler,
 		smart:    defaultSmartSampler,
 		procs:    defaultProcSampler,
-		topN:     parseTopProcs(os.Getenv("RMMWAY_TOP_PROCS")),
-		certDirs: parseCertDirs(os.Getenv("RMMWAY_CERT_DIRS")),
-		certCap:  parseCertScanCap(os.Getenv("RMMWAY_CERT_SCAN_CAP")),
+		topN:     parseTopProcs(os.Getenv("OURWAY_RMM_TOP_PROCS")),
+		certDirs: parseCertDirs(os.Getenv("OURWAY_RMM_CERT_DIRS")),
+		certCap:  parseCertScanCap(os.Getenv("OURWAY_RMM_CERT_SCAN_CAP")),
 		now:      time.Now,
 	}
 }
 
-// parseTopProcs reads RMMWAY_TOP_PROCS (default 10; invalid values fall
+// parseTopProcs reads OURWAY_RMM_TOP_PROCS (default 10; invalid values fall
 // back to the default rather than erroring at agent startup).
 func parseTopProcs(raw string) int {
 	if raw == "" {
@@ -301,7 +301,7 @@ func (c *defaultCollector) Collect(ctx context.Context) (*agentv1.MetricBatch, e
 		add("system.uptime_seconds", "", float64(secs))
 	}
 
-	// 6. Service status — per allowlisted service (RMMWAY_SERVICES):
+	// 6. Service status — per allowlisted service (OURWAY_RMM_SERVICES):
 	// 1.0 running / 0.0 stopped, source = service name (the wire shape the
 	// seeded "service.down" playbook detects on: metric service.status,
 	// == 0, source = the service the restart script targets).
@@ -354,7 +354,7 @@ func (c *defaultCollector) Collect(ctx context.Context) (*agentv1.MetricBatch, e
 		}
 	}
 
-	// 10. Certificate expiry — PEM scan of RMMWAY_CERT_DIRS (default
+	// 10. Certificate expiry — PEM scan of OURWAY_RMM_CERT_DIRS (default
 	// /etc/ssl/certs); absent dirs and non-cert files are skipped silently.
 	if c.certDirs != nil {
 		if cerr := c.emitCerts(add); cerr != nil {
@@ -368,7 +368,7 @@ func (c *defaultCollector) Collect(ctx context.Context) (*agentv1.MetricBatch, e
 	return batch, nil
 }
 
-// parseServiceList normalizes the RMMWAY_SERVICES value: comma-separated,
+// parseServiceList normalizes the OURWAY_RMM_SERVICES value: comma-separated,
 // lenient on whitespace, empties dropped, order-preserving dedupe, capped
 // at maxMonitoredServices. Unset/blank input yields nil (no samples).
 func parseServiceList(raw string) []string {

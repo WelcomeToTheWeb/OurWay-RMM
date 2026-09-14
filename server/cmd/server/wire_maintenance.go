@@ -6,7 +6,7 @@ package main
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/maintenance"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/maintenance"
 )
 
 // wireMaintenance builds the maintenance-window store (Postgres-backed,

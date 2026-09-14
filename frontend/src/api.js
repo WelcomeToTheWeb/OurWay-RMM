@@ -1,4 +1,4 @@
-// Thin fetch wrapper for the RMMWay operator API.
+// Thin fetch wrapper for the OurWay RMM operator API.
 // Every call is sent to the same origin; the Vite dev server proxies
 // /api/* to the Go server on :8080 (see vite.config.js).
 //

@@ -15,7 +15,7 @@ async function session(theme) {
     deviceScaleFactor: 2,
   });
   await ctx.addInitScript((t) => {
-    if (t) localStorage.setItem("rmmway-theme", t);
+    if (t) localStorage.setItem("ourway-rmm-theme", t);
   }, theme);
   const page = await ctx.newPage();
   await page.goto(url, { waitUntil: "networkidle" });

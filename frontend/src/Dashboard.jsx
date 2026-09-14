@@ -24,10 +24,10 @@ function relTime(iso) {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
-// Shorten rmmway.events.<group>.<name> -> <group>.<name> for the compact
+// Shorten ourway-rmm.events.<group>.<name> -> <group>.<name> for the compact
 // activity rows.
 function shortType(type) {
-  return (type || "").replace(/^rmmway\.events\./, "");
+  return (type || "").replace(/^ourway-rmm\.events\./, "");
 }
 
 // SVG donut, two segments (online / offline) — stroke-dasharray on a full

@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/baseline"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/baseline"
 )
 
 // ---- baseline data source (W2-3) -------------------------------------------

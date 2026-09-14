@@ -237,11 +237,11 @@ func TestMemoryUserStoreExpiredToken(t *testing.T) {
 // the case-insensitive username index, grants, TOTP stamps, and the
 // hash-only API-token lifecycle (incl. expiry + disabled-user refusal).
 //
-// Requires RMMWAY_TEST_PG_DSN; skipped otherwise.
+// Requires OURWAY_RMM_TEST_PG_DSN; skipped otherwise.
 func TestPostgresUsersLive(t *testing.T) {
-	dsn := os.Getenv("RMMWAY_TEST_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_TEST_PG_DSN")
 	if dsn == "" {
-		t.Skip("RMMWAY_TEST_PG_DSN not set — skipping users Postgres test")
+		t.Skip("OURWAY_RMM_TEST_PG_DSN not set — skipping users Postgres test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
@@ -258,7 +258,7 @@ func TestPostgresUsersLive(t *testing.T) {
 	if err := admin.Ping(ctx); err != nil {
 		t.Skipf("postgres not reachable: %v", err)
 	}
-	dbName := "rmmway_test_" + time.Now().Format("20060102150405")
+	dbName := "ourway-rmm_test_" + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		t.Fatalf("create db: %v", err)
 	}

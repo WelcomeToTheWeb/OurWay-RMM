@@ -1,6 +1,6 @@
-# RMMWay
+# OurWay RMM
 
-RMMWay is a self-hosted remote monitoring & management (RMM) platform. A small static agent runs on every machine you manage; a single Go server aggregates metrics, logs, alerts, and commands — and an operator web UI ties it together. Everything runs in your own infrastructure: the data, the TLS keys, and the automation all stay under your control.
+OurWay RMM is a self-hosted remote monitoring & management (RMM) platform. A small static agent runs on every machine you manage; a single Go server aggregates metrics, logs, alerts, and commands — and an operator web UI ties it together. Everything runs in your own infrastructure: the data, the TLS keys, and the automation all stay under your control.
 
 ## Features
 
@@ -21,10 +21,10 @@ Requires Docker. The entire stack runs in containers with pre-built images. Ther
 
 ### 1. Get the compose file
 
-Download the release compose file from the [latest release](https://github.com/welcometotheweb/rmmway/releases):
+Download the release compose file from the [latest release](https://github.com/welcometotheweb/ourway-rmm/releases):
 
 ```sh
-curl -LO https://github.com/welcometotheweb/rmmway/releases/download/v1.2.0/docker-compose.release.yml
+curl -LO https://github.com/welcometotheweb/ourway-rmm/releases/download/v1.2.0/docker-compose.release.yml
 ```
 
 ### 2. Configure secrets
@@ -32,7 +32,7 @@ curl -LO https://github.com/welcometotheweb/rmmway/releases/download/v1.2.0/dock
 Download the example environment file from the same release and set the required secrets:
 
 ```sh
-curl -LO https://github.com/welcometotheweb/rmmway/releases/download/v1.2.0/default.env.prod.example
+curl -LO https://github.com/welcometotheweb/ourway-rmm/releases/download/v1.2.0/default.env.prod.example
 cp default.env.prod.example .env.prod
 ```
 
@@ -40,13 +40,13 @@ Edit `.env.prod` and set these required secrets (generate each with `openssl ran
 
 | Variable | Purpose |
 | --- | --- |
-| `RMMWAY_JWT_SECRET` | Signs operator JWTs and capability tokens |
-| `RMMWAY_PG_PASSWORD` | Postgres/Timescale password |
-| `RMMWAY_MEILI_MASTER_KEY` | Meilisearch master key |
-| `RMMWAY_MINIO_PASSWORD` | MinIO root password |
-| `RMMWAY_ADMIN_PASSWORD` | Break-glass admin password (wizard password is primary) |
+| `OURWAY_RMM_JWT_SECRET` | Signs operator JWTs and capability tokens |
+| `OURWAY_RMM_PG_PASSWORD` | Postgres/Timescale password |
+| `OURWAY_RMM_MEILI_MASTER_KEY` | Meilisearch master key |
+| `OURWAY_RMM_MINIO_PASSWORD` | MinIO root password |
+| `OURWAY_RMM_ADMIN_PASSWORD` | Break-glass admin password (wizard password is primary) |
 
-Set `RMMWAY_PUBLIC_URL` to your server's public URL (e.g. `https://rmm.example.com`) so agents can reach it and TLS certs are correct.
+Set `OURWAY_RMM_PUBLIC_URL` to your server's public URL (e.g. `https://rmm.example.com`) so agents can reach it and TLS certs are correct.
 
 ### 3. Start the stack
 
@@ -82,7 +82,7 @@ docker compose down -v # stop + remove volumes (destructive)
 
 ## For Developers
 
-This README is aimed at deploying and using RMMWay. If you're building, testing, or extending RMMWay, see:
+This README is aimed at deploying and using OurWay RMM. If you're building, testing, or extending OurWay RMM, see:
 
 - **[DEVELOPER.md](DEVELOPER.md)** — repo layout, local dev workflow, test/e2e matrix, env knobs, and the full test suite
 - **[TASKS.md](TASKS.md)** — the project's shared task board
@@ -91,7 +91,7 @@ This README is aimed at deploying and using RMMWay. If you're building, testing,
 
 ```
                     ┌─────────────────────────────┐
-  Operator UI ──────┤  RMMWay server (Go)         │
+  Operator UI ──────┤  OurWay RMM server (Go)         │
   (TLS 443)         │  HTTP API + gRPC + engines  │
                     │  TimescaleDB · NATS · Redis │
                     │  Meilisearch · Loki · MinIO │

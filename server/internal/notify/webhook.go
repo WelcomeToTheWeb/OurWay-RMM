@@ -51,7 +51,7 @@ func (c *webhookChannel) Send(ctx context.Context, req SendRequest) error {
 		Title:     req.Title,
 		Message:   req.Message,
 		Data:      req.Data,
-		Source:    "rmmway",
+		Source:    "ourway-rmm",
 		Timestamp: time.Now().UTC().Format(time.RFC3339),
 	}
 	body, err := json.Marshal(payload)
@@ -83,6 +83,6 @@ func (c *webhookChannel) Test(ctx context.Context) error {
 	return c.Send(ctx, SendRequest{
 		Category: "test",
 		Title:    "Test notification",
-		Message:  "This is a test notification from the RMMWay notification system.",
+		Message:  "This is a test notification from the OurWay RMM notification system.",
 	})
 }

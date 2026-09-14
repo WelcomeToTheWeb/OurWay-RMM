@@ -5,8 +5,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/export"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/export"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // wireExport builds the per-client full-export service (W4-3 — the
@@ -24,7 +24,7 @@ func wireExport(hasPG bool, pgPool *pgxpool.Pool, devicesStore store.DeviceStore
 			Metrics: export.NewPostgresMetrics(pgPool),
 			Rollups: export.NewPostgresRollups(pgPool),
 			Alerts:  export.NewPostgresAlerts(pgPool),
-			Version: "rmmway-server/" + version,
+			Version: "ourway-rmm-server/" + version,
 		})
 		log.Println("export: per-client full export enabled (GET /api/devices/{id}/export)")
 	}

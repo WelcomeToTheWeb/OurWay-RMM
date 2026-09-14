@@ -16,10 +16,10 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 
-	"github.com/welcometotheweb/rmmway/agent/internal/caps"
-	"github.com/welcometotheweb/rmmway/agent/internal/exec"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/exec"
 )
 
 // ---- test fixtures (mirror of the server's org root + capability Mint) ----

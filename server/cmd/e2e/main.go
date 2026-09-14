@@ -1,5 +1,5 @@
 // Command e2e verifies W1-5+W1-6+W1-7+W2-2+W2-3+W2-4 against a RUNNING
-// rmmway-server: mint bootstrap (HTTP) -> enroll (gRPC) -> stream metrics
+// ourway-rmm-server: mint bootstrap (HTTP) -> enroll (gRPC) -> stream metrics
 // -> operator login + dispatch a command through the real HTTP endpoint and
 // assert it arrives on the live agent stream -> baseline engine flags a
 // synthetic weekly-pattern spike and stays quiet on the clean series ->
@@ -33,8 +33,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
 )
 
 func die(f string, a ...any) {
@@ -67,7 +67,7 @@ func authPost(url, token string, body io.Reader) (*http.Response, error) {
 func main() {
 	grpcAddr := "127.0.0.1:50051"
 	httpAddr := "http://127.0.0.1:8080"
-	pgDSN := "postgres://rmmway:rmmway@localhost:5432/rmmway?sslmode=disable"
+	pgDSN := "postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm?sslmode=disable"
 	if len(os.Args) > 1 {
 		grpcAddr = os.Args[1]
 	}

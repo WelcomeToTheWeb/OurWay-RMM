@@ -1,4 +1,4 @@
-// RMMWay UI kit — zero-dependency React components that render the existing
+// OurWay RMM UI kit — zero-dependency React components that render the existing
 // class names (see src/styles/kit.css). Re-exported for ergonomic imports:
 //   import { Button, Modal } from "./ui/index.js";
 export { default as Button } from "./Button.jsx";

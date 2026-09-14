@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/store"
-	"github.com/welcometotheweb/rmmway/server/internal/users"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/users"
 )
 
 // newUsersTestServer builds the suite's standard server with the users

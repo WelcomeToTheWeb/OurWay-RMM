@@ -6,8 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/notify"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/notify"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // wireNotify sets up the notification channel + policy framework (gap #6).

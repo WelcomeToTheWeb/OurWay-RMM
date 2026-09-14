@@ -4,7 +4,7 @@
 // It is a REAL end-to-end: it builds two agent binaries (old + new) with the
 // actual build flags, signs the new one with a fresh throwaway minisign key
 // using tools/signer (the exact signer CI uses), serves them through a real
-// in-process rmmway HTTP server (the /agent/releases/* routes), and runs the
+// in-process ourway-rmm HTTP server (the /agent/releases/* routes), and runs the
 // real agent binary's `update` command against it:
 //
 //  1. VALID   — a correctly signed new release is verified + installed; the
@@ -93,21 +93,21 @@ func main() {
 	root := repoRoot()
 	agentDir := filepath.Join(root, "agent")
 	signerDir := filepath.Join(root, "tools", "signer")
-	work, err := os.MkdirTemp("", "rmmway-update-e2e-")
+	work, err := os.MkdirTemp("", "ourway-rmm-update-e2e-")
 	if err != nil {
 		die("temp: %v", err)
 	}
 	defer os.RemoveAll(work)
 	pass := "e2e-update-pass"
 	goosArch := runtime.GOOS + "-" + runtime.GOARCH
-	assetName := "rmmway-agent-" + goosArch
+	assetName := "ourway-rmm-agent-" + goosArch
 
 	step("build the real agent binaries (old 1.0.0, new 2.0.0) + the signer")
 	oldBin := filepath.Join(work, "agent-old")
 	newBin := filepath.Join(work, "agent-new")
 	run(agentDir, "go", nil, "build", "-trimpath", "-ldflags", "-s -w -X main.version=1.0.0", "-o", oldBin, "./cmd/agent")
 	run(agentDir, "go", nil, "build", "-trimpath", "-ldflags", "-s -w -X main.version=2.0.0", "-o", newBin, "./cmd/agent")
-	signer := filepath.Join(work, "rmmway-signer")
+	signer := filepath.Join(work, "ourway-rmm-signer")
 	run(signerDir, "go", nil, "build", "-o", signer, ".")
 	info("old=%s new=%s signer=%s", oldBin, newBin, signer)
 
@@ -124,13 +124,13 @@ func main() {
 	// The "current" install: the old binary at the path the agent will update.
 	installDir := filepath.Join(work, "install")
 	_ = os.MkdirAll(installDir, 0o755)
-	current := filepath.Join(installDir, "rmmway-agent")
+	current := filepath.Join(installDir, "ourway-rmm-agent")
 	_ = copyFile(oldBin, current, 0o755)
 	curSHA := sha256File(current)
 
 	// Sign the new binary and publish a release dir for it.
 	step("sign the new build + publish a release dir")
-	run(work, signer, []string{"MINISIGN_PASS=" + pass}, "sign", "-k", filepath.Join(keys, "minisign.key"), "-pass", pass, "-c", "rmmway release v2.0.0", newBin)
+	run(work, signer, []string{"MINISIGN_PASS=" + pass}, "sign", "-k", filepath.Join(keys, "minisign.key"), "-pass", pass, "-c", "ourway-rmm release v2.0.0", newBin)
 	// Give the served asset a clean name (the agent fetches by manifest name).
 	served := filepath.Join(work, assetName)
 	_ = copyFile(newBin, served, 0o755)
@@ -144,7 +144,7 @@ func main() {
 	}
 	info("release dir: %s (release.json + %s + %s.minisig)", relDir, assetName, assetName)
 
-	step("boot a real in-process rmmway server serving the release dir")
+	step("boot a real in-process ourway-rmm server serving the release dir")
 	srv := serveReleases(relDir)
 	defer srv.Close()
 	baseURL := srv.URL
@@ -221,8 +221,8 @@ func main() {
 // applied/up-to-date and 1 for refused).
 func runAgentUpdate(work, current, baseURL, pubFile string, extraEnv []string) string {
 	env := append([]string{
-		"RMMWAY_UPDATE_PUBKEY=" + pubFile,
-		"RMMWAY_SERVER=" + baseURL,
+		"OURWAY_RMM_UPDATE_PUBKEY=" + pubFile,
+		"OURWAY_RMM_SERVER=" + baseURL,
 	}, extraEnv...)
 	cmd := exec.Command(current, "update", "--server", baseURL, "--no-restart")
 	cmd.Dir = work
@@ -245,7 +245,7 @@ func runAgentUpdate(work, current, baseURL, pubFile string, extraEnv []string) s
 
 func versionOf(bin string) string {
 	out := run(filepath.Dir(bin), bin, nil, "--version")
-	// "rmmway-agent 2.0.0" -> "2.0.0"
+	// "ourway-rmm-agent 2.0.0" -> "2.0.0"
 	fields := strings.Fields(out)
 	if len(fields) >= 2 {
 		return fields[len(fields)-1]

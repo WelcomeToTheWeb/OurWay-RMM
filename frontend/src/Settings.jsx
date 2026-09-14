@@ -398,7 +398,7 @@ export default function Settings({ token, onUnauthorized }) {
                   onChange={(e) =>
                     setSmtp((f) => ({ ...f, from: e.target.value }))
                   }
-                  placeholder="rmmway@example.com"
+                  placeholder="ourway-rmm@example.com"
                   spellCheck={false}
                   autoComplete="off"
                 />

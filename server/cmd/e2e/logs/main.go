@@ -21,7 +21,7 @@
 //     GET /admin/devices/{id}/events (newest first, level filter works),
 //  3. the /api mirror is auth-gated (401 without an operator token).
 //
-// Usage: RMMWAY_TEST_PG_DSN=... RMMWAY_LOKI_URL=http://localhost:3100
+// Usage: OURWAY_RMM_TEST_PG_DSN=... OURWAY_RMM_LOKI_URL=http://localhost:3100
 //
 //	go run ./cmd/e2e/logs
 //
@@ -47,10 +47,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/httpapi"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/httpapi"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 func die(f string, a ...any) {
@@ -75,11 +75,11 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 	defer cancel()
 
-	dsn := os.Getenv("RMMWAY_TEST_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_TEST_PG_DSN")
 	if dsn == "" {
-		dsn = "postgres://rmmway:rmmway@localhost:5432/rmmway?sslmode=disable"
+		dsn = "postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm?sslmode=disable"
 	}
-	lokiURL := os.Getenv("RMMWAY_LOKI_URL")
+	lokiURL := os.Getenv("OURWAY_RMM_LOKI_URL")
 	if lokiURL == "" {
 		lokiURL = "http://localhost:3100"
 	}
@@ -96,7 +96,7 @@ func main() {
 	if err := admin.Ping(ctx); err != nil {
 		die("postgres not reachable (%v) — run `make up`", err)
 	}
-	dbName := "rmmway_logs_e2e_" + time.Now().Format("20060102150405")
+	dbName := "ourway-rmm_logs_e2e_" + time.Now().Format("20060102150405")
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		die("create scratch db: %v", err)
 	}
@@ -167,13 +167,13 @@ func main() {
 	tmp := mustTempDir()
 	defer os.RemoveAll(tmp)
 	agentDir := filepath.Join(repoRoot(), "agent")
-	build := exec.Command("go", "build", "-o", filepath.Join(tmp, "rmmway-agent"), "./cmd/agent")
+	build := exec.Command("go", "build", "-o", filepath.Join(tmp, "ourway-rmm-agent"), "./cmd/agent")
 	build.Dir = agentDir
 	build.Stdout, build.Stderr = os.Stderr, os.Stderr
 	if err := build.Run(); err != nil {
 		die("agent build: %v", err)
 	}
-	info("agent binary built (%s)", filepath.Join(tmp, "rmmway-agent"))
+	info("agent binary built (%s)", filepath.Join(tmp, "ourway-rmm-agent"))
 
 	// ---- mint a bootstrap token and run the real agent --------------------
 	step("enroll + run the real agent (Loki + uplink shipping)")
@@ -185,15 +185,15 @@ func main() {
 	if err != nil {
 		die("agent log: %v", err)
 	}
-	cmd := exec.Command(filepath.Join(tmp, "rmmway-agent"), "run")
+	cmd := exec.Command(filepath.Join(tmp, "ourway-rmm-agent"), "run")
 	cmd.Dir = tmp
 	cmd.Env = append(os.Environ(),
-		"RMMWAY_SERVER="+httpAddr,
-		"RMMWAY_GRPC_ADDR="+grpcAddr,
-		"RMMWAY_BOOTSTRAP_TOKEN="+token,
-		"RMMWAY_IDENTITY="+filepath.Join(tmp, "agent-identity.json"),
-		"RMMWAY_LOG_FILE="+filepath.Join(tmp, "agent.jsonl"),
-		"RMMWAY_LOKI_URL="+lokiURL,
+		"OURWAY_RMM_SERVER="+httpAddr,
+		"OURWAY_RMM_GRPC_ADDR="+grpcAddr,
+		"OURWAY_RMM_BOOTSTRAP_TOKEN="+token,
+		"OURWAY_RMM_IDENTITY="+filepath.Join(tmp, "agent-identity.json"),
+		"OURWAY_RMM_LOG_FILE="+filepath.Join(tmp, "agent.jsonl"),
+		"OURWAY_RMM_LOKI_URL="+lokiURL,
 	)
 	cmd.Stdout = af
 	cmd.Stderr = af
@@ -259,7 +259,7 @@ func main() {
 	}
 	waitLoki := func() (lines []string, err error) {
 		q := url.Values{}
-		q.Set("query", `{device_id="`+devID+`",job="rmmway-agent"}`)
+		q.Set("query", `{device_id="`+devID+`",job="ourway-rmm-agent"}`)
 		q.Set("limit", "200")
 		endpoint := lokiURL + "/loki/api/v1/query_range?" + q.Encode()
 		cctx, ccancel := context.WithTimeout(ctx, 10*time.Second)
@@ -300,7 +300,7 @@ func main() {
 		time.Sleep(1 * time.Second)
 	}
 	check(lokiErr == nil && len(lokiLines) > 0,
-		"loki query returned no lines (err=%v) — is Loki up? (`make up`, RMMWAY_LOKI_URL=%s)", lokiErr, lokiURL)
+		"loki query returned no lines (err=%v) — is Loki up? (`make up`, OURWAY_RMM_LOKI_URL=%s)", lokiErr, lokiURL)
 	check(containsAll(lokiLines, "agent ready", cmdID),
 		"loki lines missing expected content; got %d lines:\n%s", len(lokiLines), strings.Join(lokiLines, "\n"))
 	info("LOKI: %d lines for %s (labels device_id/job/level) — includes 'agent ready' and the command receipt",
@@ -454,7 +454,7 @@ func repoRoot() string {
 // ---- helpers ----------------------------------------------------------------
 
 func mustTempDir() string {
-	d, err := os.MkdirTemp("", "rmmway-logs-e2e-*")
+	d, err := os.MkdirTemp("", "ourway-rmm-logs-e2e-*")
 	if err != nil {
 		die("tempdir: %v", err)
 	}

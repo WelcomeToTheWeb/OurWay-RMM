@@ -24,10 +24,10 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	"github.com/welcometotheweb/rmmway/agent/internal/collectors"
-	"github.com/welcometotheweb/rmmway/agent/internal/enroll"
-	"github.com/welcometotheweb/rmmway/agent/internal/uplink"
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/collectors"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/enroll"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/uplink"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 func discardLogger(t *testing.T) *slog.Logger {

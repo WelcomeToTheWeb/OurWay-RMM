@@ -13,10 +13,10 @@
 // Usage (after `make migrate`):
 //
 //	make seed-dev                                   # 12 devices
-//	RMMWAY_SEED_COUNT=40 go run ./cmd/seed-dev      # 40 devices
+//	OURWAY_RMM_SEED_COUNT=40 go run ./cmd/seed-dev      # 40 devices
 //	go run ./cmd/seed-dev --fresh                   # wipe seed-% first
 //
-// Env: RMMWAY_PG_DSN (same name/default as cmd/server), RMMWAY_SEED_COUNT
+// Env: OURWAY_RMM_PG_DSN (same name/default as cmd/server), OURWAY_RMM_SEED_COUNT
 // (default 12).
 package main
 
@@ -72,13 +72,13 @@ func main() {
 	fresh := flag.Bool("fresh", false, "delete seed-% devices (metrics cascade) before seeding")
 	flag.Parse()
 
-	dsn := env("RMMWAY_PG_DSN", "postgres://rmmway:rmmway@localhost:5432/rmmway?sslmode=disable")
+	dsn := env("OURWAY_RMM_PG_DSN", "postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm?sslmode=disable")
 	count := 12
-	if v := os.Getenv("RMMWAY_SEED_COUNT"); v != "" {
+	if v := os.Getenv("OURWAY_RMM_SEED_COUNT"); v != "" {
 		fmt.Sscanf(v, "%d", &count)
 	}
 	if count < 1 || count > 200 {
-		fatal("RMMWAY_SEED_COUNT must be 1..200, got %d", count)
+		fatal("OURWAY_RMM_SEED_COUNT must be 1..200, got %d", count)
 	}
 
 	ctx, stop := context.WithTimeout(context.Background(), 3*time.Minute)
@@ -118,9 +118,9 @@ func main() {
 			online++
 		}
 	}
-	fmt.Printf("RMMWAY DEV FIXTURE: done — %d/%d seed devices present (%d online), %d metric samples across 5 families, %s history @ %s\n",
+	fmt.Printf("OURWAY_RMM DEV FIXTURE: done — %d/%d seed devices present (%d online), %d metric samples across 5 families, %s history @ %s\n",
 		inserted, len(devs), online, rows, (history).String(), step)
-	fmt.Println("RMMWAY DEV FIXTURE: synthetic dev data — `go run ./cmd/seed-dev --fresh` wipes it")
+	fmt.Println("OURWAY_RMM DEV FIXTURE: synthetic dev data — `go run ./cmd/seed-dev --fresh` wipes it")
 }
 
 // makeDevice derives the i-th fixture device. Online devices keep sampling
@@ -210,7 +210,7 @@ func seed(ctx context.Context, tx pgx.Tx, devs []device, fresh bool) (int, int, 
 			return 0, 0, fmt.Errorf("fresh wipe: %w", err)
 		}
 		if tag.RowsAffected() > 0 {
-			fmt.Printf("RMMWAY DEV FIXTURE: --fresh: removed %d existing seed devices (metrics cascade away)\n", tag.RowsAffected())
+			fmt.Printf("OURWAY_RMM DEV FIXTURE: --fresh: removed %d existing seed devices (metrics cascade away)\n", tag.RowsAffected())
 		}
 	}
 

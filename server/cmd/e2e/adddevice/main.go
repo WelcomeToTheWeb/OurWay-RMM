@@ -44,12 +44,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/httpapi"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/httpapi"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 func die(f string, a ...any) {
@@ -103,7 +103,7 @@ type srv struct {
 	stop     func()
 }
 
-// startServer boots a real in-process RMMWay server: the operator HTTP API
+// startServer boots a real in-process OurWay RMM server: the operator HTTP API
 // (with /agent/enroll + /api/bootstrap), the plain gRPC bootstrap listener, and
 // the mTLS gRPC agent listener — all on loopback ephemeral ports, in-memory.
 func startServer() *srv {
@@ -260,7 +260,7 @@ func bufContains(mu *sync.Mutex, buf *bytes.Buffer, sub string) bool {
 
 func main() {
 	root := repoRoot()
-	work, err := os.MkdirTemp("", "rmmway-adddevice-e2e-")
+	work, err := os.MkdirTemp("", "ourway-rmm-adddevice-e2e-")
 	if err != nil {
 		die("temp: %v", err)
 	}
@@ -271,7 +271,7 @@ func main() {
 	fmt.Println("================================================================")
 
 	step("0. build the real agent binary (host GOOS/GOARCH)")
-	agentBin := filepath.Join(work, "rmmway-agent")
+	agentBin := filepath.Join(work, "ourway-rmm-agent")
 	buildCmd := exec.Command("go", "build", "-o", agentBin, "./cmd/agent")
 	buildCmd.Dir = filepath.Join(root, "agent")
 	if out, err := buildCmd.CombinedOutput(); err != nil {
@@ -377,24 +377,24 @@ func main() {
 
 	step("4. REAL AGENT — forced to enroll over HTTP (plain gRPC pointed at a DEAD port)")
 	// Mint a fresh token for the real agent, then run the built binary with:
-	//   - RMMWAY_SERVER      -> the operator origin (HTTP enroll works here)
-	//   - RMMWAY_GRPC_ADDR   -> 127.0.0.1:1 (DEAD): the plain gRPC bootstrap
+	//   - OURWAY_RMM_SERVER      -> the operator origin (HTTP enroll works here)
+	//   - OURWAY_RMM_GRPC_ADDR   -> 127.0.0.1:1 (DEAD): the plain gRPC bootstrap
 	//                           channel CANNOT be used, so the agent MUST have
 	//                           enrolled over the operator origin.
-	//   - RMMWAY_GRPC_MTLS_ADDR -> the mTLS listener (the 50052 model).
+	//   - OURWAY_RMM_GRPC_MTLS_ADDR -> the mTLS listener (the 50052 model).
 	code, gout := doJSON(http.MethodPost, s.httpAddr+"/api/bootstrap", map[string]any{}, operator)
 	check(code == http.StatusOK, "agent mint = %d, want 200", code)
 	agentToken := mustStr(gout, "bootstrap_token")
 	agentPrealloc := mustStr(gout, "device_id")
 
 	agentEnv := []string{
-		"RMMWAY_SERVER=" + s.httpAddr,
-		"RMMWAY_BOOTSTRAP_TOKEN=" + agentToken,
-		"RMMWAY_GRPC_ADDR=127.0.0.1:1", // DEAD — forces the HTTP enroll path
-		"RMMWAY_GRPC_MTLS_ADDR=" + s.mtlsAddr,
-		"RMMWAY_IDENTITY=" + filepath.Join(work, "agent-identity.json"),
-		"RMMWAY_LOG_FILE=" + filepath.Join(work, "agent.jsonl"),
-		"RMMWAY_AUTO_UPDATE=off",
+		"OURWAY_RMM_SERVER=" + s.httpAddr,
+		"OURWAY_RMM_BOOTSTRAP_TOKEN=" + agentToken,
+		"OURWAY_RMM_GRPC_ADDR=127.0.0.1:1", // DEAD — forces the HTTP enroll path
+		"OURWAY_RMM_GRPC_MTLS_ADDR=" + s.mtlsAddr,
+		"OURWAY_RMM_IDENTITY=" + filepath.Join(work, "agent-identity.json"),
+		"OURWAY_RMM_LOG_FILE=" + filepath.Join(work, "agent.jsonl"),
+		"OURWAY_RMM_AUTO_UPDATE=off",
 	}
 	cmd, mu, buf := runAgent(agentBin, agentEnv)
 	defer func() {

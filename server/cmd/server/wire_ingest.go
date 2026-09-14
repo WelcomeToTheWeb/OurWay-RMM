@@ -10,13 +10,13 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/flow"
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
-	"github.com/welcometotheweb/rmmway/server/internal/sessionrelay"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/sessionrelay"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // wireIngest builds the gRPC ingest service and the two agent-facing gRPC
@@ -70,7 +70,7 @@ func wireIngest(
 		log.Fatalf("grpc listen %s: %v", grpcAddr, err)
 	}
 	go func() {
-		log.Printf("rmmway-server %s: gRPC agent ingest on %s", version, grpcAddr)
+		log.Printf("ourway-rmm-server %s: gRPC agent ingest on %s", version, grpcAddr)
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Printf("grpc server: %v", err)
 		}
@@ -80,7 +80,7 @@ func wireIngest(
 	// layer requires a client leaf signed by the org root before any RPC
 	// is processed (a random cert is rejected at the handshake), and the
 	// server presents a root-signed cert so the agent verifies us too.
-	// RMMWAY_GRPC_MTLS_ADDR=off disables it (plain-listener deployments).
+	// OURWAY_RMM_GRPC_MTLS_ADDR=off disables it (plain-listener deployments).
 	var mtlsServer *grpc.Server
 	if grpcMTLSAddr != "off" && grpcMTLSAddr != "" {
 		sans := mtlsSANs(grpcMTLSAddr, grpcAddr, httpAddr)
@@ -99,7 +99,7 @@ func wireIngest(
 			log.Fatalf("grpc mTLS listen %s: %v", grpcMTLSAddr, err)
 		}
 		go func() {
-			log.Printf("rmmway-server %s: gRPC mTLS agent channel on %s (client cert required)", version, grpcMTLSAddr)
+			log.Printf("ourway-rmm-server %s: gRPC mTLS agent channel on %s (client cert required)", version, grpcMTLSAddr)
 			if err := mtlsServer.Serve(mtlsLis); err != nil {
 				log.Printf("grpc mTLS server: %v", err)
 			}

@@ -1,4 +1,4 @@
-module github.com/welcometotheweb/rmmway/server
+module github.com/welcometotheweb/ourway-rmm/server
 
 go 1.26.0
 
@@ -15,7 +15,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/jung-kurt/gofpdf v1.16.1
 	github.com/parquet-go/parquet-go v0.32.0
-	github.com/welcometotheweb/rmmway/proto/gen v0.0.0
+	github.com/welcometotheweb/ourway-rmm/proto/gen v0.0.0
 	golang.org/x/crypto v0.43.0
 	golang.org/x/oauth2 v0.37.0
 )
@@ -45,4 +45,4 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8 // indirect
 )
 
-replace github.com/welcometotheweb/rmmway/proto/gen => ../proto/gen
+replace github.com/welcometotheweb/ourway-rmm/proto/gen => ../proto/gen

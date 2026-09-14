@@ -44,7 +44,7 @@ func TestSendPlainToSink(t *testing.T) {
 	defer sink.Close()
 
 	cfg := Config{
-		Host: "127.0.0.1", Port: sink.Port(), From: "rmmway@acme.test",
+		Host: "127.0.0.1", Port: sink.Port(), From: "ourway-rmm@acme.test",
 		Username: "mailer", Password: "secret",
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -58,11 +58,11 @@ func TestSendPlainToSink(t *testing.T) {
 	}
 	m := mails[0]
 	for _, want := range []string{
-		"From: rmmway@acme.test",
-		"To: rmmway@acme.test", // empty recipient defaults to From
-		"Subject: RMMWay: SMTP outbox test",
+		"From: ourway-rmm@acme.test",
+		"To: ourway-rmm@acme.test", // empty recipient defaults to From
+		"Subject: OurWay RMM: SMTP outbox test",
 		"Content-Type: text/plain; charset=utf-8",
-		"RMMWay SMTP outbox",
+		"OurWay RMM SMTP outbox",
 	} {
 		if !strings.Contains(m, want) {
 			t.Errorf("captured mail missing %q:\n%s", want, m)

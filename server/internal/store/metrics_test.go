@@ -16,12 +16,12 @@ import (
 // recent value) and must aggregate raw samples into one point per bucket
 // (server-side bucketing, so long ranges stay a few hundred points).
 //
-// Requires RMMWAY_TEST_PG_DSN to be reachable; skipped otherwise (same
+// Requires OURWAY_RMM_TEST_PG_DSN to be reachable; skipped otherwise (same
 // pattern as the other Postgres tests in this package).
 func TestPostgresMetricsView(t *testing.T) {
-	dsn := os.Getenv("RMMWAY_TEST_PG_DSN")
+	dsn := os.Getenv("OURWAY_RMM_TEST_PG_DSN")
 	if dsn == "" {
-		t.Skip("RMMWAY_TEST_PG_DSN not set — skipping Postgres metrics view test")
+		t.Skip("OURWAY_RMM_TEST_PG_DSN not set — skipping Postgres metrics view test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -39,7 +39,7 @@ func TestPostgresMetricsView(t *testing.T) {
 		t.Skipf("postgres not reachable: %v", err)
 	}
 	suffix := time.Now().Format("20060102150405")
-	dbName := "rmmway_test_" + suffix
+	dbName := "ourway-rmm_test_" + suffix
 	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
 		t.Fatalf("create db: %v", err)
 	}

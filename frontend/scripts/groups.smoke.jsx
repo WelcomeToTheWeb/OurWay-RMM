@@ -251,7 +251,7 @@ if (bulkCall.body.tag !== "web" || bulkCall.body.action !== "run_script" || bulk
   throw new Error("unexpected bulk body: " + JSON.stringify(bulkCall.body));
 }
 const script = atob(bulkCall.body.script);
-if (!script.includes("RMMWay group script")) {
+if (!script.includes("OurWay RMM group script")) {
   throw new Error("bulk script payload is not the editor's script (base64): " + script);
 }
 await waitUntil(

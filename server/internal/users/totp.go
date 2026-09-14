@@ -115,9 +115,9 @@ func VerifyTotp(secret, code string, at time.Time) bool {
 // TotpURI is the otpauth:// provisioning URI (RFC 6238 §4) — the Users UI
 // renders it as a QR code; manual entry uses the raw secret.
 func TotpURI(username, secret string) string {
-	return "otpauth://totp/rmmway:" + url.QueryEscape(username) +
+	return "otpauth://totp/ourway-rmm:" + url.QueryEscape(username) +
 		"?secret=" + secret +
-		"&issuer=RMMWay" +
+		"&issuer=OurWay RMM" +
 		"&algorithm=SHA1" +
 		"&digits=" + itoa(TotpDigits) +
 		"&period=" + itoa(TotpPeriodSeconds)

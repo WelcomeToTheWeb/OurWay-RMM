@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // newClientTestServer builds the standard in-memory test server WITH the

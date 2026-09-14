@@ -1,7 +1,7 @@
 // Service is the W6-2 webhook + event-stream framework. It is a thin,
 // Postgres-backed consumer of the NATS event bus:
 //
-//	<bus: any rmmway.events.> event>
+//	<bus: any ourway-rmm.events.> event>
 //	    -> journal it (append-only, monotonic seq)
 //	    -> fan it out to the live SSE subscribers
 //	<every sweepInterval>
@@ -28,14 +28,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/flow"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
 )
 
 // Event categories (the endpoint's subscription filter + the journal column).
 const (
-	CategoryAlert      = "alert"      // rmmway.events.alert
-	CategoryInventory  = "inventory"  // rmmway.events.device
-	CategoryAutomation = "automation" // rmmway.events.flow.* + rmmway.events.command.result
+	CategoryAlert      = "alert"      // ourway-rmm.events.alert
+	CategoryInventory  = "inventory"  // ourway-rmm.events.device
+	CategoryAutomation = "automation" // ourway-rmm.events.flow.* + ourway-rmm.events.command.result
 	CategoryOther      = "other"      // anything else on the bus
 )
 
@@ -82,7 +82,7 @@ type Envelope struct {
 	Event    json.RawMessage `json:"event"`
 }
 
-const envelopeVersion = "rmmway-event/v1"
+const envelopeVersion = "ourway-rmm-event/v1"
 
 func (e Event) Envelope() Envelope {
 	raw := e.Data
@@ -90,7 +90,7 @@ func (e Event) Envelope() Envelope {
 		raw = json.RawMessage("{}")
 	}
 	return Envelope{
-		ID: e.Seq, Version: envelopeVersion, Source: "rmmway",
+		ID: e.Seq, Version: envelopeVersion, Source: "ourway-rmm",
 		Category: e.Category, Type: e.Type, DeviceID: e.DeviceID,
 		At: e.At, Event: raw,
 	}
@@ -114,7 +114,7 @@ type Service struct {
 // an empty field matches everything ("" = all categories, all devices, all
 // types). A subscriber gets an event only when it matches every set field, so
 // an operator can subscribe to e.g. "alerts for one device" or "all
-// rmmway.events.device events". It is shared by the in-process AddLiveFilter
+// ourway-rmm.events.device events". It is shared by the in-process AddLiveFilter
 // channel and the SSE route (handleEventStream builds one from query params).
 type Filter struct {
 	Category string // "" = all; else one of AllCategories

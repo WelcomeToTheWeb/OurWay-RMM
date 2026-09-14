@@ -10,17 +10,17 @@ import (
 	"strings"
 )
 
-// defaultCertDirs is scanned when RMMWAY_CERT_DIRS is unset.
+// defaultCertDirs is scanned when OURWAY_RMM_CERT_DIRS is unset.
 const defaultCertDirs = "/etc/ssl/certs"
 
 // defaultCertScanCap bounds how many files one heartbeat inspects across
 // all directories (a typo'd dir with a huge tree must not stall the push).
 const defaultCertScanCap = 200
 
-// maxCertScanCap caps RMMWAY_CERT_SCAN_CAP.
+// maxCertScanCap caps OURWAY_RMM_CERT_SCAN_CAP.
 const maxCertScanCap = 1000
 
-// parseCertDirs splits a comma-separated RMMWAY_CERT_DIRS value.
+// parseCertDirs splits a comma-separated OURWAY_RMM_CERT_DIRS value.
 func parseCertDirs(raw string) []string {
 	if strings.TrimSpace(raw) == "" {
 		return []string{defaultCertDirs}
@@ -38,7 +38,7 @@ func parseCertDirs(raw string) []string {
 	return dirs
 }
 
-// parseCertScanCap reads RMMWAY_CERT_SCAN_CAP (invalid values fall back to
+// parseCertScanCap reads OURWAY_RMM_CERT_SCAN_CAP (invalid values fall back to
 // the default rather than erroring at agent startup).
 func parseCertScanCap(raw string) int {
 	if strings.TrimSpace(raw) == "" {
@@ -82,7 +82,7 @@ func parseCertFile(path string) (*x509.Certificate, error) {
 // emitCerts appends the cert.days_to_expiry family (source = file path).
 // Directories that do not exist or are unreadable are skipped silently —
 // the default dir is absent on Windows and macOS, where the family simply
-// ships nothing unless the operator points RMMWAY_CERT_DIRS at a store.
+// ships nothing unless the operator points OURWAY_RMM_CERT_DIRS at a store.
 // Non-certificate files are skipped silently. A parse failure on one file
 // is a partial error but never aborts the scan.
 func (c *defaultCollector) emitCerts(add func(name, source string, value float64)) error {

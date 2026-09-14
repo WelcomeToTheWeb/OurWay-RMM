@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // ---- RBAC middleware (gap #3, wave 2, lane B) --------------------------------

@@ -7,12 +7,12 @@ Agent ↔ server protocol. **W0-2** delivers the `.proto` files + codegen;
 
 ```
 proto/
-  rmmway/agent/v1/
+  ourway-rmm/agent/v1/
     agent.proto      # AgentService: Enroll + Stream (bidi heartbeat/command)
     metrics.proto    # MetricBatch / Metric (the five W1-2 metric families)
     commands.proto   # Command dispatch (RunScript, Reboot; W3-3 capability tokens)
   gen/               # generated Go (committed; `make proto` regenerates)
-    go.mod           # module github.com/welcometotheweb/rmmway/proto/gen
+    go.mod           # module github.com/welcometotheweb/ourway-rmm/proto/gen
 ```
 
 ## Usage
@@ -23,7 +23,7 @@ make proto-lint  # buf lint
 ```
 
 Both `server/` and `agent/` import the stubs via
-`replace github.com/welcometotheweb/rmmway/proto/gen => ../proto/gen`.
+`replace github.com/welcometotheweb/ourway-rmm/proto/gen => ../proto/gen`.
 
 ## Auth model
 

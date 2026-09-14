@@ -65,15 +65,15 @@ func TestKeygenSignVerifyRoundtrip(t *testing.T) {
 	}
 
 	// Sign a file, verify it, then verify that tampering breaks it.
-	f := writeFile(t, dir, "artifact.bin", "rmmway-agent-linux-amd64\n")
-	if err := signOne(skFile, testPass, f, "rmmway release test"); err != nil {
+	f := writeFile(t, dir, "artifact.bin", "ourway-rmm-agent-linux-amd64\n")
+	if err := signOne(skFile, testPass, f, "ourway-rmm release test"); err != nil {
 		t.Fatal(err)
 	}
 	comment, err := verifyOne(pkFile, f)
 	if err != nil {
 		t.Fatalf("verify: %v", err)
 	}
-	if !strings.Contains(comment, "rmmway release test") {
+	if !strings.Contains(comment, "ourway-rmm release test") {
 		t.Fatalf("untrusted comment missing release tag: %q", comment)
 	}
 

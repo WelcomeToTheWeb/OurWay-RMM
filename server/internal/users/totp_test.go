@@ -100,8 +100,8 @@ func TestTotpSecretAndBase32Helpers(t *testing.T) {
 
 func TestTotpURI(t *testing.T) {
 	uri := TotpURI("alice@example.com", appendixSecret)
-	want := "otpauth://totp/rmmway:alice%40example.com?secret=" + appendixSecret +
-		"&issuer=RMMWay&algorithm=SHA1&digits=6&period=30"
+	want := "otpauth://totp/ourway-rmm:alice%40example.com?secret=" + appendixSecret +
+		"&issuer=OurWay RMM&algorithm=SHA1&digits=6&period=30"
 	if uri != want {
 		t.Fatalf("URI:\n got %s\nwant %s", uri, want)
 	}

@@ -1,4 +1,4 @@
-// Package main is the RMMWay agent.
+// Package main is the OurWay RMM agent.
 //
 // W1-1: single static binary per OS, zero runtime deps. Build via
 // `make agent` (or scripts/build-agent.sh) which cross-compiles
@@ -7,13 +7,13 @@
 //
 // Subcommands:
 //
-//	rmmway-agent --version         print version (-v for commit/goos details)
-//	rmmway-agent ping [url]        check the server's /healthz
-//	rmmway-agent collect           sample the five core metric families once
-//	rmmway-agent status [--config] show the persisted enrollment identity
-//	rmmway-agent run [--config]    service entrypoint: enroll + authenticated
+//	ourway-rmm-agent --version         print version (-v for commit/goos details)
+//	ourway-rmm-agent ping [url]        check the server's /healthz
+//	ourway-rmm-agent collect           sample the five core metric families once
+//	ourway-rmm-agent status [--config] show the persisted enrollment identity
+//	ourway-rmm-agent run [--config]    service entrypoint: enroll + authenticated
 //	                               metric/heartbeat uplink (W1-4)
-//	rmmway-agent update [--check]  W4-2: verify the server's latest release
+//	ourway-rmm-agent update [--check]  W4-2: verify the server's latest release
 //	                               signature; if valid, install + re-exec
 //
 // W1-3 service entrypoint (run) and W1-4 enrollment share one config surface:
@@ -45,18 +45,18 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/welcometotheweb/rmmway/agent/internal/caps"
-	"github.com/welcometotheweb/rmmway/agent/internal/collectors"
-	"github.com/welcometotheweb/rmmway/agent/internal/enroll"
-	"github.com/welcometotheweb/rmmway/agent/internal/exec"
-	"github.com/welcometotheweb/rmmway/agent/internal/logship"
-	"github.com/welcometotheweb/rmmway/agent/internal/osevent"
-	"github.com/welcometotheweb/rmmway/agent/internal/rotate"
-	"github.com/welcometotheweb/rmmway/agent/internal/secure"
-	"github.com/welcometotheweb/rmmway/agent/internal/session"
-	"github.com/welcometotheweb/rmmway/agent/internal/update"
-	"github.com/welcometotheweb/rmmway/agent/internal/uplink"
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/collectors"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/enroll"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/exec"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/logship"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/osevent"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/rotate"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/secure"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/session"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/update"
+	"github.com/welcometotheweb/ourway-rmm/agent/internal/uplink"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // Injected at build time: -ldflags "-X main.version=... -X main.commit=... -X main.date=..."
@@ -78,10 +78,10 @@ func main() {
 	switch cmd {
 	case "--version", "version":
 		if len(args) > 1 && args[1] == "-v" {
-			fmt.Printf("rmmway-agent %s (commit %s, built %s, %s/%s)\n", version, commit, date, runtime.GOOS, runtime.GOARCH)
+			fmt.Printf("ourway-rmm-agent %s (commit %s, built %s, %s/%s)\n", version, commit, date, runtime.GOOS, runtime.GOARCH)
 			return
 		}
-		fmt.Printf("rmmway-agent %s\n", version)
+		fmt.Printf("ourway-rmm-agent %s\n", version)
 	case "ping":
 		server := "http://localhost:8080/healthz"
 		if len(args) > 1 {
@@ -101,7 +101,7 @@ func main() {
 		}
 	case "collect":
 		// W1-2: sample all core metric families once (service.status included
-		// when RMMWAY_SERVICES is set), print as text.
+		// when OURWAY_RMM_SERVICES is set), print as text.
 		batch, err := collectors.NewCollector().Collect(context.Background())
 		if err != nil && len(batch.Samples) == 0 {
 			fmt.Fprintf(os.Stderr, "collect: %v\n", err)
@@ -125,7 +125,7 @@ func main() {
 	case "update":
 		updateCommand(args[1:])
 	default:
-		fmt.Fprintf(os.Stderr, "usage: rmmway-agent [--version|ping [server-url]|collect|status|run|update] [--config <path>]\n")
+		fmt.Fprintf(os.Stderr, "usage: ourway-rmm-agent [--version|ping [server-url]|collect|status|run|update] [--config <path>]\n")
 		os.Exit(2)
 	}
 }
@@ -145,11 +145,11 @@ type agentConfig struct {
 // manual / non-systemd runs). Env wins on any conflict.
 func loadConfig(cfgPath string) agentConfig {
 	cfg := agentConfig{
-		Server:         os.Getenv("RMMWAY_SERVER"),
-		BootstrapToken: os.Getenv("RMMWAY_BOOTSTRAP_TOKEN"),
-		GRPCAddr:       os.Getenv("RMMWAY_GRPC_ADDR"),
-		GRPCMTLSAddr:   os.Getenv("RMMWAY_GRPC_MTLS_ADDR"),
-		IdentityPath:   os.Getenv("RMMWAY_IDENTITY"),
+		Server:         os.Getenv("OURWAY_RMM_SERVER"),
+		BootstrapToken: os.Getenv("OURWAY_RMM_BOOTSTRAP_TOKEN"),
+		GRPCAddr:       os.Getenv("OURWAY_RMM_GRPC_ADDR"),
+		GRPCMTLSAddr:   os.Getenv("OURWAY_RMM_GRPC_MTLS_ADDR"),
+		IdentityPath:   os.Getenv("OURWAY_RMM_IDENTITY"),
 	}
 	if cfgPath != "" {
 		b, err := os.ReadFile(cfgPath)
@@ -168,19 +168,19 @@ func loadConfig(cfgPath string) agentConfig {
 			}
 			k, v = strings.TrimSpace(k), strings.TrimSpace(v)
 			switch k {
-			case "RMMWAY_SERVER":
+			case "OURWAY_RMM_SERVER":
 				if cfg.Server == "" {
 					cfg.Server = v
 				}
-			case "RMMWAY_BOOTSTRAP_TOKEN":
+			case "OURWAY_RMM_BOOTSTRAP_TOKEN":
 				if cfg.BootstrapToken == "" {
 					cfg.BootstrapToken = v
 				}
-			case "RMMWAY_GRPC_ADDR":
+			case "OURWAY_RMM_GRPC_ADDR":
 				if cfg.GRPCAddr == "" {
 					cfg.GRPCAddr = v
 				}
-			case "RMMWAY_GRPC_MTLS_ADDR":
+			case "OURWAY_RMM_GRPC_MTLS_ADDR":
 				if cfg.GRPCMTLSAddr == "" {
 					cfg.GRPCMTLSAddr = v
 				}
@@ -191,7 +191,7 @@ func loadConfig(cfgPath string) agentConfig {
 		if cfgPath != "" {
 			cfg.IdentityPath = filepath.Join(filepath.Dir(cfgPath), "agent-identity.json")
 		} else if home, err := os.UserHomeDir(); err == nil {
-			cfg.IdentityPath = filepath.Join(home, ".rmmway", "agent-identity.json")
+			cfg.IdentityPath = filepath.Join(home, ".ourway-rmm", "agent-identity.json")
 		}
 	}
 	return cfg
@@ -233,7 +233,7 @@ func mtlsHost(target string) string {
 	return h
 }
 
-// stripBootstrapTokenFromConfig removes the spent RMMWAY_BOOTSTRAP_TOKEN
+// stripBootstrapTokenFromConfig removes the spent OURWAY_RMM_BOOTSTRAP_TOKEN
 // line from the agent's --config file after a successful enrollment (L3).
 // A used one-time credential sitting on every endpoint is a habit, not a
 // feature. The token may legitimately be carried by environment instead
@@ -253,7 +253,7 @@ func stripBootstrapTokenFromConfig(cfgPath string, log *slog.Logger) {
 	stripped := false
 	for _, line := range strings.Split(orig, "\n") {
 		k, _, ok := strings.Cut(strings.TrimSpace(line), "=")
-		if ok && k == "RMMWAY_BOOTSTRAP_TOKEN" {
+		if ok && k == "OURWAY_RMM_BOOTSTRAP_TOKEN" {
 			stripped = true
 			continue
 		}
@@ -274,13 +274,13 @@ func stripBootstrapTokenFromConfig(cfgPath string, log *slog.Logger) {
 }
 
 // setupLogging builds the agent's logger: always stderr, and (W6-1) TEE'd into
-// a JSON-lines file when one can be opened. RMMWAY_LOG_FILE overrides the path;
+// a JSON-lines file when one can be opened. OURWAY_RMM_LOG_FILE overrides the path;
 // the default is agent.jsonl next to the persisted identity. Returns the logger,
 // the JSONL handler (nil when the file couldn't be opened — shipping disabled),
 // and the resolved log path.
 func setupLogging(cfg agentConfig) (*slog.Logger, *logship.JSONLHandler, string) {
 	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	logFile := os.Getenv("RMMWAY_LOG_FILE")
+	logFile := os.Getenv("OURWAY_RMM_LOG_FILE")
 	if logFile == "" {
 		logFile = filepath.Join(filepath.Dir(cfg.IdentityPath), "agent.jsonl")
 	}
@@ -306,7 +306,7 @@ func runCommand(args []string) {
 	cfg := loadConfig(cfgPath)
 	cfg.ConfigPath = cfgPath
 	if cfg.Server == "" {
-		fmt.Fprintln(os.Stderr, "run: no RMMWAY_SERVER configured (set it in the config or environment)")
+		fmt.Fprintln(os.Stderr, "run: no OURWAY_RMM_SERVER configured (set it in the config or environment)")
 		os.Exit(1)
 	}
 	log, jsonl, logFile := setupLogging(cfg)
@@ -342,14 +342,14 @@ func runAgent(ctx context.Context, log *slog.Logger, cfg agentConfig, jsonl *log
 	// in-use .exe can't be replaced in place, so it is staged as
 	// <exe>.pending). Re-verify the signature before touching the binary.
 	if exe, err := os.Executable(); err == nil {
-		if pub, perr := update.PublicKey(os.Getenv("RMMWAY_UPDATE_PUBKEY")); perr == nil {
+		if pub, perr := update.PublicKey(os.Getenv("OURWAY_RMM_UPDATE_PUBKEY")); perr == nil {
 			if err := update.ApplyPending(exe, pub, func(msg string, a ...any) {
 				log.Info(msg, a...)
 			}); err != nil {
 				log.Warn("pending update not applied", "err", err)
 			}
 		} else {
-			log.Warn("pending update check skipped (bad RMMWAY_UPDATE_PUBKEY)", "err", perr)
+			log.Warn("pending update check skipped (bad OURWAY_RMM_UPDATE_PUBKEY)", "err", perr)
 		}
 	}
 
@@ -464,14 +464,14 @@ func runAgent(ctx context.Context, log *slog.Logger, cfg agentConfig, jsonl *log
 		// cert; no downtime.
 		go func() {
 			rotCfg := rotate.Config{Logger: log}
-			// RMMWAY_ROTATE_AFTER (duration, e.g. 45s) forces the first
+			// OURWAY_RMM_ROTATE_AFTER (duration, e.g. 45s) forces the first
 			// rotation that long after start — the e2e milestone sets it so
 			// a ~1h leaf is observed rotating live in seconds.
-			if ra := os.Getenv("RMMWAY_ROTATE_AFTER"); ra != "" {
+			if ra := os.Getenv("OURWAY_RMM_ROTATE_AFTER"); ra != "" {
 				if d, perr := time.ParseDuration(ra); perr == nil {
 					rotCfg.RotateAfter = d
 				} else {
-					log.Warn("RMMWAY_ROTATE_AFTER is not a duration; ignoring", "value", ra)
+					log.Warn("OURWAY_RMM_ROTATE_AFTER is not a duration; ignoring", "value", ra)
 				}
 			}
 			rot := rotate.New(client, res.Identity.TLS, devID, res.Identity.Hostname,
@@ -532,7 +532,7 @@ func runAgent(ctx context.Context, log *slog.Logger, cfg agentConfig, jsonl *log
 	}))
 
 	// W6-1: ship the structured log events (the tail of the JSON-lines file
-	// above) two ways: to Loki over its HTTP push API (RMMWAY_LOKI_URL,
+	// above) two ways: to Loki over its HTTP push API (OURWAY_RMM_LOKI_URL,
 	// e.g. http://localhost:3100) and to the server over the uplink (where
 	// they are indexed per device in Timescale for the RMM). Delivery is
 	// at-least-once; both sinks dedup by entry id.
@@ -560,7 +560,7 @@ func runAgent(ctx context.Context, log *slog.Logger, cfg agentConfig, jsonl *log
 				return u.PushLogs(ctx, batch)
 			},
 		}
-		lokiURL := os.Getenv("RMMWAY_LOKI_URL")
+		lokiURL := os.Getenv("OURWAY_RMM_LOKI_URL")
 		if lokiURL != "" && lokiURL != "off" {
 			sc.Loki = logship.NewLokiClient(lokiURL, devID, nil)
 		}
@@ -581,27 +581,27 @@ func runAgent(ctx context.Context, log *slog.Logger, cfg agentConfig, jsonl *log
 
 	// Wave 2 gap5: tail the OS event log (systemd journal / Windows Event
 	// Log / macOS unified log) and ship it as LogBatch frames on the
-	// uplink, next to the agent's own log file. RMMWAY_EVENTLOG=off
-	// disables; RMMWAY_EVENTLOG_INTERVAL sets the poll cadence (default
-	// 60s); RMMWAY_EVENTLOG_LIMIT caps entries per poll (default 50).
+	// uplink, next to the agent's own log file. OURWAY_RMM_EVENTLOG=off
+	// disables; OURWAY_RMM_EVENTLOG_INTERVAL sets the poll cadence (default
+	// 60s); OURWAY_RMM_EVENTLOG_LIMIT caps entries per poll (default 50).
 	// Content-derived entry ids make replays no-ops on the server.
-	if ev := os.Getenv("RMMWAY_EVENTLOG"); ev != "off" && ev != "0" {
+	if ev := os.Getenv("OURWAY_RMM_EVENTLOG"); ev != "off" && ev != "0" {
 		evInterval := 60 * time.Second
-		if raw := os.Getenv("RMMWAY_EVENTLOG_INTERVAL"); raw != "" {
+		if raw := os.Getenv("OURWAY_RMM_EVENTLOG_INTERVAL"); raw != "" {
 			d, perr := time.ParseDuration(raw)
 			if perr == nil && d > 0 {
 				evInterval = d
 			} else {
-				log.Warn("invalid RMMWAY_EVENTLOG_INTERVAL, using 60s", "raw", raw, "err", perr)
+				log.Warn("invalid OURWAY_RMM_EVENTLOG_INTERVAL, using 60s", "raw", raw, "err", perr)
 			}
 		}
 		evLimit := 50
-		if raw := os.Getenv("RMMWAY_EVENTLOG_LIMIT"); raw != "" {
+		if raw := os.Getenv("OURWAY_RMM_EVENTLOG_LIMIT"); raw != "" {
 			n, aerr := strconv.Atoi(raw)
 			if aerr == nil && n > 0 && n <= 500 {
 				evLimit = n
 			} else {
-				log.Warn("invalid RMMWAY_EVENTLOG_LIMIT, using 50", "raw", raw, "err", aerr)
+				log.Warn("invalid OURWAY_RMM_EVENTLOG_LIMIT, using 50", "raw", raw, "err", aerr)
 			}
 		}
 		tail, terr := osevent.New(osevent.Config{
@@ -627,11 +627,11 @@ func runAgent(ctx context.Context, log *slog.Logger, cfg agentConfig, jsonl *log
 
 	// W4-2: signed auto-update. Periodically checks the server for a newer
 	// release; a validly signed one is installed + re-exec'd, a tampered or
-	// unsigned one is refused (logged, never installed). RMMWAY_AUTO_UPDATE
-	// =off disables; RMMWAY_UPDATE_INTERVAL sets the cadence (default 15m).
+	// unsigned one is refused (logged, never installed). OURWAY_RMM_AUTO_UPDATE
+	// =off disables; OURWAY_RMM_UPDATE_INTERVAL sets the cadence (default 15m).
 	go autoUpdate(ctx, log, cfg.Server)
 
-	fmt.Printf("rmmway-agent %s: connected to %s (%s) as device %s; uplink running\n", version, target, channel, devID)
+	fmt.Printf("ourway-rmm-agent %s: connected to %s (%s) as device %s; uplink running\n", version, target, channel, devID)
 	if err := u.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
 		return fmt.Errorf("run: uplink exited: %w", err)
 	}
@@ -678,7 +678,7 @@ func updateCommand(args []string) {
 	fs := flag.NewFlagSet("update", flag.ExitOnError)
 	checkOnly := fs.Bool("check", false, "verify the latest release but do not install it")
 	noRestart := fs.Bool("no-restart", false, "install but do not re-exec the agent")
-	serverFlag := fs.String("server", "", "server base URL (default: RMMWAY_SERVER)")
+	serverFlag := fs.String("server", "", "server base URL (default: OURWAY_RMM_SERVER)")
 	// --config is handled by loadConfig, not this flag set: strip it out so
 	// flag.Parse doesn't choke on an unknown flag.
 	cfgPath := configPath(args)
@@ -703,14 +703,14 @@ func updateCommand(args []string) {
 		base = cfg.Server
 	}
 	if base == "" {
-		fmt.Fprintln(os.Stderr, "update: no server (set --server or RMMWAY_SERVER)")
+		fmt.Fprintln(os.Stderr, "update: no server (set --server or OURWAY_RMM_SERVER)")
 		os.Exit(1)
 	}
 	if !strings.Contains(base, "://") {
 		base = "http://" + base
 	}
 
-	pub, err := update.PublicKey(os.Getenv("RMMWAY_UPDATE_PUBKEY"))
+	pub, err := update.PublicKey(os.Getenv("OURWAY_RMM_UPDATE_PUBKEY"))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "update: pinned key: %v\n", err)
 		os.Exit(1)
@@ -759,25 +759,25 @@ func updateCommand(args []string) {
 // not reached again). Refused / transient failures are logged and retried
 // on the next tick — a bad publish never takes the agent down.
 func autoUpdate(ctx context.Context, log *slog.Logger, server string) {
-	if v := os.Getenv("RMMWAY_AUTO_UPDATE"); v == "off" || v == "0" {
-		log.Debug("auto-update disabled (RMMWAY_AUTO_UPDATE)")
+	if v := os.Getenv("OURWAY_RMM_AUTO_UPDATE"); v == "off" || v == "0" {
+		log.Debug("auto-update disabled (OURWAY_RMM_AUTO_UPDATE)")
 		return
 	}
 	interval := 15 * time.Minute
-	if v := os.Getenv("RMMWAY_UPDATE_INTERVAL"); v != "" {
+	if v := os.Getenv("OURWAY_RMM_UPDATE_INTERVAL"); v != "" {
 		if d, err := time.ParseDuration(v); err == nil && d > 0 {
 			interval = d
 		} else {
-			log.Warn("bad RMMWAY_UPDATE_INTERVAL, using 15m", "value", v)
+			log.Warn("bad OURWAY_RMM_UPDATE_INTERVAL, using 15m", "value", v)
 		}
 	}
 	base := server
 	if !strings.Contains(base, "://") {
 		base = "http://" + base
 	}
-	pub, err := update.PublicKey(os.Getenv("RMMWAY_UPDATE_PUBKEY"))
+	pub, err := update.PublicKey(os.Getenv("OURWAY_RMM_UPDATE_PUBKEY"))
 	if err != nil {
-		log.Warn("auto-update off (bad RMMWAY_UPDATE_PUBKEY)", "err", err)
+		log.Warn("auto-update off (bad OURWAY_RMM_UPDATE_PUBKEY)", "err", err)
 		return
 	}
 	u := update.New(update.Config{BaseURL: base, CurrentVersion: version, PublicKey: pub, Logger: log})

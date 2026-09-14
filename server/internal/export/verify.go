@@ -216,7 +216,7 @@ func entryBytes(f *zip.File) ([]byte, error) {
 
 // ReadMetrics reads the metrics.parquet section of a bundle with the
 // standard Parquet reader — the "opens in a standard tool" half of the
-// no-lock-in promise, callable by a skeptic without trusting RMMWay.
+// no-lock-in promise, callable by a skeptic without trusting OurWay RMM.
 func ReadMetrics(r io.ReaderAt, size int64) ([]MetricRow, error) {
 	return readSection[MetricRow](r, size, MetricsName)
 }

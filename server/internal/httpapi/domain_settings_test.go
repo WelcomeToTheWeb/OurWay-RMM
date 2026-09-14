@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/setup"
-	"github.com/welcometotheweb/rmmway/server/internal/smtp"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/setup"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/smtp"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // newTestServerWithSetup builds the standard test server with a wired setup

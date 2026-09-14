@@ -78,7 +78,7 @@ func (c *teamsChannel) Test(ctx context.Context) error {
 	return c.Send(ctx, SendRequest{
 		Category: "test",
 		Title:    "Test notification",
-		Message:  "This is a test notification from the RMMWay notification system.",
+		Message:  "This is a test notification from the OurWay RMM notification system.",
 	})
 }
 

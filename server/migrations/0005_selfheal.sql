@@ -114,13 +114,13 @@ VALUES
  'disk.used_percent', '', '>', 90.0,
  '', 900, 3600,
  $sh_disk$#!/bin/sh
-# rmmway self-heal: disk.full — free reclaimable space, then report usage
+# ourway-rmm self-heal: disk.full — free reclaimable space, then report usage
 journalctl --vacuum-time=7d 2>/dev/null || true
 find /tmp /var/tmp -xdev -type f -atime +3 -delete 2>/dev/null || true
 df -hP / 2>/dev/null || df -h
 exit 0
 $sh_disk$,
- $ps_disk$# rmmway self-heal: disk.full — free temp + recycle-bin space, then report
+ $ps_disk$# ourway-rmm self-heal: disk.full — free temp + recycle-bin space, then report
 Get-ChildItem -Path $env:TEMP -File -ErrorAction SilentlyContinue |
     Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-3) } |
     Remove-Item -Force -ErrorAction SilentlyContinue
@@ -135,12 +135,12 @@ $ps_disk$,
  'service.status', '', '==', 0.0,
  '', 900, 1800,
  $sh_svc$#!/bin/sh
-# rmmway self-heal: service.down — restart the stopped service "{{source}}"
+# ourway-rmm self-heal: service.down — restart the stopped service "{{source}}"
 set -e
 systemctl restart "{{source}}"
 systemctl is-active "{{source}}"
 $sh_svc$,
- $ps_svc$# rmmway self-heal: service.down — restart the stopped service "{{source}}"
+ $ps_svc$# ourway-rmm self-heal: service.down — restart the stopped service "{{source}}"
 Restart-Service -Name "{{source}}" -Force
 (Get-Service -Name "{{source}}").Status
 exit 0
@@ -152,7 +152,7 @@ $ps_svc$,
  'wsus.update_state', '', '==', 3.0,
  'windows', 900, 7200,
  '',
- $ps_wsus$# rmmway self-heal: wsus.stuck — reset the WU client and re-trigger detection
+ $ps_wsus$# ourway-rmm self-heal: wsus.stuck — reset the WU client and re-trigger detection
 Stop-Service -Name UsoSvc -Force -ErrorAction SilentlyContinue
 wuauclt /resetauthorization /rebootnow
 wuauclt /detectnow

@@ -1,4 +1,4 @@
-# RMMWay server image (W0-3). Static Go binary; runs on :8080 (HTTP) and
+# OurWay RMM server image (W0-3). Static Go binary; runs on :8080 (HTTP) and
 # :50051 (gRPC agent ingest). Backing services (Postgres/Timescale, NATS,
 # Redis, MinIO, Meilisearch) are external — configured via env.
 FROM golang:1.27 AS build

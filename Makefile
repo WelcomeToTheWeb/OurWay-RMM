@@ -55,9 +55,9 @@ COMPOSE_PROD_BYO = $(COMPOSE) --env-file .env.prod -f docker-compose.prod.yml -f
 prod: ## Build + boot the hardened production stack (Caddy TLS edge + mTLS agent port). Needs .env.prod
 	@test -f .env.prod || { echo "no .env.prod — first: cp .env.prod.example .env.prod and set the secrets"; exit 1; }
 	$(COMPOSE_PROD) up -d --build
-	@echo "==> up. see .env.prod for RMMWAY_DOMAIN + RMMWAY_AGENT_MTLS_PORT"
-	@echo "==> operator UI/API: https://<RMMWAY_DOMAIN>/  (health: .../healthz)"
-	@echo "==> agent mTLS gRPC:   <host>:<RMMWAY_AGENT_MTLS_PORT>  (default 50052)"
+	@echo "==> up. see .env.prod for OURWAY_RMM_DOMAIN + OURWAY_RMM_AGENT_MTLS_PORT"
+	@echo "==> operator UI/API: https://<OURWAY_RMM_DOMAIN>/  (health: .../healthz)"
+	@echo "==> agent mTLS gRPC:   <host>:<OURWAY_RMM_AGENT_MTLS_PORT>  (default 50052)"
 
 .PHONY: prod-down
 prod-down: ## Stop the production stack (data volumes are kept)
@@ -73,13 +73,13 @@ prod-logs: ## Tail production stack logs
 
 ## ---- Production, bring-your-own reverse proxy (A-1) ----------------------
 .PHONY: prod-byoproxy
-prod-byoproxy: ## Boot the stack WITHOUT the bundled Caddy, publishing the API (RMMWAY_HTTP_PORT, def 8080) + SPA (RMMWAY_FRONTEND_PORT, def 8081) for your own proxy
+prod-byoproxy: ## Boot the stack WITHOUT the bundled Caddy, publishing the API (OURWAY_RMM_HTTP_PORT, def 8080) + SPA (OURWAY_RMM_FRONTEND_PORT, def 8081) for your own proxy
 	@test -f .env.prod || { echo "no .env.prod — first: cp .env.prod.example .env.prod and set the secrets"; exit 1; }
 	$(COMPOSE_PROD_BYO) up -d --build
 	@echo "==> up WITHOUT the bundled Caddy (edge profile off)."
-	@echo "==> operator API (HTTP): http://<host>:8080 (RMMWAY_HTTP_PORT)   <- your proxy forwards /api,/agent,/healthz here"
-	@echo "==> operator SPA (HTTP): http://<host>:8081 (RMMWAY_FRONTEND_PORT)   <- your proxy forwards the rest here"
-	@echo "==> agent mTLS gRPC:   <host>:<RMMWAY_AGENT_MTLS_PORT>  (default 50052, unchanged)"
+	@echo "==> operator API (HTTP): http://<host>:8080 (OURWAY_RMM_HTTP_PORT)   <- your proxy forwards /api,/agent,/healthz here"
+	@echo "==> operator SPA (HTTP): http://<host>:8081 (OURWAY_RMM_FRONTEND_PORT)   <- your proxy forwards the rest here"
+	@echo "==> agent mTLS gRPC:   <host>:<OURWAY_RMM_AGENT_MTLS_PORT>  (default 50052, unchanged)"
 
 .PHONY: prod-byoproxy-down
 prod-byoproxy-down: ## Stop the BYO-proxy production stack (data volumes are kept)
@@ -132,12 +132,12 @@ agent: ## Cross-compile static agent binaries (linux/darwin/windows × amd64/arm
 .PHONY: verify-agent
 verify-agent: ## W1-1 DoD: confirm the built binaries are static (no shared libs)
 	@echo "== file (linux/amd64)"
-	@file agent/dist/rmmway-agent-linux-amd64
+	@file agent/dist/ourway-rmm-agent-linux-amd64
 	@echo "== ldd (should report not a dynamic executable)"
-	@ldd agent/dist/rmmway-agent-linux-amd64 2>&1 | grep -Ei 'not a dynamic|statically linked' || \
+	@ldd agent/dist/ourway-rmm-agent-linux-amd64 2>&1 | grep -Ei 'not a dynamic|statically linked' || \
 		{ echo "FAIL: linux binary is dynamically linked"; exit 1; }
 	@echo "== version (runs on this host)"
-	@./agent/dist/rmmway-agent-linux-amd64 --version
+	@./agent/dist/ourway-rmm-agent-linux-amd64 --version
 
 .PHONY: sign
 sign: ## W3-4: sign all release artifacts (minisign) + verify. Needs MINISIGN_PASS (or keys/minisign.key on disk)
@@ -162,7 +162,7 @@ logs-e2e: ## W6-1 DoD: real agent's log lines are queryable in Loki AND surfaced
 	@cd server && go run ./cmd/e2e/logs
 
 .PHONY: release-dir
-release-dir: ## W4-2: assemble a releases dir (RMMWAY_RELEASES_DIR) from agent/dist. Needs: make agent && make sign. $(DIR) [default releases-local]
+release-dir: ## W4-2: assemble a releases dir (OURWAY_RMM_RELEASES_DIR) from agent/dist. Needs: make agent && make sign. $(DIR) [default releases-local]
 	@cd server && go run ./cmd/publish-release -dir $(or $(DIR),releases-local)
 
 .PHONY: pin-release-key
@@ -209,8 +209,8 @@ adddevice-e2e: ## Add-device DoD: the operator mints a token (auth-gated UI acti
 ## ---- SBOM (W4-1) -----------------------------------------------------------
 
 .PHONY: image
-image: ## Build the server Docker image locally (rmmway-server:local)
-	docker build -t rmmway-server:local -f server/Dockerfile .
+image: ## Build the server Docker image locally (ourway-rmm-server:local)
+	docker build -t ourway-rmm-server:local -f server/Dockerfile .
 
 .PHONY: sbom
 sbom: ## W4-1: generate CycloneDX SBOMs (5 agent binaries + server image)
@@ -278,7 +278,7 @@ heal-ui-smoke: ## D-3 UI DoD: the real <App/> — the 5th nav item "Heal" opens 
 	@cd frontend && bash scripts/heal.smoke.sh
 
 .PHONY: export-ui-smoke
-export-ui-smoke: ## D-6 UI DoD: the real <App/> in jsdom against a fake export endpoint serving a real ZIP with a self-consistent manifest — the device detail's "Client export" panel, the confirmation naming the device, the Preparing… state, a download named <hostname>-rmmway-export-<date>.zip, and the manifest's SHA-256/size verified against the actual downloaded bytes (both Parquet files PAR1-checked). Needs: make frontend-deps
+export-ui-smoke: ## D-6 UI DoD: the real <App/> in jsdom against a fake export endpoint serving a real ZIP with a self-consistent manifest — the device detail's "Client export" panel, the confirmation naming the device, the Preparing… state, a download named <hostname>-ourway-rmm-export-<date>.zip, and the manifest's SHA-256/size verified against the actual downloaded bytes (both Parquet files PAR1-checked). Needs: make frontend-deps
 	@cd frontend && bash scripts/export.smoke.sh
 
 .PHONY: baseline-ui-smoke

@@ -81,7 +81,7 @@ const PB = {
   metric: "cpu.utilization_percent", source: "system",
   detect_op: ">", detect_threshold: 90, os_filter: "linux",
   fresh_within_seconds: 900, cooldown_seconds: 3600,
-  remediate_sh: "systemctl restart rmmway-worker", remediate_powershell: "",
+  remediate_sh: "systemctl restart ourway-rmm-worker", remediate_powershell: "",
   confirm_op: "<", confirm_threshold: 60,
   remediate_timeout_seconds: 120, confirm_wait_seconds: 60,
   enabled: true, updated_at: "2026-08-20T09:00:00Z",
@@ -139,7 +139,7 @@ const RUNS = [];
 seedRun(1, "cpu-high", "dev-web-01", "resolved", null, [
   { status: "detected", reason: "cpu.utilization_percent 99.1 > 90 (web-01)" },
   { status: "verifying", reason: "verify-safe: device online, no active run, cooldown clear" },
-  { status: "remediating", reason: "dispatched cmd-1: sh 'systemctl restart rmmway-worker'" },
+  { status: "remediating", reason: "dispatched cmd-1: sh 'systemctl restart ourway-rmm-worker'" },
   { status: "confirming", reason: "agent reported exit 0; output: worker pool restarted in 1.4s" },
   { status: "resolved", reason: "re-measured 41.2 < 60 — healed" },
 ]);
@@ -434,7 +434,7 @@ await act(async () => {
 await waitUntil(() => container.querySelectorAll(".heal-trace-step").length === 5, "the 5-step stage trace");
 const trace = text();
 if (!trace.includes("cpu.utilization_percent 97.4 > 90")) throw new Error("the trace is missing the fired trigger");
-if (!trace.includes("dispatched cmd-3: sh 'systemctl restart rmmway-worker'")) throw new Error("the trace is missing the dispatched command");
+if (!trace.includes("dispatched cmd-3: sh 'systemctl restart ourway-rmm-worker'")) throw new Error("the trace is missing the dispatched command");
 if (!trace.includes("agent reported exit 0; output: worker pool restarted in 1.2s")) {
   throw new Error("the trace is missing the agent's script output");
 }

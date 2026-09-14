@@ -36,7 +36,7 @@ func (c *slackChannel) Send(ctx context.Context, req SendRequest) error {
 	channel, _ := c.cfg.Config["channel"].(string)
 	username, _ := c.cfg.Config["username"].(string)
 	if username == "" {
-		username = "RMMWay"
+		username = "OurWay RMM"
 	}
 
 	severity := "info"
@@ -75,7 +75,7 @@ func (c *slackChannel) Test(ctx context.Context) error {
 	return c.Send(ctx, SendRequest{
 		Category: "test",
 		Title:    "Test notification",
-		Message:  "This is a test notification from the RMMWay notification system.",
+		Message:  "This is a test notification from the OurWay RMM notification system.",
 	})
 }
 

@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // MaxChunkBytes is the on-the-wire block size for FileChunk frames (the
@@ -118,7 +118,7 @@ func StartPush(cmdID, path, mode string) (*PushSession, error) {
 	if st, err := os.Stat(dir); err != nil || !st.IsDir() {
 		return nil, fmt.Errorf("destination directory %s does not exist", dir)
 	}
-	tmp, err := os.CreateTemp(dir, filepath.Base(path)+".rmmwaytmp*")
+	tmp, err := os.CreateTemp(dir, filepath.Base(path)+".ourway-rmmtmp*")
 	if err != nil {
 		return nil, fmt.Errorf("create temp in %s: %w", dir, err)
 	}
@@ -231,7 +231,7 @@ func (p *PushSession) Abandon() {
 }
 
 func writeContent(path, mode string, content []byte) error {
-	tmp, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".rmmwaytmp*")
+	tmp, err := os.CreateTemp(filepath.Dir(path), filepath.Base(path)+".ourway-rmmtmp*")
 	if err != nil {
 		return fmt.Errorf("create temp in %s: %w", filepath.Dir(path), err)
 	}

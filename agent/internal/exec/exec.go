@@ -123,7 +123,7 @@ func defaultRunScript(ctx context.Context, lang string, script []byte, args []st
 		return 0, nil, nil, fmt.Errorf("%s not found on PATH", interp)
 	}
 
-	dir, err := os.MkdirTemp("", "rmmway-cmd-")
+	dir, err := os.MkdirTemp("", "ourway-rmm-cmd-")
 	if err != nil {
 		return 0, nil, nil, fmt.Errorf("temp dir: %w", err)
 	}
@@ -208,7 +208,7 @@ func defaultReboot(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("no reboot mechanism found (need shutdown.exe)")
 		}
-		cmd = exec.CommandContext(ctx, p, "/r", "/t", "0", "/c", "rmmway-agent reboot")
+		cmd = exec.CommandContext(ctx, p, "/r", "/t", "0", "/c", "ourway-rmm-agent reboot")
 	default:
 		return fmt.Errorf("reboot unsupported on %s", runtime.GOOS)
 	}

@@ -6,10 +6,10 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
 )
 
-var testSecret = []byte("rmmway-test-jwt-secret-0123456789")
+var testSecret = []byte("ourway-rmm-test-jwt-secret-0123456789")
 
 func TestSessionJWTRoundtrip(t *testing.T) {
 	tok, err := MintSessionJWT(testSecret, time.Hour, SessionClaims{

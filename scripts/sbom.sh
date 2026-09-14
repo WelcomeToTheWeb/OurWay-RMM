@@ -2,13 +2,13 @@
 # W4-1: generate CycloneDX SBOMs for every artifact.
 #
 # Outputs (all CycloneDX JSON, scanned by the pinned syft):
-#   agent/dist/rmmway-agent-<os>-<arch>[.exe].cdx.json   (6 agent binaries)
-#   dist/rmmway-server.cdx.json                          (server Docker image)
+#   agent/dist/ourway-rmm-agent-<os>-<arch>[.exe].cdx.json   (6 agent binaries)
+#   dist/ourway-rmm-server.cdx.json                          (server Docker image)
 #
 # The agent binaries must already be built (make agent). The server image
 # is scanned via the local Docker daemon; build it first with:
-#   make image        (docker build -t rmmway-server:local -f server/Dockerfile .)
-# RMMWAY_SERVER_IMAGE overrides the image reference (default rmmway-server:local).
+#   make image        (docker build -t ourway-rmm-server:local -f server/Dockerfile .)
+# OURWAY_RMM_SERVER_IMAGE overrides the image reference (default ourway-rmm-server:local).
 #
 # Usage: scripts/sbom.sh [--skip-image]
 set -euo pipefail
@@ -17,17 +17,17 @@ cd "$(dirname "$0")/.."
 SKIP_IMAGE=0
 [ "${1:-}" = "--skip-image" ] && SKIP_IMAGE=1
 
-SERVER_IMAGE="${RMMWAY_SERVER_IMAGE:-rmmway-server:local}"
+SERVER_IMAGE="${OURWAY_RMM_SERVER_IMAGE:-ourway-rmm-server:local}"
 
 ./scripts/install-syft.sh
 SYFT="bin/syft"
 
-AGENTS="rmmway-agent-linux-amd64
-rmmway-agent-linux-arm64
-rmmway-agent-darwin-amd64
-rmmway-agent-darwin-arm64
-rmmway-agent-windows-amd64.exe
-rmmway-agent-windows-arm64.exe"
+AGENTS="ourway-rmm-agent-linux-amd64
+ourway-rmm-agent-linux-arm64
+ourway-rmm-agent-darwin-amd64
+ourway-rmm-agent-darwin-arm64
+ourway-rmm-agent-windows-amd64.exe
+ourway-rmm-agent-windows-arm64.exe"
 
 echo "==> agent binary SBOMs (CycloneDX JSON)"
 for a in $AGENTS; do
@@ -44,14 +44,14 @@ if [ "$SKIP_IMAGE" = 0 ]; then
     exit 1
   fi
   if ! docker image inspect "$SERVER_IMAGE" >/dev/null 2>&1; then
-    echo "ERROR: image $SERVER_IMAGE not present — build it with: make image (or set RMMWAY_SERVER_IMAGE)" >&2
+    echo "ERROR: image $SERVER_IMAGE not present — build it with: make image (or set OURWAY_RMM_SERVER_IMAGE)" >&2
     exit 1
   fi
   mkdir -p dist
-  echo "  $SERVER_IMAGE -> dist/rmmway-server.cdx.json"
-  "$SYFT" "docker:$SERVER_IMAGE" -o cyclonedx-json=dist/rmmway-server.cdx.json -q
+  echo "  $SERVER_IMAGE -> dist/ourway-rmm-server.cdx.json"
+  "$SYFT" "docker:$SERVER_IMAGE" -o cyclonedx-json=dist/ourway-rmm-server.cdx.json -q
 fi
 
 echo "==> SBOMs:"
 ls -lh agent/dist/*.cdx.json
-[ -f dist/rmmway-server.cdx.json ] && ls -lh dist/rmmway-server.cdx.json || true
+[ -f dist/ourway-rmm-server.cdx.json ] && ls -lh dist/ourway-rmm-server.cdx.json || true

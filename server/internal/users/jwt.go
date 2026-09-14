@@ -6,11 +6,11 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"github.com/welcometotheweb/rmmway/server/internal/ingest"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ingest"
 )
 
 // SessionClaims is the operator session token (gap #3): the legacy
-// ingest.OperatorJWT contract (HS256, subject "operator", issuer "rmmway",
+// ingest.OperatorJWT contract (HS256, subject "operator", issuer "ourway-rmm",
 // "caps" claim) extended with the RBAC role and the account's username.
 //
 // Legacy tokens (minted before this wave — no role claim) parse with an

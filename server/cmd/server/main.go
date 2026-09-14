@@ -1,4 +1,4 @@
-// Package main is the RMMWay backend server.
+// Package main is the OurWay RMM backend server.
 //
 // W1-5: serves HTTP :8080 (health + admin JSON) and gRPC :50051 (agent
 // ingest: Enroll + Stream). W0-1's /healthz still probes the stack.
@@ -27,16 +27,16 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/redis/go-redis/v9"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
-	"github.com/welcometotheweb/rmmway/server/internal/ca"
-	"github.com/welcometotheweb/rmmway/server/internal/caps"
-	"github.com/welcometotheweb/rmmway/server/internal/flow"
-	"github.com/welcometotheweb/rmmway/server/internal/heal"
-	"github.com/welcometotheweb/rmmway/server/internal/httpapi"
-	"github.com/welcometotheweb/rmmway/server/internal/oidc"
-	"github.com/welcometotheweb/rmmway/server/internal/sessionrelay"
-	"github.com/welcometotheweb/rmmway/server/internal/setup"
-	"github.com/welcometotheweb/rmmway/server/internal/store"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/ca"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/heal"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/httpapi"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/oidc"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/sessionrelay"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/setup"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 )
 
 // hostIPv4s returns the machine's non-loopback unicast IPv4 addresses —
@@ -69,12 +69,12 @@ func hostIPv4s() []string {
 	return out
 }
 
-// publicURL returns the configured public operator URL (RMMWAY_PUBLIC_URL).
+// publicURL returns the configured public operator URL (OURWAY_RMM_PUBLIC_URL).
 // If set, its host is used as the authoritative dial target for agents and
 // seeded into the mTLS server cert's SANs so remote agents' x509 verification
 // passes. Returns "" when unset.
 func publicURL() string {
-	return strings.TrimSpace(os.Getenv("RMMWAY_PUBLIC_URL"))
+	return strings.TrimSpace(os.Getenv("OURWAY_RMM_PUBLIC_URL"))
 }
 
 // publicURLHost extracts the host from a URL (stripping scheme and port), or
@@ -98,12 +98,12 @@ func publicURLHost(url string) string {
 
 // mtlsSANs derives the SAN names for the mTLS server cert from the listen
 // addresses: whatever hosts the server is reachable on. Agents typically
-// dial by the RMMWAY_SERVER hostname or by loopback, so we cover both the
+// dial by the OURWAY_RMM_SERVER hostname or by loopback, so we cover both the
 // host of each configured listener and the common local names.
 //
 // A-1: in production agents dial the mTLS channel by the PUBLIC hostname
 // (e.g. rmm.example.com), which a bare listen address (":50052") can't
-// express — RMMWAY_GRPC_MTLS_SANs (comma-separated DNS names / IPs) adds
+// express — OURWAY_RMM_GRPC_MTLS_SANs (comma-separated DNS names / IPs) adds
 // those to the cert so hostname verification passes for remote agents.
 //
 // T3: a bare all-interfaces bind (":50052" / 0.0.0.0 / ::) also carries no
@@ -111,9 +111,9 @@ func publicURLHost(url string) string {
 // the cert too, so "server on the LAN, agent dials by IP" works without
 // configuring the env var.
 //
-// RMMWAY_PUBLIC_URL (if set) is the authoritative public dial target: its
-// host is ALWAYS included (no need to also set RMMWAY_GRPC_MTLS_SANs or
-// RMMWAY_DOMAIN).
+// OURWAY_RMM_PUBLIC_URL (if set) is the authoritative public dial target: its
+// host is ALWAYS included (no need to also set OURWAY_RMM_GRPC_MTLS_SANs or
+// OURWAY_RMM_DOMAIN).
 func mtlsSANs(listenAddrs ...string) []string {
 	seen := map[string]bool{}
 	sans := []string{}
@@ -128,7 +128,7 @@ func mtlsSANs(listenAddrs ...string) []string {
 	// Common local dial names, always.
 	add("localhost")
 	add("127.0.0.1")
-	// RMMWAY_PUBLIC_URL's host (the authoritative public dial target).
+	// OURWAY_RMM_PUBLIC_URL's host (the authoritative public dial target).
 	if h := publicURLHost(publicURL()); h != "" {
 		add(h)
 	}
@@ -155,7 +155,7 @@ func mtlsSANs(listenAddrs ...string) []string {
 		}
 	}
 	// A-1: explicitly configured public names (production domain, etc.).
-	for _, s := range strings.Split(os.Getenv("RMMWAY_GRPC_MTLS_SANs"), ",") {
+	for _, s := range strings.Split(os.Getenv("OURWAY_RMM_GRPC_MTLS_SANs"), ",") {
 		add(s)
 	}
 	return sans
@@ -169,15 +169,15 @@ func env(key, def string) string {
 	return def
 }
 
-// baselineInterval is the W2-3 scoring cadence (RMMWAY_BASELINE_INTERVAL,
+// baselineInterval is the W2-3 scoring cadence (OURWAY_RMM_BASELINE_INTERVAL,
 // default 5m). One pass re-scores every series' latest hourly mean against
 // its rolling baseline — cheap on the hourly-bucketed hypertable.
 func baselineInterval() time.Duration {
-	if v := os.Getenv("RMMWAY_BASELINE_INTERVAL"); v != "" {
+	if v := os.Getenv("OURWAY_RMM_BASELINE_INTERVAL"); v != "" {
 		if d, err := time.ParseDuration(v); err == nil && d > 0 {
 			return d
 		}
-		log.Printf("WARN: bad RMMWAY_BASELINE_INTERVAL %q — using 5m", v)
+		log.Printf("WARN: bad OURWAY_RMM_BASELINE_INTERVAL %q — using 5m", v)
 	}
 	return 5 * time.Minute
 }
@@ -190,33 +190,33 @@ func sha256Short(pemBytes []byte) string {
 }
 
 // leafTTL is the device leaf (and server cert) lifetime (W3-2): the default
-// is the ~1h short-lived window the org CA package defines; RMMWAY_LEAF_TTL
+// is the ~1h short-lived window the org CA package defines; OURWAY_RMM_LEAF_TTL
 // overrides it for tests / long dev sessions (e.g. "24h").
 func leafTTL() time.Duration {
-	v := os.Getenv("RMMWAY_LEAF_TTL")
+	v := os.Getenv("OURWAY_RMM_LEAF_TTL")
 	if v == "" {
 		return 0 // 0 -> the ca package default (~1h)
 	}
 	d, err := time.ParseDuration(v)
 	if err != nil || d <= 0 {
-		log.Printf("WARN: bad RMMWAY_LEAF_TTL %q — using the default ~1h", v)
+		log.Printf("WARN: bad OURWAY_RMM_LEAF_TTL %q — using the default ~1h", v)
 		return 0
 	}
 	return d
 }
 
 // alertAutoResolve is the number of consecutive clean passes before an
-// open alert auto-resolves (RMMWAY_ALERT_AUTO_RESOLVE, default 1). With the
+// open alert auto-resolves (OURWAY_RMM_ALERT_AUTO_RESOLVE, default 1). With the
 // default 5-min engine cadence, 1 = an alert closes ~5 min after the metric
 // returns to baseline. 0 disables auto-resolve (manual only).
 func alertAutoResolve() int {
-	v := os.Getenv("RMMWAY_ALERT_AUTO_RESOLVE")
+	v := os.Getenv("OURWAY_RMM_ALERT_AUTO_RESOLVE")
 	if v == "" {
 		return 1
 	}
 	n, err := strconv.Atoi(v)
 	if err != nil || n < 0 {
-		log.Printf("WARN: bad RMMWAY_ALERT_AUTO_RESOLVE %q — using 1", v)
+		log.Printf("WARN: bad OURWAY_RMM_ALERT_AUTO_RESOLVE %q — using 1", v)
 		return 1
 	}
 	return n
@@ -224,25 +224,25 @@ func alertAutoResolve() int {
 
 // capTTL is the lifetime of minted capability tokens (W3-3): the default is
 // a 10-minute time-box for a command to reach + be accepted by the agent;
-// RMMWAY_CAP_TTL overrides it (tests / long-running dispatch queues).
+// OURWAY_RMM_CAP_TTL overrides it (tests / long-running dispatch queues).
 func capTTL() time.Duration {
-	v := os.Getenv("RMMWAY_CAP_TTL")
+	v := os.Getenv("OURWAY_RMM_CAP_TTL")
 	if v == "" {
 		return 10 * time.Minute
 	}
 	d, err := time.ParseDuration(v)
 	if err != nil || d <= 0 {
-		log.Printf("WARN: bad RMMWAY_CAP_TTL %q — using 10m", v)
+		log.Printf("WARN: bad OURWAY_RMM_CAP_TTL %q — using 10m", v)
 		return 10 * time.Minute
 	}
 	return d
 }
 
-// healInterval is the W5-1 self-healing pass cadence (RMMWAY_HEAL_INTERVAL,
+// healInterval is the W5-1 self-healing pass cadence (OURWAY_RMM_HEAL_INTERVAL,
 // default 5m). One pass detects failing conditions, drives in-flight runs
 // forward (confirm re-measures), and escalates stuck ones. "off" disables.
 func healInterval() (time.Duration, bool) {
-	v := os.Getenv("RMMWAY_HEAL_INTERVAL")
+	v := os.Getenv("OURWAY_RMM_HEAL_INTERVAL")
 	if v == "off" {
 		return 0, false
 	}
@@ -250,13 +250,13 @@ func healInterval() (time.Duration, bool) {
 		if d, err := time.ParseDuration(v); err == nil && d > 0 {
 			return d, true
 		}
-		log.Printf("WARN: bad RMMWAY_HEAL_INTERVAL %q — using 5m", v)
+		log.Printf("WARN: bad OURWAY_RMM_HEAL_INTERVAL %q — using 5m", v)
 	}
 	return 5 * time.Minute, true
 }
 
 // flowInterval parses a duration env for a flow-engine ticker
-// (RMMWAY_FLOW_SWEEP / RMMWAY_FLOW_SAMPLE); "off" returns -1 (disabled),
+// (OURWAY_RMM_FLOW_SWEEP / OURWAY_RMM_FLOW_SAMPLE); "off" returns -1 (disabled),
 // a bad value falls back to def with a warning.
 func flowInterval(key string, def time.Duration) time.Duration {
 	v := os.Getenv(key)
@@ -275,10 +275,10 @@ func flowInterval(key string, def time.Duration) time.Duration {
 }
 
 // adminCaps is the capability set minted into operator session tokens
-// (W3-3). RMMWAY_ADMIN_CAPS is a comma-separated list (e.g. "rmmway.run_script");
+// (W3-3). OURWAY_RMM_ADMIN_CAPS is a comma-separated list (e.g. "ourway-rmm.run_script");
 // empty = the full Phase 1 set (all capabilities).
 func adminCaps() []string {
-	v := os.Getenv("RMMWAY_ADMIN_CAPS")
+	v := os.Getenv("OURWAY_RMM_ADMIN_CAPS")
 	if v == "" {
 		return caps.AllCapabilities
 	}
@@ -374,7 +374,7 @@ func runProbes(ctx context.Context) []probe {
 	probes := make([]probe, 0, 5)
 
 	{
-		dsn := env("RMMWAY_PG_DSN", "postgres://rmmway:rmmway@localhost:5432/rmmway?sslmode=disable")
+		dsn := env("OURWAY_RMM_PG_DSN", "postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm?sslmode=disable")
 		start := time.Now()
 		cctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 		conn, err := pgx.Connect(cctx, dsn)
@@ -398,7 +398,7 @@ func runProbes(ctx context.Context) []probe {
 		probes = append(probes, p)
 	}
 	{
-		url := env("RMMWAY_NATS_URL", "nats://localhost:4222")
+		url := env("OURWAY_RMM_NATS_URL", "nats://localhost:4222")
 		start := time.Now()
 		p := probe{Service: "nats"}
 		nc, err := nats.Connect(url, nats.Timeout(3*time.Second))
@@ -412,7 +412,7 @@ func runProbes(ctx context.Context) []probe {
 		probes = append(probes, p)
 	}
 	{
-		addr := env("RMMWAY_REDIS_ADDR", "localhost:6379")
+		addr := env("OURWAY_RMM_REDIS_ADDR", "localhost:6379")
 		start := time.Now()
 		rdb := redis.NewClient(&redis.Options{Addr: addr})
 		rctx, cancel := context.WithTimeout(ctx, 3*time.Second)
@@ -429,7 +429,7 @@ func runProbes(ctx context.Context) []probe {
 		probes = append(probes, p)
 	}
 	{
-		endpoint := env("RMMWAY_MINIO_ENDPOINT", "http://localhost:9000")
+		endpoint := env("OURWAY_RMM_MINIO_ENDPOINT", "http://localhost:9000")
 		start := time.Now()
 		cctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 		req, _ := http.NewRequestWithContext(cctx, http.MethodGet, endpoint+"/", nil)
@@ -451,7 +451,7 @@ func runProbes(ctx context.Context) []probe {
 		probes = append(probes, p)
 	}
 	{
-		endpoint := env("RMMWAY_MEILI_ENDPOINT", "http://localhost:7700")
+		endpoint := env("OURWAY_RMM_MEILI_ENDPOINT", "http://localhost:7700")
 		start := time.Now()
 		cctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 		req, _ := http.NewRequestWithContext(cctx, http.MethodGet, endpoint+"/health", nil)
@@ -478,60 +478,60 @@ func main() {
 	migrateOnly := flag.Bool("migrate-only", false, "apply SQL migrations and exit")
 	flag.Parse()
 
-	version := env("RMMWAY_VERSION", "1.2.0")
-	httpAddr := env("RMMWAY_ADDR", ":8080")
-	grpcAddr := env("RMMWAY_GRPC_ADDR", ":50051")
+	version := env("OURWAY_RMM_VERSION", "1.2.0")
+	httpAddr := env("OURWAY_RMM_ADDR", ":8080")
+	grpcAddr := env("OURWAY_RMM_GRPC_ADDR", ":50051")
 	// W3-1: the mTLS agent channel. A second gRPC listener that REQUIRES a
 	// client leaf cert issued by the org root. "off" disables it (dev / the
 	// pre-W3-1 bootstrap path keeps working on the plain listener).
-	grpcMTLSAddr := env("RMMWAY_GRPC_MTLS_ADDR", ":50052")
-	jwtSecret := []byte(env("RMMWAY_JWT_SECRET", "rmmway-dev-secret-change-me"))
+	grpcMTLSAddr := env("OURWAY_RMM_GRPC_MTLS_ADDR", ":50052")
+	jwtSecret := []byte(env("OURWAY_RMM_JWT_SECRET", "ourway-rmm-dev-secret-change-me"))
 	// Operator (human/UI) credentials for the frontend login (W2-1).
 	// Single admin account; override both in prod.
-	adminUser := env("RMMWAY_ADMIN_USER", "admin")
-	adminPassword := env("RMMWAY_ADMIN_PASSWORD", "admin")
+	adminUser := env("OURWAY_RMM_ADMIN_USER", "admin")
+	adminPassword := env("OURWAY_RMM_ADMIN_PASSWORD", "admin")
 
 	// C2: the built-in insecure defaults (dev JWT secret, admin/admin, dev
 	// Meili master key) must not run silently in production — an operator
 	// JWT is full /api/* access and a forged agent JWT (any device id is
-	// guessable) is stream access. RMMWAY_ENV=dev (the default) warns;
+	// guessable) is stream access. OURWAY_RMM_ENV=dev (the default) warns;
 	// anything else refuses to boot while a default is in use.
-	rmmwayEnv := strings.ToLower(strings.TrimSpace(os.Getenv("RMMWAY_ENV")))
-	if rmmwayEnv == "" {
-		rmmwayEnv = "dev"
+	ourwayRmmEnv := strings.ToLower(strings.TrimSpace(os.Getenv("OURWAY_RMM_ENV")))
+	if ourwayRmmEnv == "" {
+		ourwayRmmEnv = "dev"
 	}
 	var insecureDefaults []string
-	if os.Getenv("RMMWAY_JWT_SECRET") == "" {
+	if os.Getenv("OURWAY_RMM_JWT_SECRET") == "" {
 		insecureDefaults = append(insecureDefaults,
-			"RMMWAY_JWT_SECRET is unset — using the built-in dev secret (anyone who reads the source can forge agent AND operator JWTs)")
+			"OURWAY_RMM_JWT_SECRET is unset — using the built-in dev secret (anyone who reads the source can forge agent AND operator JWTs)")
 	}
-	if os.Getenv("RMMWAY_ADMIN_USER") == "" && os.Getenv("RMMWAY_ADMIN_PASSWORD") == "" {
+	if os.Getenv("OURWAY_RMM_ADMIN_USER") == "" && os.Getenv("OURWAY_RMM_ADMIN_PASSWORD") == "" {
 		insecureDefaults = append(insecureDefaults,
-			"operator login is the built-in admin/admin (set RMMWAY_ADMIN_USER/RMMWAY_ADMIN_PASSWORD)")
+			"operator login is the built-in admin/admin (set OURWAY_RMM_ADMIN_USER/OURWAY_RMM_ADMIN_PASSWORD)")
 	}
-	if os.Getenv("RMMWAY_MEILI_MASTER_KEY") == "" {
+	if os.Getenv("OURWAY_RMM_MEILI_MASTER_KEY") == "" {
 		insecureDefaults = append(insecureDefaults,
-			"Meilisearch master key is unset — using the built-in dev key (set RMMWAY_MEILI_MASTER_KEY)")
+			"Meilisearch master key is unset — using the built-in dev key (set OURWAY_RMM_MEILI_MASTER_KEY)")
 	}
 	switch {
-	case rmmwayEnv != "dev" && len(insecureDefaults) > 0:
+	case ourwayRmmEnv != "dev" && len(insecureDefaults) > 0:
 		var b strings.Builder
-		fmt.Fprintf(&b, "refusing to boot (RMMWAY_ENV=%s) with insecure built-in defaults:\n", rmmwayEnv)
+		fmt.Fprintf(&b, "refusing to boot (OURWAY_RMM_ENV=%s) with insecure built-in defaults:\n", ourwayRmmEnv)
 		for _, s := range insecureDefaults {
 			fmt.Fprintf(&b, "  - %s\n", s)
 		}
-		b.WriteString("set the variables above, or RMMWAY_ENV=dev to allow the dev defaults\n")
+		b.WriteString("set the variables above, or OURWAY_RMM_ENV=dev to allow the dev defaults\n")
 		log.Fatal(b.String())
-	case rmmwayEnv != "dev":
-		log.Printf("RMMWAY_ENV=%s: no built-in dev defaults in use", rmmwayEnv)
+	case ourwayRmmEnv != "dev":
+		log.Printf("OURWAY_RMM_ENV=%s: no built-in dev defaults in use", ourwayRmmEnv)
 	default:
 		for _, s := range insecureDefaults {
-			log.Printf("WARN: RMMWAY_ENV=dev — %s", s)
+			log.Printf("WARN: OURWAY_RMM_ENV=dev — %s", s)
 		}
 	}
 
 	// ---- data layer (W1-6) ---------------------------------------------
-	dsn := env("RMMWAY_PG_DSN", "postgres://rmmway:rmmway@localhost:5432/rmmway?sslmode=disable")
+	dsn := env("OURWAY_RMM_PG_DSN", "postgres://ourway-rmm:ourway-rmm@localhost:5432/ourway-rmm?sslmode=disable")
 	pgPool, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
 		log.Fatalf("pg pool: %v", err)
@@ -539,7 +539,7 @@ func main() {
 	var devicesStore store.DeviceStore
 	var metricsSink store.MetricsSink
 	hasPG := false
-	migrationsDir := env("RMMWAY_MIGRATIONS_DIR", "migrations")
+	migrationsDir := env("OURWAY_RMM_MIGRATIONS_DIR", "migrations")
 	// L6: first-boot migrations (CREATE EXTENSION timescaledb, hypertables)
 	// can take longer than a few seconds on cold storage — 60s budget.
 	ctxBg, cancelBg := context.WithTimeout(context.Background(), 60*time.Second)
@@ -551,10 +551,10 @@ func main() {
 		// turns a transient blip into a full data loss (every enrollment +
 		// metric vanishes at the next restart) — refuse to boot unless the
 		// operator opts into data-loss mode.
-		if os.Getenv("RMMWAY_ALLOW_MEMORY_FALLBACK") != "1" {
-			log.Fatalf("migrations failed (%v) — refusing to boot on in-memory stores (data-loss mode); set RMMWAY_ALLOW_MEMORY_FALLBACK=1 to allow", err)
+		if os.Getenv("OURWAY_RMM_ALLOW_MEMORY_FALLBACK") != "1" {
+			log.Fatalf("migrations failed (%v) — refusing to boot on in-memory stores (data-loss mode); set OURWAY_RMM_ALLOW_MEMORY_FALLBACK=1 to allow", err)
 		}
-		log.Printf("WARN: migrations failed (%v) — running with in-memory stores (RMMWAY_ALLOW_MEMORY_FALLBACK=1; data will NOT survive a restart)", err)
+		log.Printf("WARN: migrations failed (%v) — running with in-memory stores (OURWAY_RMM_ALLOW_MEMORY_FALLBACK=1; data will NOT survive a restart)", err)
 		devicesStore = store.NewMemoryDeviceStore()
 		metricsSink = store.NewMemoryMetricsSink(100000)
 	} else {
@@ -591,7 +591,7 @@ func main() {
 	// boot, reused across restarts so enrolled devices' leaf certs stay
 	// valid. Enroll hands each device its leaf (signed by the root); the
 	// mTLS gRPC listener serves a root-signed server cert and requires the
-	// leaf. W3-2: leaves are short-lived (~1h, RMMWAY_LEAF_TTL) and the
+	// leaf. W3-2: leaves are short-lived (~1h, OURWAY_RMM_LEAF_TTL) and the
 	// agent rotates them via RefreshLeaf while the old leaf is still valid;
 	// the server cert the listener serves rotates in place via
 	// GetCertificate (no listener restart). With Postgres the root lives in
@@ -685,14 +685,14 @@ func main() {
 	// ---- device search index (W1-7) ------------------------------------
 	// FullSync at boot heals any drift (Meili was down, data changed by
 	// hand); IndexerHook keeps it current on enroll + (re)connect.
-	// RMMWAY_MEILI_ENDPOINT empty (or "off") disables indexing entirely.
+	// OURWAY_RMM_MEILI_ENDPOINT empty (or "off") disables indexing entirely.
 	var (
 		indexer *store.IndexerHook
 		mSearch *store.Meili
 	)
-	meiliEndpoint := env("RMMWAY_MEILI_ENDPOINT", "http://localhost:7700")
+	meiliEndpoint := env("OURWAY_RMM_MEILI_ENDPOINT", "http://localhost:7700")
 	if meiliEndpoint != "" && meiliEndpoint != "off" {
-		m := store.NewMeili(meiliEndpoint, env("RMMWAY_MEILI_MASTER_KEY", "rmmway-dev-master-key"))
+		m := store.NewMeili(meiliEndpoint, env("OURWAY_RMM_MEILI_MASTER_KEY", "ourway-rmm-dev-master-key"))
 		// M7: construct the indexer even when the boot FullSync fails —
 		// Meilisearch coming up a few seconds AFTER the server used to
 		// disable device search for the whole process lifetime (no retry,
@@ -710,7 +710,7 @@ func main() {
 			log.Printf("meilisearch: full sync ok (endpoint=%s)", meiliEndpoint)
 		}
 	} else {
-		log.Println("meilisearch: disabled (RMMWAY_MEILI_ENDPOINT empty/off)")
+		log.Println("meilisearch: disabled (OURWAY_RMM_MEILI_ENDPOINT empty/off)")
 	}
 
 	// ---- event bus (W5-2) + event fan-out (W6-2) ------------------------
@@ -917,7 +917,7 @@ func main() {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]string{
-			"service": "rmmway-server",
+			"service": "ourway-rmm-server",
 			"version": version,
 			"grpc":    grpcAddr,
 		})
@@ -925,7 +925,7 @@ func main() {
 
 	httpServer := &http.Server{Addr: httpAddr, Handler: mux}
 	go func() {
-		log.Printf("rmmway-server %s: HTTP on %s", version, httpAddr)
+		log.Printf("ourway-rmm-server %s: HTTP on %s", version, httpAddr)
 		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
 		}

@@ -10,11 +10,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/welcometotheweb/rmmway/server/internal/httpapi"
-	"github.com/welcometotheweb/rmmway/server/internal/releases"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/httpapi"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/releases"
 )
 
-// releaseServer is a live in-process rmmway HTTP server wired with a
+// releaseServer is a live in-process ourway-rmm HTTP server wired with a
 // releases directory — the exact surface the agent's auto-update talks to.
 type releaseServer struct {
 	URL  string
@@ -49,7 +49,7 @@ func publish(dir, version, publicKey, goosArch, src string) error {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
-	name := "rmmway-agent-" + goosArch
+	name := "ourway-rmm-agent-" + goosArch
 	b, err := os.ReadFile(src)
 	if err != nil {
 		return err

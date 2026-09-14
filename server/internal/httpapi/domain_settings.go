@@ -28,9 +28,9 @@ import (
 
 	"golang.org/x/crypto/pbkdf2"
 
-	"github.com/welcometotheweb/rmmway/server/internal/setup"
-	"github.com/welcometotheweb/rmmway/server/internal/smtp"
-	"github.com/welcometotheweb/rmmway/server/internal/users"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/setup"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/smtp"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/users"
 )
 
 func registerSettings(s *Server, mux *http.ServeMux) {

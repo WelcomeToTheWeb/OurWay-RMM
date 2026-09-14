@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // Enroller is the server-side Enroll RPC (the generated client satisfies it).

@@ -9,7 +9,7 @@ import (
 
 	"github.com/shirou/gopsutil/v4/mem"
 
-	agentv1 "github.com/welcometotheweb/rmmway/proto/gen/rmmway/agent/v1"
+	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
 // fakeCPU returns canned values or an error, so tests never sleep.
@@ -157,7 +157,7 @@ func TestServiceStatusPartialFailure(t *testing.T) {
 	}
 }
 
-// TestServiceStatusEmptyAllowlist: unset RMMWAY_SERVICES (nil list) adds no
+// TestServiceStatusEmptyAllowlist: unset OURWAY_RMM_SERVICES (nil list) adds no
 // samples and no partial error — the default five families are unchanged.
 func TestServiceStatusEmptyAllowlist(t *testing.T) {
 	c := NewCollectorWithCPUServices(fakeCPU([]float64{1}, nil), nil, nil)

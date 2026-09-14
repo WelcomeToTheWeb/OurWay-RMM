@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/store"
-	"github.com/welcometotheweb/rmmway/server/internal/users"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/users"
 )
 
 type deviceOut struct {
@@ -537,7 +537,7 @@ func (s *Server) handleDeviceExport(w http.ResponseWriter, r *http.Request, devi
 		return
 	}
 	withRollups := q.Get("rollups") != "0"
-	fname := "rmmway-export-" + deviceID + "-" + time.Now().UTC().Format("20060102-150405") + ".zip"
+	fname := "ourway-rmm-export-" + deviceID + "-" + time.Now().UTC().Format("20060102-150405") + ".zip"
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+fname+`"`)
 	w.WriteHeader(http.StatusOK)

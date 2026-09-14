@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/flow"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
 )
 
 // ---- W5-2: event-driven automation chains ----------------------------------

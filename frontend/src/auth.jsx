@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from "rea
 import { api } from "./api.js";
 
 const AuthCtx = createContext(null);
-const KEY = "rmmway.operator.token";
+const KEY = "ourway-rmm.operator.token";
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem(KEY) || null);
@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   // On mount, if we restored a token, probe the API once so an expired or
-  // invalid token (e.g. server restarted with a new RMMWAY_JWT_SECRET)
+  // invalid token (e.g. server restarted with a new OURWAY_RMM_JWT_SECRET)
   // gets cleared instead of being presented as a working session.
   useEffect(() => {
     if (!token) return;

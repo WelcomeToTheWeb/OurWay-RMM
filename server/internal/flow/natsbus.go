@@ -1,6 +1,6 @@
 // NATS/JetStream implementation of the W5-2 Bus.
 //
-// One JetStream stream (RMMWAY_EVENTS, subjects rmmway.events.>) carries
+// One JetStream stream (OURWAY_RMM_EVENTS, subjects ourway-rmm.events.>) carries
 // every flow hop; the engine consumes it with a single durable consumer.
 // JetStream is at-least-once, which is exactly what the engine wants: a
 // step event delivered twice is a no-op (the run's conditional transition

@@ -12,18 +12,18 @@ import (
 // Meilisearch instance: FullSync puts every device in the index, Search
 // finds a device by hostname / id / IP, and a deleted device disappears
 // from search. Uses a scratch index so the dev "devices" index is never
-// touched. Requires RMMWAY_MEILI_TEST_ENDPOINT (e.g.
-// http://localhost:7700 with RMMWAY_MEILI_TEST_KEY for the master key);
+// touched. Requires OURWAY_RMM_MEILI_TEST_ENDPOINT (e.g.
+// http://localhost:7700 with OURWAY_RMM_MEILI_TEST_KEY for the master key);
 // skipped otherwise.
 func TestMeiliSyncAndSearch(t *testing.T) {
-	endpoint := os.Getenv("RMMWAY_MEILI_TEST_ENDPOINT")
+	endpoint := os.Getenv("OURWAY_RMM_MEILI_TEST_ENDPOINT")
 	if endpoint == "" {
-		t.Skip("RMMWAY_MEILI_TEST_ENDPOINT not set — skipping Meilisearch live test")
+		t.Skip("OURWAY_RMM_MEILI_TEST_ENDPOINT not set — skipping Meilisearch live test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	m := NewMeili(endpoint, os.Getenv("RMMWAY_MEILI_TEST_KEY"))
+	m := NewMeili(endpoint, os.Getenv("OURWAY_RMM_MEILI_TEST_KEY"))
 	const scratch = "devices_w17_test"
 	prevIndex := IndexName
 	defer func() {
@@ -170,13 +170,13 @@ func TestMeiliSyncAndSearch(t *testing.T) {
 // local stack: an index created by an older client blocked all
 // document imports).
 func TestMeiliIndexSelfHeal(t *testing.T) {
-	endpoint := os.Getenv("RMMWAY_MEILI_TEST_ENDPOINT")
+	endpoint := os.Getenv("OURWAY_RMM_MEILI_TEST_ENDPOINT")
 	if endpoint == "" {
-		t.Skip("RMMWAY_MEILI_TEST_ENDPOINT not set — skipping Meilisearch live test")
+		t.Skip("OURWAY_RMM_MEILI_TEST_ENDPOINT not set — skipping Meilisearch live test")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	m := NewMeili(endpoint, os.Getenv("RMMWAY_MEILI_TEST_KEY"))
+	m := NewMeili(endpoint, os.Getenv("OURWAY_RMM_MEILI_TEST_KEY"))
 	const scratch = "devices_w17_heal"
 	prevIndex := IndexName
 	IndexName = scratch

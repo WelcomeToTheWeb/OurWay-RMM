@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/welcometotheweb/rmmway/server/internal/users"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/users"
 )
 
 // fakeUsersAuth is the test UsersAuth: a map of username (lower-cased) →

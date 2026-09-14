@@ -43,7 +43,7 @@ if (cmdBtn) {
   const url = page.url();
   console.log(`After Command click, URL: ${url}`);
   await page.screenshot({
-    path: "/tmp/rmmway-07-after-command.png",
+    path: "/tmp/ourway-rmm-07-after-command.png",
     fullPage: true,
   });
 }
@@ -69,7 +69,7 @@ if (connBtn) {
   const url2 = page.url();
   console.log(`After Connect click, URL: ${url2}`);
   await page.screenshot({
-    path: "/tmp/rmmway-08-after-connect.png",
+    path: "/tmp/ourway-rmm-08-after-connect.png",
     fullPage: true,
   });
 }
@@ -106,7 +106,7 @@ if (queryBtn) {
   await queryBtn.click();
   await page.waitForTimeout(2500);
   await page.screenshot({
-    path: "/tmp/rmmway-09-patch-error.png",
+    path: "/tmp/ourway-rmm-09-patch-error.png",
     fullPage: true,
   });
   console.log("Clicked Query Available Patches");

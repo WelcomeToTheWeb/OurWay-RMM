@@ -22,7 +22,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/welcometotheweb/rmmway/server/internal/baseline"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/baseline"
 )
 
 // Alert is one inbox row.

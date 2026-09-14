@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# RMMWay one-line bootstrap installer (W1-3) — Linux + macOS.
+# OurWay RMM one-line bootstrap installer (W1-3) — Linux + macOS.
 #
-#   curl -fsSL https://raw.githubusercontent.com/welcometotheweb/rmmway/main/scripts/install.sh \
+#   curl -fsSL https://raw.githubusercontent.com/welcometotheweb/ourway-rmm/main/scripts/install.sh \
 #     | bash -s -- --server https://rmm.example.com --bootstrap <TOKEN>
 #
 #   Optional: --grpc-addr host:port when the server's gRPC port differs from
@@ -15,7 +15,7 @@
 #   2. Download the matching static agent from the GitHub release (default:
 #      latest; pin with --version).
 #   3. Install it to /usr/local/bin (or $HOME/.local/bin when not root).
-#   4. Write config (server URL + one-time bootstrap token) to /etc/rmmway.
+#   4. Write config (server URL + one-time bootstrap token) to /etc/ourway-rmm.
 #   5. Install + start the agent as a system service (systemd / launchd).
 #
 # Only --server and --bootstrap are required. The agent enrolls over the
@@ -31,19 +31,19 @@
 set -euo pipefail
 
 # --- defaults ---------------------------------------------------------------
-REPO="welcometotheweb/rmmway"
+REPO="welcometotheweb/ourway-rmm"
 VERSION="latest" # resolved via the GitHub API
 SERVER=""
 BOOTSTRAP=""
 GRPC_ADDR=""      # optional explicit agent->server gRPC host:port
 GRPC_MTLS_ADDR="" # optional explicit mTLS (W3-1) agent->server gRPC host:port
-CONFIG_DIR="/etc/rmmway"
+CONFIG_DIR="/etc/ourway-rmm"
 SERVICE_USER="root"
 # Base URLs are overridable so the installer works against a self-hosted
-# mirror AND can be E2E-tested against a local mock (RMMWAY_GITHUB_API /
-# RMMWAY_DOWNLOAD_BASE).
-GITHUB="${RMMWAY_GITHUB_API:-https://api.github.com}"
-RAW_DL="${RMMWAY_DOWNLOAD_BASE:-https://github.com/${REPO}/releases/download}"
+# mirror AND can be E2E-tested against a local mock (OURWAY_RMM_GITHUB_API /
+# OURWAY_RMM_DOWNLOAD_BASE).
+GITHUB="${OURWAY_RMM_GITHUB_API:-https://api.github.com}"
+RAW_DL="${OURWAY_RMM_DOWNLOAD_BASE:-https://github.com/${REPO}/releases/download}"
 
 # --- parse args -------------------------------------------------------------
 while [ $# -gt 0 ]; do
@@ -109,7 +109,7 @@ if [ "$VERSION" = "latest" ]; then
     sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -n1)"
   [ -n "$VERSION" ] || die "could not resolve latest release for ${REPO}"
 fi
-URL="${RAW_DL}/${VERSION}/rmmway-agent-${OS}-${ARCH}"
+URL="${RAW_DL}/${VERSION}/ourway-rmm-agent-${OS}-${ARCH}"
 
 log "OS=${OS} ARCH=${ARCH}  release=${VERSION}"
 log "asset: ${URL}"
@@ -117,10 +117,10 @@ log "asset: ${URL}"
 # --- pick install dir -------------------------------------------------------
 if [ "$(id -u)" = "0" ]; then
   INSTALL_DIR="/usr/local/bin"
-  BIN="${INSTALL_DIR}/rmmway-agent"
+  BIN="${INSTALL_DIR}/ourway-rmm-agent"
 else
   INSTALL_DIR="${HOME}/.local/bin"
-  BIN="${INSTALL_DIR}/rmmway-agent"
+  BIN="${INSTALL_DIR}/ourway-rmm-agent"
   log "not root — installing to ${INSTALL_DIR}"
 fi
 mkdir -p "$INSTALL_DIR"
@@ -144,12 +144,12 @@ log "verified: ${VER_OUT}"
 SUMS_URL="${RAW_DL}/${VERSION}/SHA256SUMS"
 if SUMS="$(curl -fsSL "$SUMS_URL" 2>/dev/null)"; then
   # sums lines are "<hash>  agent/dist/<asset>"; anchor on the exact asset
-  # name at the END of the path field (so rmmway-agent-X never matches
-  # rmmway-agent-X.cdx.json).
-  WANT="$(printf '%s\n' "$SUMS" | awk -v a="rmmway-agent-${OS}-${ARCH}" '$2 ~ ("/" a "$") { print $1; exit }')"
+  # name at the END of the path field (so ourway-rmm-agent-X never matches
+  # ourway-rmm-agent-X.cdx.json).
+  WANT="$(printf '%s\n' "$SUMS" | awk -v a="ourway-rmm-agent-${OS}-${ARCH}" '$2 ~ ("/" a "$") { print $1; exit }')"
   if [ -n "$WANT" ]; then
     GOT="$(sha256sum "$TMP" | awk '{print $1}')"
-    [ "$GOT" = "$WANT" ] || die "SHA256 mismatch for rmmway-agent-${OS}-${ARCH}: release says ${WANT}, download is ${GOT}. The release asset does not match its published sums (unsigned hot-swap?) - not installing. Ask the operator to cut a fresh signed release."
+    [ "$GOT" = "$WANT" ] || die "SHA256 mismatch for ourway-rmm-agent-${OS}-${ARCH}: release says ${WANT}, download is ${GOT}. The release asset does not match its published sums (unsigned hot-swap?) - not installing. Ask the operator to cut a fresh signed release."
     log "sha256 verified: ${GOT}"
   else
     log "no SHA256SUMS entry for this asset - skipping checksum check"
@@ -165,20 +165,20 @@ log "installed -> ${BIN}"
 mkdir -p "$CONFIG_DIR"
 CFG="${CONFIG_DIR}/agent.env"
 {
-  printf 'RMMWAY_SERVER=%s\n' "${SERVER:-https://rmm.local}"
-  printf 'RMMWAY_BOOTSTRAP_TOKEN=%s\n' "${BOOTSTRAP:-}"
+  printf 'OURWAY_RMM_SERVER=%s\n' "${SERVER:-https://rmm.local}"
+  printf 'OURWAY_RMM_BOOTSTRAP_TOKEN=%s\n' "${BOOTSTRAP:-}"
   # NB: the device id is minted at enroll — the agent does not read an
-  # RMMWAY_DEVICE_ID key, so writing one here only invites drift.
+  # OURWAY_RMM_DEVICE_ID key, so writing one here only invites drift.
   # Optional explicit gRPC endpoint. When set, the agent connects here
-  # directly instead of deriving host:port from RMMWAY_SERVER (needed for
+  # directly instead of deriving host:port from OURWAY_RMM_SERVER (needed for
   # split-port deployments where HTTP and gRPC listen on different ports).
-  [ -n "${GRPC_ADDR}" ] && printf 'RMMWAY_GRPC_ADDR=%s\n' "${GRPC_ADDR}" || true
+  [ -n "${GRPC_ADDR}" ] && printf 'OURWAY_RMM_GRPC_ADDR=%s\n' "${GRPC_ADDR}" || true
   # W3-1 mTLS agent channel. Explicit flag wins; otherwise derive the host
-  # from RMMWAY_SERVER (default port 50052 — the agent itself also defaults
+  # from OURWAY_RMM_SERVER (default port 50052 — the agent itself also defaults
   # to 50052 on the derived host, so this line is belt-and-braces for
   # split-port deployments).
   if [ -n "${GRPC_MTLS_ADDR}" ]; then
-    printf 'RMMWAY_GRPC_MTLS_ADDR=%s\n' "${GRPC_MTLS_ADDR}"
+    printf 'OURWAY_RMM_GRPC_MTLS_ADDR=%s\n' "${GRPC_MTLS_ADDR}"
   else
     _srv="${SERVER:-}"
     _mtls_host=""
@@ -186,7 +186,7 @@ CFG="${CONFIG_DIR}/agent.env"
     # strip the scheme too — for the most common input (https://host, no
     # path) the stripped value has no slash and hits `*)`, and stripping the
     # original at the first ':' left "https" behind (W0 gap #9: the
-    # installer wrote RMMWAY_GRPC_MTLS_ADDR=https:50052).
+    # installer wrote OURWAY_RMM_GRPC_MTLS_ADDR=https:50052).
     case "${_srv#*://}" in
     */*)
       _mtls_host="${_srv#*://}"
@@ -198,7 +198,7 @@ CFG="${CONFIG_DIR}/agent.env"
       _mtls_host="${_mtls_host%%:*}"
       ;;
     esac
-    [ -n "${_mtls_host}" ] && printf 'RMMWAY_GRPC_MTLS_ADDR=%s:50052\n' "${_mtls_host}" || true
+    [ -n "${_mtls_host}" ] && printf 'OURWAY_RMM_GRPC_MTLS_ADDR=%s:50052\n' "${_mtls_host}" || true
   fi
 } >"$CFG"
 chmod 0600 "$CFG"
@@ -226,11 +226,11 @@ xml_escape() {
 }
 
 if [ "$OS" = "linux" ] && command -v systemctl >/dev/null 2>&1; then
-  UNIT="/etc/systemd/system/rmmway-agent.service"
+  UNIT="/etc/systemd/system/ourway-rmm-agent.service"
   log "installing systemd unit -> ${UNIT}"
   cat >"$UNIT" <<EOF
 [Unit]
-Description=RMMWay agent
+Description=OurWay RMM agent
 After=network-online.target
 Wants=network-online.target
 
@@ -252,9 +252,9 @@ ReadWritePaths=${CONFIG_DIR}
 WantedBy=multi-user.target
 EOF
   systemctl daemon-reload
-  systemctl enable --now rmmway-agent.service || log "unit enabled (start deferred — is systemd running?)"
+  systemctl enable --now ourway-rmm-agent.service || log "unit enabled (start deferred — is systemd running?)"
 elif [ "$OS" = "darwin" ] && [ -d /Library/LaunchDaemons ]; then
-  PLIST="/Library/LaunchDaemons/io.rmmway.agent.plist"
+  PLIST="/Library/LaunchDaemons/io.ourway-rmm.agent.plist"
   log "installing launchd plist -> ${PLIST}"
   # ProgramArguments must be SEPARATE <string> elements — launchd execs the
   # first element and passes the rest as argv (a single joined string would
@@ -271,7 +271,7 @@ elif [ "$OS" = "darwin" ] && [ -d /Library/LaunchDaemons ]; then
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>Label</key><string>io.rmmway.agent</string>
+  <key>Label</key><string>io.ourway-rmm.agent</string>
   <key>ProgramArguments</key>
   <array>
     <string>${BIN}</string>
@@ -299,7 +299,7 @@ log "done. agent ${VER_OUT} installed."
 log "  binary : ${BIN}"
 log "  config : ${CFG}"
 [ "$OS" = "linux" ] && command -v systemctl >/dev/null 2>&1 &&
-  systemctl is-active rmmway-agent.service 2>/dev/null | sed 's/^/  status : /'
+  systemctl is-active ourway-rmm-agent.service 2>/dev/null | sed 's/^/  status : /'
 log "note: the agent enrolls over the server's HTTPS origin, then streams over"
 log "      the mTLS gRPC port (default 50052 on the server host). Only that"
 log "      host + port need to be reachable from this machine."
