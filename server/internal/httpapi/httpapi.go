@@ -39,6 +39,7 @@ import (
 	"github.com/welcometotheweb/rmmway/server/internal/ingest"
 	"github.com/welcometotheweb/rmmway/server/internal/maintenance"
 	"github.com/welcometotheweb/rmmway/server/internal/notify"
+	"github.com/welcometotheweb/rmmway/server/internal/oidc"
 	"github.com/welcometotheweb/rmmway/server/internal/releases"
 	"github.com/welcometotheweb/rmmway/server/internal/reports"
 	"github.com/welcometotheweb/rmmway/server/internal/sessionrelay"
@@ -133,6 +134,10 @@ type Server struct {
 	// (RMMWAY_PUBLIC_URL). The Add Device UI reads this via
 	// GET /api/public-url to prefill the server URL field.
 	publicURL string
+
+	// OIDC support
+	oidcStore      oidc.Store
+	oidcStateStore *oidc.StateStore
 	// gap #1a: remote session support.
 	sessions           *sessionrelay.Registry
 	sendSessionControl func(deviceID string, sc *agentv1.SessionControl) bool
@@ -226,6 +231,8 @@ type Config struct {
 	// server URL with the configured public target instead of guessing
 	// window.location.origin (wrong when behind a reverse proxy).
 	PublicURL string
+	// OIDCStore manages OIDC provider configuration. Nil disables OIDC.
+	OIDCStore oidc.Store
 	// LoginRateLimit (L8) enables the per-IP failed-login limiter on
 	// /api/login. Defaults to true; tests that hammer the login route set
 	// it false.
@@ -305,6 +312,8 @@ func New(cfg Config) *Server {
 		publicURL:          cfg.PublicURL,
 		sessions:           cfg.Sessions,
 		sendSessionControl: cfg.SendSessionControl,
+		oidcStore:          cfg.OIDCStore,
+		oidcStateStore:     oidc.NewStateStore(),
 	}
 }
 
@@ -334,6 +343,7 @@ func (s *Server) Register(mux *http.ServeMux) {
 	registerSession(s, mux)     // gap #1a: remote session + file download routes
 	registerMaintenance(s, mux) // gap #10b: maintenance windows + snooze
 	registerReports(s, mux)     // gap #8b: scheduled + on-demand reports
+	registerOIDC(s, mux)        // C #10b: OpenID Connect authentication
 }
 
 type loginRequest struct {

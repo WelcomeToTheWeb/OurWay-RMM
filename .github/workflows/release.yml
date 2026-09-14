@@ -144,6 +144,22 @@ jobs:
           push: true
           tags: "ghcr.io/welcometotheweb/rmmway-frontend:${{ env.TAG }}"
           outputs: type=docker,dest=frontend-image.tar
+      - name: Build + push loki (embedded config)
+        id: build-loki
+        uses: docker/build-push-action@v6
+        with:
+          context: ./loki
+          file: loki/Dockerfile
+          push: true
+          tags: "ghcr.io/welcometotheweb/rmmway-loki:${{ env.TAG }}"
+      - name: Build + push caddy edge (embedded config)
+        id: build-caddy
+        uses: docker/build-push-action@v6
+        with:
+          context: ./deploy
+          file: deploy/Dockerfile.caddy
+          push: true
+          tags: "ghcr.io/welcometotheweb/rmmway-caddy:${{ env.TAG }}"
       # W4-1: CycloneDX SBOM for the server image (Go modules + OS packages
       # of the distroless base), scanned from the exported tar.
       - name: Generate image SBOM (CycloneDX, W4-1)
@@ -187,6 +203,22 @@ jobs:
           ./bin/rmmway-signer sign -k keys/minisign.key \
             -c "rmmway release ${GITHUB_REF_NAME}" dist/rmmway-server.cdx.json
           ./bin/rmmway-signer verify -p keys/minisign.pub dist/rmmway-server.cdx.json
+      - name: Publish deploy files to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          upload() {
+            local f="$1" a
+            for a in 1 2 3 4 5; do
+              if gh release upload "$TAG" --clobber "$f"; then return 0; fi
+              sleep 3
+            done
+            echo "upload failed after 5 attempts: $f"; return 1
+          }
+          upload "docker-compose.release.yml"
+          upload "docker-compose.release-byop.yml"
+          upload ".env.prod.example"
       - name: Publish image SBOM to release
         env:
           GH_TOKEN: ${{ github.token }}

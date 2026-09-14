@@ -1,0 +1,3 @@
+# RMMWay Caddy edge with embedded Caddyfile
+FROM caddy:2.11-alpine
+COPY Caddyfile /etc/caddy/Caddyfile

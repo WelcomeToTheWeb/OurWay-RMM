@@ -10,5 +10,6 @@ RUN cd server && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/serve
 
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /out/server /server
+COPY --from=build /src/server/migrations /migrations
 EXPOSE 8080 50051
 ENTRYPOINT ["/server"]

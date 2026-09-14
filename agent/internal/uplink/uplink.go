@@ -462,6 +462,14 @@ func (u *Uplink) handleCommand(ctx context.Context, stream agentv1.AgentService_
 		return u.patchQueryCommand(ctx, stream, cmd)
 	case *agentv1.Command_PatchApply: // gap #4
 		return u.patchApplyCommand(ctx, stream, cmd)
+	case *agentv1.Command_ListProcesses: // process management
+		return u.listProcessesCommand(ctx, stream, cmd)
+	case *agentv1.Command_KillProcess: // process management
+		return u.killProcessCommand(ctx, stream, cmd)
+	case *agentv1.Command_ListServices: // service management
+		return u.listServicesCommand(ctx, stream, cmd)
+	case *agentv1.Command_ServiceControl: // service management
+		return u.serviceControlCommand(ctx, stream, cmd)
 	}
 	return nil
 }

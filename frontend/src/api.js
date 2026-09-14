@@ -53,6 +53,24 @@ export const api = {
   // body: { smtp: {host, port, from, username, password}, to? }.
   testSmtp: (body) => request("/api/setup/smtp/test", { method: "POST", body }),
 
+  // ---- C #10b: OpenID Connect authentication ---------------------------
+  // POST /api/oidc/login -> { auth_url } (redirect to OIDC provider)
+  oidcLogin: (callbackUrl) =>
+    request("/api/oidc/login", {
+      method: "POST",
+      body: callbackUrl ? { callback_url: callbackUrl } : {},
+    }),
+
+  // GET /api/oidc/status -> { enabled, configured, provider }
+  oidcStatus: () => request("/api/oidc/status"),
+
+  // GET /api/oidc/config -> OIDC provider config (admin)
+  oidcConfig: (token) => request("/api/oidc/config", { token }),
+
+  // POST /api/oidc/config -> save OIDC provider config (admin)
+  oidcSaveConfig: (token, body) =>
+    request("/api/oidc/config", { method: "POST", token, body }),
+
   // POST /api/login -> { token, expiry }
   login: (username, password) =>
     request("/api/login", { method: "POST", body: { username, password } }),

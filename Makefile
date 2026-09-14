@@ -1,4 +1,4 @@
-VERSION := 1.1.0
+VERSION := 1.2.0
 SHELL := /bin/bash
 COMPOSE ?= docker compose
 # Go + buf + node live in these dirs on the dev box; put them on PATH once.

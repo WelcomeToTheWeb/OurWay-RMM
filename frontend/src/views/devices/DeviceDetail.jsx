@@ -25,6 +25,7 @@ import QuickHealth from "./QuickHealth.jsx";
 import InventorySnapshot from "./InventorySnapshot.jsx";
 import MultiMetricChart from "./MultiMetricChart.jsx";
 import CorrelatedMetrics from "./CorrelatedMetrics.jsx";
+import ProcessServiceManagement from "./ProcessServiceManagement.jsx";
 
 // ---- agent log (recent indexed events) ------------------------------------
 
@@ -742,6 +743,8 @@ export default function DeviceDetail({
     { key: "correlated", label: "Correlated" },
     { key: "inventory", label: "Inventory" },
     { key: "commands", label: "Commands" },
+    { key: "processes", label: "Processes" },
+    { key: "services", label: "Services" },
     { key: "events", label: "Events" },
   ];
 
@@ -837,6 +840,24 @@ export default function DeviceDetail({
             deviceId={device.id}
             onUnauthorized={onUnauthorized}
             liveTick={liveTick}
+          />
+        )}
+        {tab === "processes" && (
+          <ProcessServiceManagement
+            token={token}
+            device={device}
+            onUnauthorized={onUnauthorized}
+            onSaved={onSaved}
+            mode="processes"
+          />
+        )}
+        {tab === "services" && (
+          <ProcessServiceManagement
+            token={token}
+            device={device}
+            onUnauthorized={onUnauthorized}
+            onSaved={onSaved}
+            mode="services"
           />
         )}
         {tab === "events" && (

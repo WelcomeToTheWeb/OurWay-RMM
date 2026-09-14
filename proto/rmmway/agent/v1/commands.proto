@@ -39,6 +39,11 @@ message Command {
     PatchQuery patch_query = 60;
     PatchApprove patch_approve = 61;
     PatchApply patch_apply = 62;
+    // Process/service management (range 70-79).
+    ListProcesses list_processes = 70;
+    KillProcess kill_process = 71;
+    ListServices list_services = 72;
+    ServiceControl service_control = 73;
   }
 
   // Max seconds before the server considers this command failed. 0 = agent
@@ -138,6 +143,51 @@ message PatchApply {
   uint32 reboot_delay_seconds = 3;
   // W3-3: capability token (cap=rmmway.patch_apply).
   string capability_token = 4;
+}
+
+// ListProcesses queries all running processes on the agent. Results are
+// reported back via CommandResult with stdout_tail containing JSON
+// process list. Capability: rmmway.list_processes.
+message ListProcesses {
+  // Optional: filter by process name substring (case-insensitive).
+  string name_filter = 1;
+  // W3-3: capability token (cap=rmmway.list_processes).
+  string capability_token = 2;
+}
+
+// KillProcess terminates a running process by PID. Capability:
+// rmmway.kill_process.
+message KillProcess {
+  int32 pid = 1;
+  // Force kill (SIGKILL on Unix, TERMINATE on Windows).
+  bool force = 2;
+  // W3-3: capability token (cap=rmmway.kill_process).
+  string capability_token = 3;
+}
+
+// ListServices queries all services on the agent. Results are reported back
+// via CommandResult with stdout_tail containing JSON service list.
+// Capability: rmmway.list_services.
+message ListServices {
+  // Optional: filter by service name substring (case-insensitive).
+  string name_filter = 1;
+  // W3-3: capability token (cap=rmmway.list_services).
+  string capability_token = 2;
+}
+
+// ServiceControl manages a service (start/stop/restart). Capability:
+// rmmway.service_control.
+message ServiceControl {
+  string service_name = 1;
+  enum Action {
+    ACTION_UNSPECIFIED = 0;
+    START = 1;
+    STOP = 2;
+    RESTART = 3;
+  }
+  Action action = 2;
+  // W3-3: capability token (cap=rmmway.service_control).
+  string capability_token = 3;
 }
 
 // CommandResult is the agent's report back (sent as a future StreamRequest

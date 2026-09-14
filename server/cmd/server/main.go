@@ -33,6 +33,7 @@ import (
 	"github.com/welcometotheweb/rmmway/server/internal/flow"
 	"github.com/welcometotheweb/rmmway/server/internal/heal"
 	"github.com/welcometotheweb/rmmway/server/internal/httpapi"
+	"github.com/welcometotheweb/rmmway/server/internal/oidc"
 	"github.com/welcometotheweb/rmmway/server/internal/sessionrelay"
 	"github.com/welcometotheweb/rmmway/server/internal/setup"
 	"github.com/welcometotheweb/rmmway/server/internal/store"
@@ -477,7 +478,7 @@ func main() {
 	migrateOnly := flag.Bool("migrate-only", false, "apply SQL migrations and exit")
 	flag.Parse()
 
-	version := env("RMMWAY_VERSION", "1.1.0")
+	version := env("RMMWAY_VERSION", "1.2.0")
 	httpAddr := env("RMMWAY_ADDR", ":8080")
 	grpcAddr := env("RMMWAY_GRPC_ADDR", ":50051")
 	// W3-1: the mTLS agent channel. A second gRPC listener that REQUIRES a
@@ -851,6 +852,13 @@ func main() {
 	// gap #8b: reports (see wire_reports.go).
 	reportsStore := wireReports(hasPG, pgPool)
 
+	// C #10b: OpenID Connect authentication store.
+	var oidcStore oidc.Store
+	if hasPG {
+		oidcStore = oidc.NewPostgresStore(pgPool)
+		log.Println("oidc: OpenID Connect authentication enabled")
+	}
+
 	// Per-device metrics viewer: the operator UI's device-detail charts read
 	// the metric series the agents report (Timescale hypertable).
 	metricsView := store.NewPostgresMetricsView(pgPool)
@@ -898,6 +906,7 @@ func main() {
 		NotifyStore:  notifyStore,
 		NotifySender: notifySender,
 		PublicURL:    publicURL(),
+		OIDCStore:    oidcStore,
 	})
 	apiSrv.Register(mux)
 

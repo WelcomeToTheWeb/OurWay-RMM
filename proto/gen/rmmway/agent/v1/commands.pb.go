@@ -36,6 +36,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ServiceControl_Action int32
+
+const (
+	ServiceControl_ACTION_UNSPECIFIED ServiceControl_Action = 0
+	ServiceControl_START              ServiceControl_Action = 1
+	ServiceControl_STOP               ServiceControl_Action = 2
+	ServiceControl_RESTART            ServiceControl_Action = 3
+)
+
+// Enum value maps for ServiceControl_Action.
+var (
+	ServiceControl_Action_name = map[int32]string{
+		0: "ACTION_UNSPECIFIED",
+		1: "START",
+		2: "STOP",
+		3: "RESTART",
+	}
+	ServiceControl_Action_value = map[string]int32{
+		"ACTION_UNSPECIFIED": 0,
+		"START":              1,
+		"STOP":               2,
+		"RESTART":            3,
+	}
+)
+
+func (x ServiceControl_Action) Enum() *ServiceControl_Action {
+	p := new(ServiceControl_Action)
+	*p = x
+	return p
+}
+
+func (x ServiceControl_Action) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ServiceControl_Action) Descriptor() protoreflect.EnumDescriptor {
+	return file_rmmway_agent_v1_commands_proto_enumTypes[0].Descriptor()
+}
+
+func (ServiceControl_Action) Type() protoreflect.EnumType {
+	return &file_rmmway_agent_v1_commands_proto_enumTypes[0]
+}
+
+func (x ServiceControl_Action) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ServiceControl_Action.Descriptor instead.
+func (ServiceControl_Action) EnumDescriptor() ([]byte, []int) {
+	return file_rmmway_agent_v1_commands_proto_rawDescGZIP(), []int{12, 0}
+}
+
 type CommandResult_Status int32
 
 const (
@@ -84,11 +136,11 @@ func (x CommandResult_Status) String() string {
 }
 
 func (CommandResult_Status) Descriptor() protoreflect.EnumDescriptor {
-	return file_rmmway_agent_v1_commands_proto_enumTypes[0].Descriptor()
+	return file_rmmway_agent_v1_commands_proto_enumTypes[1].Descriptor()
 }
 
 func (CommandResult_Status) Type() protoreflect.EnumType {
-	return &file_rmmway_agent_v1_commands_proto_enumTypes[0]
+	return &file_rmmway_agent_v1_commands_proto_enumTypes[1]
 }
 
 func (x CommandResult_Status) Number() protoreflect.EnumNumber {
@@ -97,7 +149,7 @@ func (x CommandResult_Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CommandResult_Status.Descriptor instead.
 func (CommandResult_Status) EnumDescriptor() ([]byte, []int) {
-	return file_rmmway_agent_v1_commands_proto_rawDescGZIP(), []int{9, 0}
+	return file_rmmway_agent_v1_commands_proto_rawDescGZIP(), []int{13, 0}
 }
 
 // Command is one requested action. The agent acknowledges receipt with a
@@ -118,6 +170,10 @@ type Command struct {
 	//	*Command_PatchQuery
 	//	*Command_PatchApprove
 	//	*Command_PatchApply
+	//	*Command_ListProcesses
+	//	*Command_KillProcess
+	//	*Command_ListServices
+	//	*Command_ServiceControl
 	Action isCommand_Action `protobuf_oneof:"action"`
 	// Max seconds before the server considers this command failed. 0 = agent
 	// default.
@@ -249,6 +305,42 @@ func (x *Command) GetPatchApply() *PatchApply {
 	return nil
 }
 
+func (x *Command) GetListProcesses() *ListProcesses {
+	if x != nil {
+		if x, ok := x.Action.(*Command_ListProcesses); ok {
+			return x.ListProcesses
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetKillProcess() *KillProcess {
+	if x != nil {
+		if x, ok := x.Action.(*Command_KillProcess); ok {
+			return x.KillProcess
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetListServices() *ListServices {
+	if x != nil {
+		if x, ok := x.Action.(*Command_ListServices); ok {
+			return x.ListServices
+		}
+	}
+	return nil
+}
+
+func (x *Command) GetServiceControl() *ServiceControl {
+	if x != nil {
+		if x, ok := x.Action.(*Command_ServiceControl); ok {
+			return x.ServiceControl
+		}
+	}
+	return nil
+}
+
 func (x *Command) GetTimeoutS() int32 {
 	if x != nil {
 		return x.TimeoutS
@@ -296,6 +388,23 @@ type Command_PatchApply struct {
 	PatchApply *PatchApply `protobuf:"bytes,62,opt,name=patch_apply,json=patchApply,proto3,oneof"`
 }
 
+type Command_ListProcesses struct {
+	// Process/service management (range 70-79).
+	ListProcesses *ListProcesses `protobuf:"bytes,70,opt,name=list_processes,json=listProcesses,proto3,oneof"`
+}
+
+type Command_KillProcess struct {
+	KillProcess *KillProcess `protobuf:"bytes,71,opt,name=kill_process,json=killProcess,proto3,oneof"`
+}
+
+type Command_ListServices struct {
+	ListServices *ListServices `protobuf:"bytes,72,opt,name=list_services,json=listServices,proto3,oneof"`
+}
+
+type Command_ServiceControl struct {
+	ServiceControl *ServiceControl `protobuf:"bytes,73,opt,name=service_control,json=serviceControl,proto3,oneof"`
+}
+
 func (*Command_RunScript) isCommand_Action() {}
 
 func (*Command_Reboot) isCommand_Action() {}
@@ -311,6 +420,14 @@ func (*Command_PatchQuery) isCommand_Action() {}
 func (*Command_PatchApprove) isCommand_Action() {}
 
 func (*Command_PatchApply) isCommand_Action() {}
+
+func (*Command_ListProcesses) isCommand_Action() {}
+
+func (*Command_KillProcess) isCommand_Action() {}
+
+func (*Command_ListServices) isCommand_Action() {}
+
+func (*Command_ServiceControl) isCommand_Action() {}
 
 // RunScript executes a small, signed script (base64 payload; the signing +
 // verification story is W3-4/W4-2). v1 is read-only by default.
@@ -817,6 +934,247 @@ func (x *PatchApply) GetCapabilityToken() string {
 	return ""
 }
 
+// ListProcesses queries all running processes on the agent. Results are
+// reported back via CommandResult with stdout_tail containing JSON
+// process list. Capability: rmmway.list_processes.
+type ListProcesses struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional: filter by process name substring (case-insensitive).
+	NameFilter string `protobuf:"bytes,1,opt,name=name_filter,json=nameFilter,proto3" json:"name_filter,omitempty"`
+	// W3-3: capability token (cap=rmmway.list_processes).
+	CapabilityToken string `protobuf:"bytes,2,opt,name=capability_token,json=capabilityToken,proto3" json:"capability_token,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ListProcesses) Reset() {
+	*x = ListProcesses{}
+	mi := &file_rmmway_agent_v1_commands_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListProcesses) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListProcesses) ProtoMessage() {}
+
+func (x *ListProcesses) ProtoReflect() protoreflect.Message {
+	mi := &file_rmmway_agent_v1_commands_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListProcesses.ProtoReflect.Descriptor instead.
+func (*ListProcesses) Descriptor() ([]byte, []int) {
+	return file_rmmway_agent_v1_commands_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ListProcesses) GetNameFilter() string {
+	if x != nil {
+		return x.NameFilter
+	}
+	return ""
+}
+
+func (x *ListProcesses) GetCapabilityToken() string {
+	if x != nil {
+		return x.CapabilityToken
+	}
+	return ""
+}
+
+// KillProcess terminates a running process by PID. Capability:
+// rmmway.kill_process.
+type KillProcess struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Pid   int32                  `protobuf:"varint,1,opt,name=pid,proto3" json:"pid,omitempty"`
+	// Force kill (SIGKILL on Unix, TERMINATE on Windows).
+	Force bool `protobuf:"varint,2,opt,name=force,proto3" json:"force,omitempty"`
+	// W3-3: capability token (cap=rmmway.kill_process).
+	CapabilityToken string `protobuf:"bytes,3,opt,name=capability_token,json=capabilityToken,proto3" json:"capability_token,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *KillProcess) Reset() {
+	*x = KillProcess{}
+	mi := &file_rmmway_agent_v1_commands_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *KillProcess) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*KillProcess) ProtoMessage() {}
+
+func (x *KillProcess) ProtoReflect() protoreflect.Message {
+	mi := &file_rmmway_agent_v1_commands_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use KillProcess.ProtoReflect.Descriptor instead.
+func (*KillProcess) Descriptor() ([]byte, []int) {
+	return file_rmmway_agent_v1_commands_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *KillProcess) GetPid() int32 {
+	if x != nil {
+		return x.Pid
+	}
+	return 0
+}
+
+func (x *KillProcess) GetForce() bool {
+	if x != nil {
+		return x.Force
+	}
+	return false
+}
+
+func (x *KillProcess) GetCapabilityToken() string {
+	if x != nil {
+		return x.CapabilityToken
+	}
+	return ""
+}
+
+// ListServices queries all services on the agent. Results are reported back
+// via CommandResult with stdout_tail containing JSON service list.
+// Capability: rmmway.list_services.
+type ListServices struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Optional: filter by service name substring (case-insensitive).
+	NameFilter string `protobuf:"bytes,1,opt,name=name_filter,json=nameFilter,proto3" json:"name_filter,omitempty"`
+	// W3-3: capability token (cap=rmmway.list_services).
+	CapabilityToken string `protobuf:"bytes,2,opt,name=capability_token,json=capabilityToken,proto3" json:"capability_token,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ListServices) Reset() {
+	*x = ListServices{}
+	mi := &file_rmmway_agent_v1_commands_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListServices) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListServices) ProtoMessage() {}
+
+func (x *ListServices) ProtoReflect() protoreflect.Message {
+	mi := &file_rmmway_agent_v1_commands_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListServices.ProtoReflect.Descriptor instead.
+func (*ListServices) Descriptor() ([]byte, []int) {
+	return file_rmmway_agent_v1_commands_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ListServices) GetNameFilter() string {
+	if x != nil {
+		return x.NameFilter
+	}
+	return ""
+}
+
+func (x *ListServices) GetCapabilityToken() string {
+	if x != nil {
+		return x.CapabilityToken
+	}
+	return ""
+}
+
+// ServiceControl manages a service (start/stop/restart). Capability:
+// rmmway.service_control.
+type ServiceControl struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	ServiceName string                 `protobuf:"bytes,1,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
+	Action      ServiceControl_Action  `protobuf:"varint,2,opt,name=action,proto3,enum=rmmway.agent.v1.ServiceControl_Action" json:"action,omitempty"`
+	// W3-3: capability token (cap=rmmway.service_control).
+	CapabilityToken string `protobuf:"bytes,3,opt,name=capability_token,json=capabilityToken,proto3" json:"capability_token,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ServiceControl) Reset() {
+	*x = ServiceControl{}
+	mi := &file_rmmway_agent_v1_commands_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ServiceControl) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ServiceControl) ProtoMessage() {}
+
+func (x *ServiceControl) ProtoReflect() protoreflect.Message {
+	mi := &file_rmmway_agent_v1_commands_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ServiceControl.ProtoReflect.Descriptor instead.
+func (*ServiceControl) Descriptor() ([]byte, []int) {
+	return file_rmmway_agent_v1_commands_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ServiceControl) GetServiceName() string {
+	if x != nil {
+		return x.ServiceName
+	}
+	return ""
+}
+
+func (x *ServiceControl) GetAction() ServiceControl_Action {
+	if x != nil {
+		return x.Action
+	}
+	return ServiceControl_ACTION_UNSPECIFIED
+}
+
+func (x *ServiceControl) GetCapabilityToken() string {
+	if x != nil {
+		return x.CapabilityToken
+	}
+	return ""
+}
+
 // CommandResult is the agent's report back (sent as a future StreamRequest
 // extension; the field is defined here for versioning stability).
 type CommandResult struct {
@@ -834,7 +1192,7 @@ type CommandResult struct {
 
 func (x *CommandResult) Reset() {
 	*x = CommandResult{}
-	mi := &file_rmmway_agent_v1_commands_proto_msgTypes[9]
+	mi := &file_rmmway_agent_v1_commands_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -846,7 +1204,7 @@ func (x *CommandResult) String() string {
 func (*CommandResult) ProtoMessage() {}
 
 func (x *CommandResult) ProtoReflect() protoreflect.Message {
-	mi := &file_rmmway_agent_v1_commands_proto_msgTypes[9]
+	mi := &file_rmmway_agent_v1_commands_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -859,7 +1217,7 @@ func (x *CommandResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommandResult.ProtoReflect.Descriptor instead.
 func (*CommandResult) Descriptor() ([]byte, []int) {
-	return file_rmmway_agent_v1_commands_proto_rawDescGZIP(), []int{9}
+	return file_rmmway_agent_v1_commands_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *CommandResult) GetCommandId() string {
@@ -915,7 +1273,7 @@ var File_rmmway_agent_v1_commands_proto protoreflect.FileDescriptor
 
 const file_rmmway_agent_v1_commands_proto_rawDesc = "" +
 	"\n" +
-	"\x1ermmway/agent/v1/commands.proto\x12\x0frmmway.agent.v1\"\xde\x04\n" +
+	"\x1ermmway/agent/v1/commands.proto\x12\x0frmmway.agent.v1\"\xfc\x06\n" +
 	"\aCommand\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12 \n" +
 	"\fissued_at_ms\x18\x02 \x01(\x03R\n" +
@@ -931,7 +1289,11 @@ const file_rmmway_agent_v1_commands_proto_rawDesc = "" +
 	"patchQuery\x12D\n" +
 	"\rpatch_approve\x18= \x01(\v2\x1d.rmmway.agent.v1.PatchApproveH\x00R\fpatchApprove\x12>\n" +
 	"\vpatch_apply\x18> \x01(\v2\x1b.rmmway.agent.v1.PatchApplyH\x00R\n" +
-	"patchApply\x12\x1b\n" +
+	"patchApply\x12G\n" +
+	"\x0elist_processes\x18F \x01(\v2\x1e.rmmway.agent.v1.ListProcessesH\x00R\rlistProcesses\x12A\n" +
+	"\fkill_process\x18G \x01(\v2\x1c.rmmway.agent.v1.KillProcessH\x00R\vkillProcess\x12D\n" +
+	"\rlist_services\x18H \x01(\v2\x1d.rmmway.agent.v1.ListServicesH\x00R\flistServices\x12J\n" +
+	"\x0fservice_control\x18I \x01(\v2\x1f.rmmway.agent.v1.ServiceControlH\x00R\x0eserviceControl\x12\x1b\n" +
 	"\ttimeout_s\x18( \x01(\x05R\btimeoutSB\b\n" +
 	"\x06action\"}\n" +
 	"\tRunScript\x12\x12\n" +
@@ -966,7 +1328,28 @@ const file_rmmway_agent_v1_commands_proto_rawDesc = "" +
 	"\tpatch_ids\x18\x01 \x03(\tR\bpatchIds\x12'\n" +
 	"\x0fschedule_reboot\x18\x02 \x01(\bR\x0escheduleReboot\x120\n" +
 	"\x14reboot_delay_seconds\x18\x03 \x01(\rR\x12rebootDelaySeconds\x12)\n" +
-	"\x10capability_token\x18\x04 \x01(\tR\x0fcapabilityToken\"\x90\x03\n" +
+	"\x10capability_token\x18\x04 \x01(\tR\x0fcapabilityToken\"[\n" +
+	"\rListProcesses\x12\x1f\n" +
+	"\vname_filter\x18\x01 \x01(\tR\n" +
+	"nameFilter\x12)\n" +
+	"\x10capability_token\x18\x02 \x01(\tR\x0fcapabilityToken\"`\n" +
+	"\vKillProcess\x12\x10\n" +
+	"\x03pid\x18\x01 \x01(\x05R\x03pid\x12\x14\n" +
+	"\x05force\x18\x02 \x01(\bR\x05force\x12)\n" +
+	"\x10capability_token\x18\x03 \x01(\tR\x0fcapabilityToken\"Z\n" +
+	"\fListServices\x12\x1f\n" +
+	"\vname_filter\x18\x01 \x01(\tR\n" +
+	"nameFilter\x12)\n" +
+	"\x10capability_token\x18\x02 \x01(\tR\x0fcapabilityToken\"\xe2\x01\n" +
+	"\x0eServiceControl\x12!\n" +
+	"\fservice_name\x18\x01 \x01(\tR\vserviceName\x12>\n" +
+	"\x06action\x18\x02 \x01(\x0e2&.rmmway.agent.v1.ServiceControl.ActionR\x06action\x12)\n" +
+	"\x10capability_token\x18\x03 \x01(\tR\x0fcapabilityToken\"B\n" +
+	"\x06Action\x12\x16\n" +
+	"\x12ACTION_UNSPECIFIED\x10\x00\x12\t\n" +
+	"\x05START\x10\x01\x12\b\n" +
+	"\x04STOP\x10\x02\x12\v\n" +
+	"\aRESTART\x10\x03\"\x90\x03\n" +
 	"\rCommandResult\x12\x1d\n" +
 	"\n" +
 	"command_id\x18\x01 \x01(\tR\tcommandId\x12=\n" +
@@ -1001,36 +1384,46 @@ func file_rmmway_agent_v1_commands_proto_rawDescGZIP() []byte {
 	return file_rmmway_agent_v1_commands_proto_rawDescData
 }
 
-var file_rmmway_agent_v1_commands_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_rmmway_agent_v1_commands_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_rmmway_agent_v1_commands_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_rmmway_agent_v1_commands_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_rmmway_agent_v1_commands_proto_goTypes = []any{
-	(CommandResult_Status)(0), // 0: rmmway.agent.v1.CommandResult.Status
-	(*Command)(nil),           // 1: rmmway.agent.v1.Command
-	(*RunScript)(nil),         // 2: rmmway.agent.v1.RunScript
-	(*Reboot)(nil),            // 3: rmmway.agent.v1.Reboot
-	(*FilePull)(nil),          // 4: rmmway.agent.v1.FilePull
-	(*FilePush)(nil),          // 5: rmmway.agent.v1.FilePush
-	(*CollectInventory)(nil),  // 6: rmmway.agent.v1.CollectInventory
-	(*PatchQuery)(nil),        // 7: rmmway.agent.v1.PatchQuery
-	(*PatchApprove)(nil),      // 8: rmmway.agent.v1.PatchApprove
-	(*PatchApply)(nil),        // 9: rmmway.agent.v1.PatchApply
-	(*CommandResult)(nil),     // 10: rmmway.agent.v1.CommandResult
+	(ServiceControl_Action)(0), // 0: rmmway.agent.v1.ServiceControl.Action
+	(CommandResult_Status)(0),  // 1: rmmway.agent.v1.CommandResult.Status
+	(*Command)(nil),            // 2: rmmway.agent.v1.Command
+	(*RunScript)(nil),          // 3: rmmway.agent.v1.RunScript
+	(*Reboot)(nil),             // 4: rmmway.agent.v1.Reboot
+	(*FilePull)(nil),           // 5: rmmway.agent.v1.FilePull
+	(*FilePush)(nil),           // 6: rmmway.agent.v1.FilePush
+	(*CollectInventory)(nil),   // 7: rmmway.agent.v1.CollectInventory
+	(*PatchQuery)(nil),         // 8: rmmway.agent.v1.PatchQuery
+	(*PatchApprove)(nil),       // 9: rmmway.agent.v1.PatchApprove
+	(*PatchApply)(nil),         // 10: rmmway.agent.v1.PatchApply
+	(*ListProcesses)(nil),      // 11: rmmway.agent.v1.ListProcesses
+	(*KillProcess)(nil),        // 12: rmmway.agent.v1.KillProcess
+	(*ListServices)(nil),       // 13: rmmway.agent.v1.ListServices
+	(*ServiceControl)(nil),     // 14: rmmway.agent.v1.ServiceControl
+	(*CommandResult)(nil),      // 15: rmmway.agent.v1.CommandResult
 }
 var file_rmmway_agent_v1_commands_proto_depIdxs = []int32{
-	2, // 0: rmmway.agent.v1.Command.run_script:type_name -> rmmway.agent.v1.RunScript
-	3, // 1: rmmway.agent.v1.Command.reboot:type_name -> rmmway.agent.v1.Reboot
-	6, // 2: rmmway.agent.v1.Command.collect_inventory:type_name -> rmmway.agent.v1.CollectInventory
-	4, // 3: rmmway.agent.v1.Command.file_pull:type_name -> rmmway.agent.v1.FilePull
-	5, // 4: rmmway.agent.v1.Command.file_push:type_name -> rmmway.agent.v1.FilePush
-	7, // 5: rmmway.agent.v1.Command.patch_query:type_name -> rmmway.agent.v1.PatchQuery
-	8, // 6: rmmway.agent.v1.Command.patch_approve:type_name -> rmmway.agent.v1.PatchApprove
-	9, // 7: rmmway.agent.v1.Command.patch_apply:type_name -> rmmway.agent.v1.PatchApply
-	0, // 8: rmmway.agent.v1.CommandResult.status:type_name -> rmmway.agent.v1.CommandResult.Status
-	9, // [9:9] is the sub-list for method output_type
-	9, // [9:9] is the sub-list for method input_type
-	9, // [9:9] is the sub-list for extension type_name
-	9, // [9:9] is the sub-list for extension extendee
-	0, // [0:9] is the sub-list for field type_name
+	3,  // 0: rmmway.agent.v1.Command.run_script:type_name -> rmmway.agent.v1.RunScript
+	4,  // 1: rmmway.agent.v1.Command.reboot:type_name -> rmmway.agent.v1.Reboot
+	7,  // 2: rmmway.agent.v1.Command.collect_inventory:type_name -> rmmway.agent.v1.CollectInventory
+	5,  // 3: rmmway.agent.v1.Command.file_pull:type_name -> rmmway.agent.v1.FilePull
+	6,  // 4: rmmway.agent.v1.Command.file_push:type_name -> rmmway.agent.v1.FilePush
+	8,  // 5: rmmway.agent.v1.Command.patch_query:type_name -> rmmway.agent.v1.PatchQuery
+	9,  // 6: rmmway.agent.v1.Command.patch_approve:type_name -> rmmway.agent.v1.PatchApprove
+	10, // 7: rmmway.agent.v1.Command.patch_apply:type_name -> rmmway.agent.v1.PatchApply
+	11, // 8: rmmway.agent.v1.Command.list_processes:type_name -> rmmway.agent.v1.ListProcesses
+	12, // 9: rmmway.agent.v1.Command.kill_process:type_name -> rmmway.agent.v1.KillProcess
+	13, // 10: rmmway.agent.v1.Command.list_services:type_name -> rmmway.agent.v1.ListServices
+	14, // 11: rmmway.agent.v1.Command.service_control:type_name -> rmmway.agent.v1.ServiceControl
+	0,  // 12: rmmway.agent.v1.ServiceControl.action:type_name -> rmmway.agent.v1.ServiceControl.Action
+	1,  // 13: rmmway.agent.v1.CommandResult.status:type_name -> rmmway.agent.v1.CommandResult.Status
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_rmmway_agent_v1_commands_proto_init() }
@@ -1047,14 +1440,18 @@ func file_rmmway_agent_v1_commands_proto_init() {
 		(*Command_PatchQuery)(nil),
 		(*Command_PatchApprove)(nil),
 		(*Command_PatchApply)(nil),
+		(*Command_ListProcesses)(nil),
+		(*Command_KillProcess)(nil),
+		(*Command_ListServices)(nil),
+		(*Command_ServiceControl)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_rmmway_agent_v1_commands_proto_rawDesc), len(file_rmmway_agent_v1_commands_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   10,
+			NumEnums:      2,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

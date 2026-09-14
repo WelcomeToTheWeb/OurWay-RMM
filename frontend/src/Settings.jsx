@@ -38,6 +38,23 @@ export default function Settings({ token, onUnauthorized }) {
   const [pwBusy, setPwBusy] = useState(false);
   const [pwSaved, setPwSaved] = useState(false);
 
+  // OIDC configuration
+  const [oidc, setOidc] = useState({
+    enabled: false,
+    issuer_url: "",
+    client_id: "",
+    client_secret: "",
+  });
+  const [oidcErr, setOidcErr] = useState(null);
+  const [oidcBusy, setOidcBusy] = useState(false);
+  const [oidcSaved, setOidcSaved] = useState(false);
+  const [oidcLoading, setOidcLoading] = useState(false);
+  const [oidcStatus, setOidcStatus] = useState({
+    enabled: false,
+    configured: false,
+    provider: "",
+  });
+
   const load = useCallback(
     async (reloadingRun = false) => {
       if (reloadingRun) setReloading(true);
@@ -65,6 +82,8 @@ export default function Settings({ token, onUnauthorized }) {
 
   useEffect(() => {
     load();
+    loadOidcConfig();
+    loadOidcStatus();
   }, [load]);
 
   // Mirrors the server's smtp.Config.Normalize: a blank host means
@@ -165,6 +184,57 @@ export default function Settings({ token, onUnauthorized }) {
     }
   }
 
+  async function loadOidcConfig() {
+    try {
+      const config = await api.oidcConfig(token);
+      setOidc({
+        enabled: config.enabled || false,
+        issuer_url: config.issuer_url || "",
+        client_id: config.client_id || "",
+        client_secret: "",
+      });
+    } catch (e) {
+      if (!e.unauthorized) {
+        console.error("Failed to load OIDC config:", e);
+      }
+    }
+  }
+
+  async function loadOidcStatus() {
+    try {
+      const status = await api.oidcStatus();
+      setOidcStatus(status);
+    } catch (e) {
+      if (!e.unauthorized) {
+        console.error("Failed to load OIDC status:", e);
+      }
+    }
+  }
+
+  async function saveOidc(e) {
+    e.preventDefault();
+    if (oidcBusy) return;
+    setOidcBusy(true);
+    setOidcErr(null);
+    setOidcSaved(false);
+    try {
+      await api.oidcSaveConfig(token, {
+        enabled: oidc.enabled,
+        issuer_url: oidc.issuer_url.trim(),
+        client_id: oidc.client_id.trim(),
+        client_secret: oidc.client_secret,
+      });
+      setOidcSaved(true);
+      setOidc((o) => ({ ...o, client_secret: "" }));
+      loadOidcStatus();
+    } catch (ex) {
+      if (ex.unauthorized) onUnauthorized();
+      else setOidcErr(ex.message || "failed to save OIDC configuration");
+    } finally {
+      setOidcBusy(false);
+    }
+  }
+
   const profile = data?.profile || {};
   const s = data?.smtp || {};
 
@@ -209,6 +279,81 @@ export default function Settings({ token, onUnauthorized }) {
                   : "not set (in-memory server)"
               }
             />
+          </section>
+
+          {/* OIDC Authentication */}
+          <section className="settings-card">
+            <h3>
+              OpenID Connect (OIDC) Authentication{" "}
+              {oidcStatus.enabled ? (
+                <span className="settings-badge on">enabled</span>
+              ) : (
+                <span className="settings-badge">disabled</span>
+              )}
+            </h3>
+            <p className="muted">
+              Allow users to log in with an OIDC provider (e.g., Google, GitHub,
+              Azure AD, Keycloak). Users are auto-provisioned on first login.
+            </p>
+            <form onSubmit={saveOidc} noValidate>
+              <div className="settings-grid">
+                <Field
+                  label="Enable OIDC"
+                  type="checkbox"
+                  checked={oidc.enabled}
+                  onChange={(e) =>
+                    setOidc((o) => ({ ...o, enabled: e.target.checked }))
+                  }
+                />
+                <Field
+                  label="Issuer URL"
+                  value={oidc.issuer_url}
+                  onChange={(e) =>
+                    setOidc((o) => ({ ...o, issuer_url: e.target.value }))
+                  }
+                  placeholder="https://accounts.google.com"
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+                <Field
+                  label="Client ID"
+                  value={oidc.client_id}
+                  onChange={(e) =>
+                    setOidc((o) => ({ ...o, client_id: e.target.value }))
+                  }
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                <Field
+                  label="Client Secret (optional)"
+                  type="password"
+                  value={oidc.client_secret}
+                  onChange={(e) =>
+                    setOidc((o) => ({ ...o, client_secret: e.target.value }))
+                  }
+                  autoComplete="new-password"
+                />
+              </div>
+              {oidcErr && (
+                <Banner tone="err" className="settings-err">
+                  {oidcErr}
+                </Banner>
+              )}
+              <div className="settings-actions">
+                <Button variant="primary" type="submit" busy={oidcBusy}>
+                  Save OIDC Settings
+                </Button>
+                {oidcSaved && (
+                  <span className="muted settings-save-msg">Saved.</span>
+                )}
+              </div>
+            </form>
+            {oidcStatus.provider && (
+              <div className="settings-mfa">
+                <span>OIDC Provider</span>
+                <span className="muted">{oidcStatus.provider}</span>
+              </div>
+            )}
           </section>
 
           {/* SMTP outbox — edit + test. */}

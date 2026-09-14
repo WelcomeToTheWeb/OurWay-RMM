@@ -36,6 +36,11 @@ const (
 	// gap #1a: file transfer.
 	CapFilePull = "rmmway.file_pull"
 	CapFilePush = "rmmway.file_push"
+	// Process/service management.
+	CapListProcesses   = "rmmway.list_processes"
+	CapKillProcess     = "rmmway.kill_process"
+	CapListServices    = "rmmway.list_services"
+	CapServiceControl  = "rmmway.service_control"
 
 	// TokenIssuer is the `iss` claim of every capability token.
 	TokenIssuer = "rmmway"
@@ -43,7 +48,7 @@ const (
 
 // AllCapabilities is the full Phase 1 capability set (the default admin
 // grant). New actions must add their capability here.
-var AllCapabilities = []string{CapRunScript, CapReboot, CapFilePull, CapFilePush}
+var AllCapabilities = []string{CapRunScript, CapReboot, CapFilePull, CapFilePush, CapListProcesses, CapKillProcess, CapListServices, CapServiceControl}
 
 // ForAction maps a dispatch action (the Command oneof member) to the
 // capability it requires. Unknown actions are reported (ok=false).
@@ -57,6 +62,14 @@ func ForAction(action any) (string, bool) {
 		return CapFilePull, true
 	case *agentv1.Command_FilePush: // gap #1a
 		return CapFilePush, true
+	case *agentv1.Command_ListProcesses: // process management
+		return CapListProcesses, true
+	case *agentv1.Command_KillProcess: // process management
+		return CapKillProcess, true
+	case *agentv1.Command_ListServices: // service management
+		return CapListServices, true
+	case *agentv1.Command_ServiceControl: // service management
+		return CapServiceControl, true
 	default:
 		return "", false
 	}

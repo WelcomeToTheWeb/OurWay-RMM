@@ -154,6 +154,12 @@ type dispatchRequest struct {
 	Path       string   `json:"path"`        // gap #1a: file path for pull/push
 	ContentB64 string   `json:"content_b64"` // gap #1a: inline content for push
 	Mode       string   `json:"mode"`        // gap #1a: octal mode for push
+	// Process management
+	PID      int32  `json:"pid"`
+	Force    bool   `json:"force"`
+	// Service management
+	ServiceName string `json:"service_name"`
+	ServiceAction string `json:"service_action"`
 }
 
 // buildCommandAction maps the JSON body onto the proto oneof action.
@@ -230,8 +236,43 @@ func buildCommandAction(in dispatchRequest) (any, error) {
 			ScheduleReboot:     scheduleReboot,
 			RebootDelaySeconds: rebootDelay,
 		}}, nil
+	case "list_processes": // process management
+		return &agentv1.Command_ListProcesses{ListProcesses: &agentv1.ListProcesses{
+			NameFilter: in.Path, // name filter via path field
+		}}, nil
+	case "kill_process": // process management
+		if in.PID <= 0 {
+			return nil, fmt.Errorf("kill_process requires pid")
+		}
+		return &agentv1.Command_KillProcess{KillProcess: &agentv1.KillProcess{
+			Pid:   in.PID,
+			Force: in.Force,
+		}}, nil
+	case "list_services": // service management
+		return &agentv1.Command_ListServices{ListServices: &agentv1.ListServices{
+			NameFilter: in.Path, // name filter via path field
+		}}, nil
+	case "service_control": // service management
+		if in.ServiceName == "" {
+			return nil, fmt.Errorf("service_control requires service_name")
+		}
+		var action agentv1.ServiceControl_Action
+		switch in.ServiceAction {
+		case "start":
+			action = agentv1.ServiceControl_START
+		case "stop":
+			action = agentv1.ServiceControl_STOP
+		case "restart":
+			action = agentv1.ServiceControl_RESTART
+		default:
+			return nil, fmt.Errorf("service_control action must be start|stop|restart")
+		}
+		return &agentv1.Command_ServiceControl{ServiceControl: &agentv1.ServiceControl{
+			ServiceName: in.ServiceName,
+			Action:      action,
+		}}, nil
 	default:
-		return nil, fmt.Errorf("unknown action %q (want run_script|reboot|file_pull|file_push|collect_inventory|patch_query|patch_apply)", in.Action)
+		return nil, fmt.Errorf("unknown action %q (want run_script|reboot|file_pull|file_push|collect_inventory|patch_query|patch_apply|list_processes|kill_process|list_services|service_control)", in.Action)
 	}
 }
 

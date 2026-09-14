@@ -63,7 +63,27 @@ func (s *Server) handleSetupStatus(w http.ResponseWriter, r *http.Request) {
 		}
 		st = out
 	}
-	writeJSON(w, http.StatusOK, st)
+
+	// Include OIDC availability in the status response
+	oidcAvailable := false
+	if s.oidcStore != nil {
+		if oidcCfg, err := s.oidcStore.Get(r.Context()); err == nil && oidcCfg.Enabled {
+			oidcAvailable = true
+		}
+	}
+
+	// Build the response with OIDC info
+	resp := map[string]any{
+		"available":         st.Available,
+		"setup":             st.Setup,
+		"org_name":          st.OrgName,
+		"admin_user":        st.AdminUser,
+		"smtp_host":         st.SMTPHost,
+		"smtp_configured":   st.SMTPConfigured,
+		"devices_enrolled":  st.DevicesEnrolled,
+		"oidc_enabled":      oidcAvailable,
+	}
+	writeJSON(w, http.StatusOK, resp)
 }
 
 // handleSetup reads back the stored wizard choices (the password is never

@@ -16,9 +16,17 @@ RMMWay is a self-hosted remote monitoring & management (RMM) platform. A small s
 
 ## Quick Start
 
-Requires Docker. The entire stack runs in containers with pre-built images.
+Requires Docker. The entire stack runs in containers with pre-built images. No git clone needed — just download the compose file and configure secrets.
 
-### 1. Configure secrets
+### 1. Get the compose file
+
+Download the release compose file from the [latest release](https://github.com/welcometotheweb/rmmway/releases):
+
+```sh
+curl -LO https://github.com/welcometotheweb/rmmway/releases/download/v1.1.0/docker-compose.release.yml
+```
+
+### 2. Configure secrets
 
 Copy the example environment file and set the required secrets:
 
@@ -38,7 +46,7 @@ Edit `.env.prod` and set these required secrets (generate each with `openssl ran
 
 Set `RMMWAY_PUBLIC_URL` to your server's public URL (e.g. `https://rmm.example.com`) so agents can reach it and TLS certs are correct.
 
-### 2. Start the stack
+### 3. Start the stack
 
 ```sh
 # Bundled Caddy TLS edge (ports 80/443 + 50052 for agents)
@@ -50,7 +58,7 @@ docker compose -f docker-compose.release-byop.yml up -d
 
 The stack includes the server, frontend, TimescaleDB, NATS, Redis, MinIO, Meilisearch, and Loki. On first run it automatically pulls images, applies database migrations, and starts all services.
 
-### 3. Verify and log in
+### 4. Verify and log in
 
 ```sh
 # Check all services are healthy

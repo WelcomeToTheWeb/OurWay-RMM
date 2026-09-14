@@ -2,6 +2,16 @@
 
 All notable changes to RMMWay will be documented in this file.
 
+## [1.2.0] - 2026-09-14
+
+### Added
+
+- **Process management** — list running processes with CPU/memory stats, filter by name, and kill processes by PID
+- **Service management** — list system services with status, and control services (start/stop/restart)
+- Remote control capabilities now support process and service operations across Linux, Windows, and macOS
+- New W3-3 capability tokens for process/service management (rmmway.list_processes, rmmway.kill_process, rmmway.list_services, rmmway.service_control)
+- Updated release compose files to reference v1.2.0 images
+
 ## [1.0.1] - 2026-09-10
 
 ### Fixed

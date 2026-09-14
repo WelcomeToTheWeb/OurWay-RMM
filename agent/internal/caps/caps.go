@@ -37,6 +37,11 @@ const (
 	// gap #1a: file transfer.
 	CapFilePull = "rmmway.file_pull"
 	CapFilePush = "rmmway.file_push"
+	// Process/service management.
+	CapListProcesses  = "rmmway.list_processes"
+	CapKillProcess    = "rmmway.kill_process"
+	CapListServices   = "rmmway.list_services"
+	CapServiceControl = "rmmway.service_control"
 
 	// TokenIssuer is the `iss` claim of every capability token.
 	TokenIssuer = "rmmway"
@@ -128,6 +133,14 @@ func ForCommand(cmd *agentv1.Command) (capability, token string, ok bool) {
 		return CapFilePull, a.FilePull.GetCapabilityToken(), true
 	case *agentv1.Command_FilePush: // gap #1a
 		return CapFilePush, a.FilePush.GetCapabilityToken(), true
+	case *agentv1.Command_ListProcesses: // process management
+		return CapListProcesses, a.ListProcesses.GetCapabilityToken(), true
+	case *agentv1.Command_KillProcess: // process management
+		return CapKillProcess, a.KillProcess.GetCapabilityToken(), true
+	case *agentv1.Command_ListServices: // service management
+		return CapListServices, a.ListServices.GetCapabilityToken(), true
+	case *agentv1.Command_ServiceControl: // service management
+		return CapServiceControl, a.ServiceControl.GetCapabilityToken(), true
 	default:
 		return "", "", false
 	}
