@@ -1,5 +1,14 @@
 # Changelog
 
+## [v1.3.0] - 2026-09-14
+- Rebrand: RMMWay → OurWay RMM across the entire codebase
+- All binaries, Docker images, and release assets now use the `ourway-rmm` name
+- Environment variables renamed from `RMMWAY_*` to `OURWAY_RMM_*`
+- Proto package renamed from `rmmway.agent.v1` to `ourway_rmm.agent.v1`
+- Updated all documentation, configuration files, and deployment manifests
+
+## [v1.2.0] - Previous
+
 All notable changes to OurWay RMM will be documented in this file.
 
 ## [1.2.0] - 2026-09-14
