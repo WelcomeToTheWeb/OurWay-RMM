@@ -116,13 +116,15 @@ log "asset: ${URL}"
 
 # --- pick install dir -------------------------------------------------------
 if [ "$(id -u)" = "0" ]; then
-  INSTALL_DIR="/usr/local/bin"
-  BIN="${INSTALL_DIR}/ourway-rmm-agent"
+	INSTALL_DIR="/usr/local/bin"
+	CONFIG_DIR="/etc/ourway-rmm"
+	SERVICE_USER="root"
 else
-  INSTALL_DIR="${HOME}/.local/bin"
-  BIN="${INSTALL_DIR}/ourway-rmm-agent"
-  log "not root — installing to ${INSTALL_DIR}"
+	INSTALL_DIR="${HOME}/.local/bin"
+	CONFIG_DIR="${HOME}/.config/ourway-rmm"
+	SERVICE_USER="$(whoami)"
 fi
+log "install dir: ${INSTALL_DIR}  config dir: ${CONFIG_DIR}  service user: ${SERVICE_USER}"
 mkdir -p "$INSTALL_DIR"
 [ -w "$INSTALL_DIR" ] || die "cannot write to ${INSTALL_DIR} (re-run as root or sudo)"
 

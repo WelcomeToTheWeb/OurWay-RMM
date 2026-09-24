@@ -290,8 +290,8 @@ jobs:
             --server http://localhost:8080 \
             --bootstrap "$BOOTSTRAP_TOKEN" \
             --version 0.0.0-e2e
-          echo "--- /etc/ourway-rmm/agent.env (token redacted) ---"
-          sed 's/^OURWAY_RMM_BOOTSTRAP_TOKEN=.*/OURWAY_RMM_BOOTSTRAP_TOKEN=<redacted>/' /etc/ourway-rmm/agent.env
+          echo "--- ${HOME}/.config/ourway-rmm/agent.env (token redacted) ---"
+          sed 's/^OURWAY_RMM_BOOTSTRAP_TOKEN=.*/OURWAY_RMM_BOOTSTRAP_TOKEN=<redacted>/' ${HOME}/.config/ourway-rmm/agent.env
           echo "--- unit state ---"
           systemctl is-active ourway-rmm-agent.service || true
       - name: Assert the device is online and metrics flow (<= 60 s)
