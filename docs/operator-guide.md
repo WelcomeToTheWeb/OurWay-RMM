@@ -130,7 +130,8 @@ curl -X POST \
   https://rmm.example.com/api/bootstrap
 ```
 
-The response contains a one-time token to use with the agent enrollment command.
+The response contains `bootstrap_token` - the one-time token to pass as the
+installer's `-Bootstrap` flag - plus a pre-minted `device_id`.
 
 ### Verifying Enrollment
 

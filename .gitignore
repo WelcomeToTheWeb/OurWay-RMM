@@ -30,6 +30,7 @@ server/bin/
 agent/agent
 server/server
 scripts/load-test/load-test
+tools/signer/signer
 SHA256SUMS
 SHA256SUMS.minisig
 *.minisig
