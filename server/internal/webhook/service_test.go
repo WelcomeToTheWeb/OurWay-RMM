@@ -309,6 +309,26 @@ func publishTestEvent(t *testing.T, h *harness, subject, deviceID, action string
 	}
 }
 
+// waitJournal blocks until the event journal contains at least n events
+// (or times out after 5 s). This guards against the async gap between
+// publishTestEvent and the service's journal handler.
+func waitJournal(t *testing.T, h *harness, n int) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	for {
+		mx, err := h.svc.Store().MaxSeq(ctx)
+		if err == nil && mx >= int64(n) {
+			return
+		}
+		select {
+		case <-ctx.Done():
+			t.Fatalf("journal never reached %d events (max seq=%d, err=%v)", n, mx, err)
+		case <-time.After(50 * time.Millisecond):
+		}
+	}
+}
+
 // sweepN clears every endpoint's backoff watermark before EACH sweep, then
 // runs it (so a test doesn't wait real backoff, and each sweep is eligible).
 // It is idempotent and pacing-only.
@@ -357,7 +377,7 @@ func TestJournalAndDelivery(t *testing.T) {
 	publishTestEvent(t, h, "ourway-rmm.events.alert", "dev-1", "fired")
 	publishTestEvent(t, h, "ourway-rmm.events.alert", "dev-1", "fired")
 	publishTestEvent(t, h, "ourway-rmm.events.flow.notify", "dev-1", "notify")
-
+	waitJournal(t, h, 3)
 	// Deliver one event per sweep.
 	sweepN(t, h, 10)
 
@@ -386,8 +406,8 @@ func TestJournalAndDelivery(t *testing.T) {
 	fresh, err := st.Endpoint(ctx, ep.ID)
 	if err != nil {
 		t.Fatalf("fetch endpoint: %v", err)
-	}
-	if fresh.LastSeq < 2 {
+	publishTestEvent(t, h, "ourway-rmm.events.alert", "dev-1", "fired")
+	waitJournal(t, h, 1)
 		t.Fatalf("cursor = %d, want >= 2 (both alerts delivered)", fresh.LastSeq)
 	}
 	// The journal holds all three (automation was journaled, just not delivered).
@@ -415,7 +435,7 @@ func TestRetryAndDeadLetter(t *testing.T) {
 		t.Fatalf("create endpoint: %v", err)
 	}
 	publishTestEvent(t, h, "ourway-rmm.events.alert", "dev-1", "fired")
-
+	waitJournal(t, h, 1)
 	// Each sweep retries one event; the backoff is cleared by sweepN so the
 	// attempt counter accumulates across sweeps until max_attempts (3) ->
 	// status "failing".
@@ -469,6 +489,7 @@ func TestReplayRedrives(t *testing.T) {
 	publishTestEvent(t, h, "ourway-rmm.events.alert", "d", "a1")
 	publishTestEvent(t, h, "ourway-rmm.events.alert", "d", "a2")
 	publishTestEvent(t, h, "ourway-rmm.events.alert", "d", "a3")
+	waitJournal(t, h, 3)
 	sweepN(t, h, 10)
 	mu.Lock()
 	firstThree := append([]int64{}, delivered...)

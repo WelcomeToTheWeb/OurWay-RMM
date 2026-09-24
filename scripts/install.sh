@@ -124,7 +124,7 @@ else
 	CONFIG_DIR="${HOME}/.config/ourway-rmm"
 	SERVICE_USER="$(whoami)"
 fi
-log "install dir: ${INSTALL_DIR}  config dir: ${CONFIG_DIR}  service user: ${SERVICE_USER}"
+BIN="${INSTALL_DIR}/ourway-rmm-agent"
 mkdir -p "$INSTALL_DIR"
 [ -w "$INSTALL_DIR" ] || die "cannot write to ${INSTALL_DIR} (re-run as root or sudo)"
 
