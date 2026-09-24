@@ -259,7 +259,7 @@ jobs:
           # redis/minio/meili), so wait for the login API to answer 200 —
           # that means the server is fully booted (migrations + PKI included).
           for i in $(seq 1 90); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8080/api/login -H 'Content-Type: application/json' -d '{"username":"admin","password":"admin"}')
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8080/api/login -H 'Content-Type: application/json' -d '{"username":"admin","password":"admin"}' || echo 000)
             [ "$code" = "200" ] && break
             sleep 1
           done
