@@ -406,8 +406,8 @@ func TestJournalAndDelivery(t *testing.T) {
 	fresh, err := st.Endpoint(ctx, ep.ID)
 	if err != nil {
 		t.Fatalf("fetch endpoint: %v", err)
-	publishTestEvent(t, h, "ourway-rmm.events.alert", "dev-1", "fired")
-	waitJournal(t, h, 1)
+		publishTestEvent(t, h, "ourway-rmm.events.alert", "dev-1", "fired")
+		waitJournal(t, h, 1)
 		t.Fatalf("cursor = %d, want >= 2 (both alerts delivered)", fresh.LastSeq)
 	}
 	// The journal holds all three (automation was journaled, just not delivered).
