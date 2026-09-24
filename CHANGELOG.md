@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.4.0] - 2026-09-24
 
 ### Added
 
@@ -159,6 +159,7 @@
 - Webhooks, SSE events, client export
 - Settings and profile pages
 
+[1.4.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.4.0
 [1.3.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.3.0
 [1.2.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.2.0
 [1.0.1]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.0.1
