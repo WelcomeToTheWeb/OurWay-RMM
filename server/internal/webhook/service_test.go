@@ -359,7 +359,7 @@ func TestJournalAndDelivery(t *testing.T) {
 	publishTestEvent(t, h, "ourway-rmm.events.flow.notify", "dev-1", "notify")
 
 	// Deliver one event per sweep.
-	sweepN(t, h, 4)
+	sweepN(t, h, 10)
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -412,7 +412,7 @@ func TestRetryAndDeadLetter(t *testing.T) {
 	// Each sweep retries one event; the backoff is cleared by sweepN so the
 	// attempt counter accumulates across sweeps until max_attempts (3) ->
 	// status "failing".
-	sweepN(t, h, 5)
+	sweepN(t, h, 10)
 
 	fresh, _ := st.Endpoint(ctx, ep.ID)
 	if fresh.LastSeq != 0 {
