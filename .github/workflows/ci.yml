@@ -245,10 +245,12 @@ jobs:
       - name: Serve a local "release" dir (binary + SHA256SUMS) on 127.0.0.1:8088
         run: |
           set -euo pipefail
-          (cd agent/dist && sha256sum ourway-rmm-agent-linux-amd64 > SHA256SUMS && cat SHA256SUMS)
+          mkdir -p agent/dist/0.0.0-e2e
+          cp agent/dist/ourway-rmm-agent-linux-amd64 agent/dist/0.0.0-e2e/
+          (cd agent/dist/0.0.0-e2e && sha256sum ourway-rmm-agent-linux-amd64 > SHA256SUMS && cat SHA256SUMS)
           python3 -m http.server 8088 --bind 127.0.0.1 --directory agent/dist > /tmp/ourway-rmm-filesrv.log 2>&1 &
-          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8088/SHA256SUMS > /dev/null && break; sleep 1; done
-          curl -sf http://127.0.0.1:8088/SHA256SUMS
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8088/0.0.0-e2e/SHA256SUMS > /dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:8088/0.0.0-e2e/SHA256SUMS
       - name: Boot the server from source (fresh Timescale — migrations on boot)
         working-directory: server
         run: |
