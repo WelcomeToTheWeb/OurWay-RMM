@@ -321,7 +321,7 @@ func sweepN(t *testing.T, h *harness, n int) {
 			_ = st.SetNextRetry(context.Background(), ps[i].ID, time.Now().Add(-time.Second))
 		}
 	}
-	for i := 0; i < n; i++ {
+	for range n {
 		clear()
 		h.svc.Sweep(context.Background(), time.Now())
 	}
@@ -462,9 +462,7 @@ func TestReplayRedrives(t *testing.T) {
 	publishTestEvent(t, h, "ourway-rmm.events.alert", "d", "a1")
 	publishTestEvent(t, h, "ourway-rmm.events.alert", "d", "a2")
 	publishTestEvent(t, h, "ourway-rmm.events.alert", "d", "a3")
-	for i := 0; i < 3; i++ {
-		sweepN(t, h, 1)
-	}
+	sweepN(t, h, 10)
 	mu.Lock()
 	firstThree := append([]int64{}, delivered...)
 	mu.Unlock()
@@ -474,9 +472,7 @@ func TestReplayRedrives(t *testing.T) {
 
 	// Replay from the first seq: the endpoint should re-receive all 3.
 	_ = st.SetCursor(ctx, ep.ID, firstThree[0]-1)
-	for i := 0; i < 3; i++ {
-		sweepN(t, h, 1)
-	}
+	sweepN(t, h, 10)
 	mu.Lock()
 	total := append([]int64{}, delivered...)
 	mu.Unlock()
