@@ -32,7 +32,7 @@
   now count unique deliveries instead of exact counts to tolerate
   retry-based duplicates.
 
-## [0.1.5] - 2026-09-24
+## [1.5.0] - 2026-09-24
 
 ### Added
 
@@ -216,7 +216,7 @@
 - Settings and profile pages
 
 [0.1.4]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v0.1.4
-[0.1.5]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v0.1.5
+[1.5.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.5.0
 [1.4.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.4.0
 [1.3.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.3.0
 [1.2.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.2.0
