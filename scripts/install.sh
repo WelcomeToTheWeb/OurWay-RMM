@@ -239,7 +239,8 @@ if [ "$OS" = "linux" ] && command -v systemctl >/dev/null 2>&1; then
 	fi
 	log "installing systemd unit -> ${UNIT}"
 	mkdir -p "$(dirname "$UNIT")"
-	cat >"$UNIT" <<EOF
+	if [ "$(id -u)" = "0" ]; then
+		cat >"$UNIT" <<EOF
 [Unit]
 Description=OurWay RMM agent
 After=network-online.target
@@ -262,6 +263,24 @@ ReadWritePaths=${CONFIG_DIR}
 [Install]
 WantedBy=${WANTED_BY}
 EOF
+	else
+		cat >"$UNIT" <<EOF
+[Unit]
+Description=OurWay RMM agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=${CFG}
+ExecStart=${run_cmd}
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=${WANTED_BY}
+EOF
+	fi
 	$SYSTEMCTL daemon-reload
 	$SYSTEMCTL enable ourway-rmm-agent.service || log "unit enable failed (is systemd running?)"
 	$SYSTEMCTL start ourway-rmm-agent.service || log "unit start failed (will try on next boot)"
