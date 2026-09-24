@@ -23,6 +23,13 @@
 
 ### Changed
 
+- **Windows service + install dir renamed (rebrand follow-through)**: the
+  Windows service is now `OurWayRMMAgent` (was `RmmWayAgent`), non-elevated
+  installs go to `%LOCALAPPDATA%\OurWayRMM` (was `RmmWay`), and elevated
+  installs to `C:\Program Files\OurWay RMM` (was `RMMWay`). Re-running
+  `scripts/install.ps1` on a pre-1.3.0 machine stops + deletes the legacy
+  service and carries the old install dir over, so an upgrade can't leave
+  two agents running or orphan the bootstrap config.
 - **Version constants aligned to v1.3.0**: the repo's version pins (Makefile
   `VERSION`, `.env.prod.example`, the server's built-in default, and the
   compose image tags + `OURWAY_RMM_VERSION` pins) now all say 1.3.0 — release
@@ -64,6 +71,14 @@
   still required the old `rmmway/proto/gen` module path; it no longer
   compiled. Fixed + the committed `load-test` binary artifact was removed
   (now gitignored).
+- **Remote session test suite was never committed**: the 419-line
+  `domain_session_test.go` (incl. `TestSessionStreamDeliversNamedSSEEvents`,
+  cited by docs/remote-session.md) was untracked in git; it is now committed.
+- **Stray signer binary in the tree**: a 3.4 MB compiled `tools/signer/signer`
+  ELF was sitting untracked; removed and added to .gitignore so it can't recur.
+- **Doc drift**: the operator guide's bootstrap API section now documents the
+  actual `{bootstrap_token, device_id}` response shape, and install.ps1's
+  stale v0.4.0 hot-swap comment no longer pins a release tag.
 
 ### Removed
 
