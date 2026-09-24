@@ -165,8 +165,15 @@ func main() {
 	}
 	info("PASS: signed release applied — on-disk binary is now %s", versionOf(current))
 
-	// Re-install the OLD binary so the next cases start from the same state.
-	_ = copyFile(oldBin, current, 0o755)
+	// Re-install the OLD binary so the next cases start from the same
+	// state; die on failure (a stale binary would make the next case
+	// compare against the wrong version).
+	if err := copyFile(oldBin, current, 0o755); err != nil {
+		die("restore old binary: %v", err)
+	}
+	if ver := versionOf(current); ver != "1.0.0" {
+		die("restored binary reports %q, want 1.0.0", ver)
+	}
 
 	// ---- 2. TAMPERED: bytes don't match the signature -> refused -----------
 	step("2. TAMPERED release (bytes flip, signature stale) -> REFUSED, old binary survives")
@@ -193,8 +200,12 @@ func main() {
 	info("PASS: tampered release refused — binary still %s (sha unchanged)", versionOf(current))
 
 	// Re-install the OLD binary + restore the clean served bytes.
-	_ = copyFile(oldBin, current, 0o755)
-	_ = copyFile(newBin, filepath.Join(relDir, assetName), 0o755)
+	if err := copyFile(oldBin, current, 0o755); err != nil {
+		die("restore old binary: %v", err)
+	}
+	if ver := versionOf(current); ver != "1.0.0" {
+		die("restored binary reports %q, want 1.0.0", ver)
+	}
 	_ = copyFile(newBin+".minisig", filepath.Join(relDir, assetName+".minisig"), 0o644)
 	if err := patchManifestSHA(relDir, goosArch, newSHA); err != nil {
 		die("restore manifest: %v", err)
@@ -253,10 +264,17 @@ func versionOf(bin string) string {
 	return strings.TrimSpace(out)
 }
 
+// copyFile copies src to dst (mode), replacing dst. It unlinks dst first
+// rather than truncating it: a write-open (O_TRUNC) can transiently fail
+// with ETXTBSY while the kernel releases state from a binary that was
+// just exec'd at that path, and the restore steps race exactly that
+// window. Unlink + create always works (a running/mapped inode survives
+// the unlink until its last reference drops).
 func copyFile(src, dst string, mode os.FileMode) error {
 	b, err := os.ReadFile(src)
 	if err != nil {
 		return err
 	}
+	_ = os.Remove(dst)
 	return os.WriteFile(dst, b, mode)
 }

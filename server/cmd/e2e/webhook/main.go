@@ -239,12 +239,14 @@ func main() {
 		die("scratch pool: %v", err)
 	}
 	defer pool.Close()
-	if n, err := store.Migrate(ctx, pool, "migrations"); err != nil {
-		die("migrate: %v (n=%d)", err, n)
-	} else if n != 11 {
-		die("expected 11 migrations, got %d", n)
+	n, err := store.Migrate(ctx, pool, "migrations")
+	if err != nil {
+		die("migrate: %v", err)
 	}
-	info("11 migrations applied to scratch db %s", dbName)
+	if want := migrationCount(); n != want {
+		die("expected %d migrations, got %d", want, n)
+	}
+	info("%d migrations applied to scratch db %s", n, dbName)
 
 	// ---- real NATS bus -----------------------------------------------------
 	step("nats jetstream bus")
@@ -439,10 +441,8 @@ func main() {
 		fevs, ferr := whStore.EventsAfterFilter(ctx, 0, webhook.Filter{Device: fa.devID, Type: flow.SubjectDevice}, 100)
 		if ferr == nil {
 			for _, e := range fevs {
-				var raw struct {
-					Action string `json:"action"`
-				}
-				if err := json.Unmarshal(e.Data, &raw); err == nil && raw.Action == "offline" {
+				var fe flow.Event
+				if err := json.Unmarshal(e.Data, &fe); err == nil && fe.Data["action"] == "offline" {
 					offlineSeen = true
 				}
 			}
@@ -466,10 +466,8 @@ func main() {
 	check(len(list) >= 1, "GET /admin/events?device=&type= returned %d envelopes, want >=1", len(list))
 	restOffline := false
 	for _, e := range list {
-		var inner struct {
-			Action string `json:"action"`
-		}
-		if json.Unmarshal(e.Event, &inner) == nil && inner.Action == "offline" {
+		var fe flow.Event
+		if json.Unmarshal(e.Event, &fe) == nil && fe.Data["action"] == "offline" {
 			restOffline = true
 		}
 	}
@@ -834,4 +832,21 @@ func parseCertPEM(pemBytes []byte) (*x509.Certificate, error) {
 		return nil, fmt.Errorf("no PEM block")
 	}
 	return x509.ParseCertificate(block.Bytes)
+}
+
+// migrationCount returns the number of .sql files in the migrations dir
+// (cwd = server module root, the same path Migrate is given) so the
+// assertion stays valid as migrations are added.
+func migrationCount() int {
+	entries, err := os.ReadDir("migrations")
+	if err != nil {
+		die("read migrations dir: %v", err)
+	}
+	n := 0
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".sql") {
+			n++
+		}
+	}
+	return n
 }

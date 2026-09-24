@@ -113,12 +113,14 @@ func main() {
 	defer pool.Close()
 
 	step("migrate")
-	if n, err := store.Migrate(ctx, pool, "migrations"); err != nil {
-		die("migrate: %v (n=%d)", err, n)
-	} else if n != 8 {
-		die("expected 8 migrations, got %d", n)
+	n, err := store.Migrate(ctx, pool, "migrations")
+	if err != nil {
+		die("migrate: %v", err)
 	}
-	info("8 migrations applied to scratch db %s", dbName)
+	if want := migrationCount(); n != want {
+		die("expected %d migrations, got %d", want, n)
+	}
+	info("%d migrations applied to scratch db %s", n, dbName)
 
 	// ---- in-process server: real ingest + real operator API --------------
 	step("boot in-process server (ingest + operator API)")
@@ -523,4 +525,21 @@ func fetchWarnEvents(base, token, devID string) (*struct {
 		return nil, err
 	}
 	return &er, nil
+}
+
+// migrationCount returns the number of .sql files in the migrations dir
+// (cwd = server module root, the same path Migrate is given) so the
+// assertion stays valid as migrations are added.
+func migrationCount() int {
+	entries, err := os.ReadDir("migrations")
+	if err != nil {
+		die("read migrations dir: %v", err)
+	}
+	n := 0
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".sql") {
+			n++
+		}
+	}
+	return n
 }
