@@ -263,7 +263,8 @@ ReadWritePaths=${CONFIG_DIR}
 WantedBy=${WANTED_BY}
 EOF
 	$SYSTEMCTL daemon-reload
-	$SYSTEMCTL enable --now ourway-rmm-agent.service || log "unit enabled (start deferred — is systemd running?)"
+	$SYSTEMCTL enable ourway-rmm-agent.service || log "unit enable failed (is systemd running?)"
+	$SYSTEMCTL start ourway-rmm-agent.service || log "unit start failed (will try on next boot)"
 elif [ "$OS" = "darwin" ] && [ -d /Library/LaunchDaemons ]; then
   PLIST="/Library/LaunchDaemons/io.ourway-rmm.agent.plist"
   log "installing launchd plist -> ${PLIST}"
