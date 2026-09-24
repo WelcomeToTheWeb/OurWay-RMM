@@ -259,10 +259,10 @@ func TestPostgresUsersLive(t *testing.T) {
 		t.Skipf("postgres not reachable: %v", err)
 	}
 	dbName := "ourway-rmm_test_" + time.Now().Format("20060102150405")
-	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
+	if _, err := admin.Exec(ctx, `CREATE DATABASE "`+dbName+`"`); err != nil {
 		t.Fatalf("create db: %v", err)
 	}
-	defer admin.Exec(context.Background(), `DROP DATABASE IF EXISTS `+dbName)
+	defer admin.Exec(context.Background(), `DROP DATABASE IF EXISTS "`+dbName+`"`)
 
 	u.Path = "/" + dbName
 	db, err := pgxpool.New(ctx, u.String())
@@ -277,8 +277,8 @@ func TestPostgresUsersLive(t *testing.T) {
 	t.Chdir("../../..")
 	if n, err := Migrate(ctx, db, "server/migrations"); err != nil {
 		t.Fatalf("migrate: %v", err)
-	} else if n != 11 {
-		t.Fatalf("expected 11 migrations applied, got %d", n)
+	} else if want := migrationFileCount(t); n != want {
+		t.Fatalf("expected %d migrations applied, got %d", want, n)
 	}
 
 	s := NewPostgresUserStore(db)

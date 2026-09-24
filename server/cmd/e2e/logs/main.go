@@ -97,13 +97,13 @@ func main() {
 		die("postgres not reachable (%v) — run `make up`", err)
 	}
 	dbName := "ourway-rmm_logs_e2e_" + time.Now().Format("20060102150405")
-	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
+	if _, err := admin.Exec(ctx, `CREATE DATABASE "`+dbName+`"`); err != nil {
 		die("create scratch db: %v", err)
 	}
 	defer func() {
 		ctxC, cancelC := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancelC()
-		_, _ = admin.Exec(ctxC, `DROP DATABASE IF EXISTS `+dbName)
+		_, _ = admin.Exec(ctxC, `DROP DATABASE IF EXISTS "`+dbName+`"`)
 	}()
 	u.Path = "/" + dbName
 	pool, err := pgxpool.New(ctx, u.String())

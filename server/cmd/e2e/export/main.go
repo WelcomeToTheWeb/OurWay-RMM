@@ -381,7 +381,7 @@ func makeScratch(ctx context.Context, dsn, prefix string) (*pgxpool.Pool, *pgxpo
 		die("postgres not reachable: %v (try OURWAY_RMM_PG_DSN=postgres://postgres@localhost:5432/postgres)", err)
 	}
 	name := prefix + time.Now().Format("20060102150405")
-	if _, err := admin.Exec(ctx, `CREATE DATABASE `+name); err != nil {
+	if _, err := admin.Exec(ctx, `CREATE DATABASE "`+name+`"`); err != nil {
 		die("create scratch db: %v (does the user have CREATEDB?)", err)
 	}
 	step("migrate scratch db " + name)
@@ -406,7 +406,7 @@ func dropScratch(admin *pgxpool.Pool, name string) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	_, _ = admin.Exec(ctx, `DROP DATABASE IF EXISTS `+name)
+	_, _ = admin.Exec(ctx, `DROP DATABASE IF EXISTS "`+name+`"`)
 	admin.Close()
 }
 

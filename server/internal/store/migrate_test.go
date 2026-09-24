@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -44,10 +45,10 @@ func TestMigrateAppliesInitInTempDB(t *testing.T) {
 	}
 	suffix := time.Now().Format("20060102150405")
 	dbName := "ourway-rmm_test_" + suffix
-	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
+	if _, err := admin.Exec(ctx, `CREATE DATABASE "`+dbName+`"`); err != nil {
 		t.Fatalf("create db: %v", err)
 	}
-	defer admin.Exec(context.Background(), `DROP DATABASE IF EXISTS `+dbName)
+	defer admin.Exec(context.Background(), `DROP DATABASE IF EXISTS "`+dbName+`"`)
 
 	u.Path = "/" + dbName
 	db, err := pgxpool.New(ctx, u.String())
@@ -69,8 +70,8 @@ func TestMigrateAppliesInitInTempDB(t *testing.T) {
 	if err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
-	if n != 11 {
-		t.Fatalf("expected 11 migrations applied, got %d", n)
+	if want := migrationFileCount(t); n != want {
+		t.Fatalf("expected %d migrations applied, got %d", want, n)
 	}
 
 	mustScan := func(query string, dst ...any) {
@@ -199,4 +200,24 @@ func TestMigrationsDirResolves(t *testing.T) {
 	if st.IsDir() {
 		t.Fatalf("0001_init.sql is a directory?")
 	}
+}
+
+// migrationFileCount returns the number of .sql files in the migrations
+// dir the live tests point Migrate at ("server/migrations", cwd = repo
+// root). Asserting against this instead of a hardcoded count keeps the
+// tests correct as migrations are added. Callers must have already
+// t.Chdir'd to the repo root.
+func migrationFileCount(t *testing.T) int {
+	t.Helper()
+	entries, err := os.ReadDir(filepath.Join("server", "migrations"))
+	if err != nil {
+		t.Fatalf("read migrations dir: %v", err)
+	}
+	n := 0
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".sql") {
+			n++
+		}
+	}
+	return n
 }

@@ -253,13 +253,13 @@ func main() {
 		die("postgres not reachable: %v", err)
 	}
 	dbName := "ourway-rmm_setup_e2e_" + time.Now().Format("20060102150405")
-	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
+	if _, err := admin.Exec(ctx, `CREATE DATABASE "`+dbName+`"`); err != nil {
 		die("create scratch db: %v", err)
 	}
 	defer func() {
 		ctxC, cancelC := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancelC()
-		_, _ = admin.Exec(ctxC, `DROP DATABASE IF EXISTS `+dbName)
+		_, _ = admin.Exec(ctxC, `DROP DATABASE IF EXISTS "`+dbName+`"`)
 	}()
 	u.Path = "/" + dbName
 	pool, err := pgxpool.New(ctx, u.String())
@@ -513,13 +513,13 @@ func main() {
 	// ---- guard: devices enrolled -> the wizard refuses -----------------------
 	step("guard: enrolled devices block the wizard (no CA swap under leaves)")
 	dbName2 := "ourway-rmm_setup_guard_" + time.Now().Format("20060102150405")
-	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName2); err != nil {
+	if _, err := admin.Exec(ctx, `CREATE DATABASE "`+dbName2+`"`); err != nil {
 		die("create guard db: %v", err)
 	}
 	defer func() {
 		ctxC, cancelC := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancelC()
-		_, _ = admin.Exec(ctxC, `DROP DATABASE IF EXISTS `+dbName2)
+		_, _ = admin.Exec(ctxC, `DROP DATABASE IF EXISTS "`+dbName2+`"`)
 	}()
 	u2 := &url.URL{Scheme: u.Scheme, User: u.User, Host: u.Host, Path: "/" + dbName2}
 	pool2, err := pgxpool.New(ctx, u2.String())

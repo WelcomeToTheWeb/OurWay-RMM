@@ -1,5 +1,29 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **CI lint red on main**: four session files were unformatted (gofmt), and
+  `buf lint` failed on the rebrand's hyphenated proto directory vs
+  underscored package mismatch (`PACKAGE_DIRECTORY_MATCH` is now exempted
+  in `buf.yaml` — the mismatch is intentional).
+- **CI Test + Installer e2e could never start their NATS service**:
+  nats-server flags (`--jetstream`) were placed in the service `options`
+  (docker-create flags only; service containers have no `command` key),
+  failing with `unknown flag: --jetstream`. The `nats:2.10-alpine` image's
+  default config already enables JetStream + the 8222 monitor port, so only
+  the healthcheck remains in options.
+- **Live Postgres tests could not create their scratch databases**: the
+  scratch db name contains a hyphen (`ourway-rmm_...`), but `CREATE
+  DATABASE`/`DROP DATABASE` interpolated it unquoted, so every live test
+  failed with `syntax error at or near "-"` (SQLSTATE 42601). The
+  identifiers are now double-quoted in all 19 affected call sites.
+- **Stale migration count in store tests**: five live tests asserted
+  exactly 11 migrations applied, but the suite now ships 16
+  (0012–0016 added after the tests were written). They now count the
+  `.sql` files in `server/migrations` instead of hardcoding.
+
 ## [1.4.0] - 2026-09-24
 
 ### Added

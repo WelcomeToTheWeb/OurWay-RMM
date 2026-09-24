@@ -53,14 +53,14 @@ func scratchPool(t *testing.T) *pgxpool.Pool {
 	rnd := make([]byte, 4)
 	_, _ = rand.Read(rnd)
 	dbName := "ourway-rmm_flow_test_" + time.Now().Format("20060102150405") + "_" + hex.EncodeToString(rnd)
-	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
+	if _, err := admin.Exec(ctx, `CREATE DATABASE "`+dbName+`"`); err != nil {
 		t.Fatalf("create db: %v", err)
 	}
 	t.Cleanup(func() {
 		ctxC, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		for attempt := 0; attempt < 5; attempt++ {
-			if _, err := admin.Exec(ctxC, `DROP DATABASE IF EXISTS `+dbName); err == nil {
+			if _, err := admin.Exec(ctxC, `DROP DATABASE IF EXISTS "`+dbName+`"`); err == nil {
 				return
 			}
 			time.Sleep(200 * time.Millisecond)

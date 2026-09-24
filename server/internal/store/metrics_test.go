@@ -40,10 +40,10 @@ func TestPostgresMetricsView(t *testing.T) {
 	}
 	suffix := time.Now().Format("20060102150405")
 	dbName := "ourway-rmm_test_" + suffix
-	if _, err := admin.Exec(ctx, `CREATE DATABASE `+dbName); err != nil {
+	if _, err := admin.Exec(ctx, `CREATE DATABASE "`+dbName+`"`); err != nil {
 		t.Fatalf("create db: %v", err)
 	}
-	defer admin.Exec(context.Background(), `DROP DATABASE IF EXISTS `+dbName)
+	defer admin.Exec(context.Background(), `DROP DATABASE IF EXISTS "`+dbName+`"`)
 
 	u.Path = "/" + dbName
 	db, err := pgxpool.New(ctx, u.String())
