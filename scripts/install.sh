@@ -228,9 +228,16 @@ xml_escape() {
 }
 
 if [ "$OS" = "linux" ] && command -v systemctl >/dev/null 2>&1; then
-  UNIT="/etc/systemd/system/ourway-rmm-agent.service"
-  log "installing systemd unit -> ${UNIT}"
-  cat >"$UNIT" <<EOF
+	if [ "$(id -u)" = "0" ]; then
+		UNIT="/etc/systemd/system/ourway-rmm-agent.service"
+		SYSTEMCTL="systemctl"
+	else
+		UNIT="${HOME}/.config/systemd/user/ourway-rmm-agent.service"
+		SYSTEMCTL="systemctl --user"
+	fi
+	log "installing systemd unit -> ${UNIT}"
+	mkdir -p "$(dirname "$UNIT")"
+	cat >"$UNIT" <<EOF
 [Unit]
 Description=OurWay RMM agent
 After=network-online.target
@@ -253,8 +260,8 @@ ReadWritePaths=${CONFIG_DIR}
 [Install]
 WantedBy=multi-user.target
 EOF
-  systemctl daemon-reload
-  systemctl enable --now ourway-rmm-agent.service || log "unit enabled (start deferred — is systemd running?)"
+	$SYSTEMCTL daemon-reload
+	$SYSTEMCTL enable --now ourway-rmm-agent.service || log "unit enabled (start deferred — is systemd running?)"
 elif [ "$OS" = "darwin" ] && [ -d /Library/LaunchDaemons ]; then
   PLIST="/Library/LaunchDaemons/io.ourway-rmm.agent.plist"
   log "installing launchd plist -> ${PLIST}"
