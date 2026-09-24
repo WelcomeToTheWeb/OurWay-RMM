@@ -9,6 +9,7 @@ import (
 
 	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 	"github.com/welcometotheweb/ourway-rmm/server/internal/caps"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/releases"
 )
 
 // ---- W4-2: signed agent release distribution --------------------------------
@@ -22,7 +23,14 @@ func (s *Server) handleReleasesLatest(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	m, err := s.releases.Manifest()
+	deviceID := r.URL.Query().Get("device_id")
+	var m *releases.Manifest
+	var err error
+	if deviceID != "" {
+		m, err = s.releases.ManifestForDevice(deviceID)
+	} else {
+		m, err = s.releases.Manifest()
+	}
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		return

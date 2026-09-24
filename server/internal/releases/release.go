@@ -19,6 +19,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"path"
 	"path/filepath"
@@ -27,6 +28,9 @@ import (
 
 // ManifestPath is the fixed manifest filename inside the releases dir.
 const ManifestPath = "release.json"
+
+// CanaryPath is the fixed canary manifest filename.
+const CanaryPath = "release-canary.json"
 
 // Asset is one platform's build in the manifest.
 type Asset struct {
@@ -40,10 +44,12 @@ type Asset struct {
 
 // Manifest is the on-disk release.json.
 type Manifest struct {
-	Version    string           `json:"version"`
-	ReleasedAt string           `json:"released_at,omitempty"`
-	PublicKey  string           `json:"public_key"` // full minisign .pub (2 lines)
-	Assets     map[string]Asset `json:"assets"`     // key: "<goos>-<goarch>"
+	Version       string           `json:"version"`
+	ReleasedAt    string           `json:"released_at,omitempty"`
+	PublicKey     string           `json:"public_key"` // full minisign .pub (2 lines)
+	Assets        map[string]Asset `json:"assets"`     // key: "<goos>-<goarch>"
+	IsCanary      bool             `json:"is_canary,omitempty"`
+	CanaryPercent int              `json:"canary_percent,omitempty"`
 }
 
 // Server serves a releases directory. The manifest is re-read from disk on
@@ -97,6 +103,58 @@ func (s *Server) Manifest() (*Manifest, error) {
 		return nil, fmt.Errorf("%s: no assets", ManifestPath)
 	}
 	return &m, nil
+}
+
+// ManifestForDevice returns the appropriate manifest for a given device.
+// If a canary manifest exists and the device is in the canary group
+// (determined by hashing the device_id), it returns the canary manifest.
+// Otherwise, it returns the stable manifest.
+func (s *Server) ManifestForDevice(deviceID string) (*Manifest, error) {
+	// Try to load the canary manifest.
+	canary, err := s.loadManifest(CanaryPath)
+	if err == nil && canary.IsCanary {
+		// Device is in canary group if hash(device_id) % 100 < canary_percent.
+		if deviceInCanaryGroup(deviceID, canary.CanaryPercent) {
+			return canary, nil
+		}
+	}
+	return s.loadManifest(ManifestPath)
+}
+
+// loadManifest loads a manifest from a specific file.
+func (s *Server) loadManifest(path string) (*Manifest, error) {
+	b, err := os.ReadFile(filepath.Join(s.dir, path))
+	if err != nil {
+		return nil, err
+	}
+	var m Manifest
+	if err := json.Unmarshal(b, &m); err != nil {
+		return nil, fmt.Errorf("%s: %w", path, err)
+	}
+	if m.Version == "" {
+		return nil, fmt.Errorf("%s: missing version", path)
+	}
+	if strings.TrimSpace(m.PublicKey) == "" {
+		return nil, fmt.Errorf("%s: missing public_key", path)
+	}
+	if len(m.Assets) == 0 {
+		return nil, fmt.Errorf("%s: no assets", path)
+	}
+	return &m, nil
+}
+
+// deviceInCanaryGroup determines if a device is in the canary group based
+// on a hash of its ID.
+func deviceInCanaryGroup(deviceID string, percent int) bool {
+	if percent <= 0 {
+		return false
+	}
+	if percent >= 100 {
+		return true
+	}
+	h := fnv.New32a()
+	h.Write([]byte(deviceID))
+	return int(h.Sum32()%100) < percent
 }
 
 // AssetPath resolves a requested asset name to a file path inside the

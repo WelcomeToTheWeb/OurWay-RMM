@@ -26,17 +26,18 @@ const (
 
 // Schedule is one recurring report schedule.
 type Schedule struct {
-	ID           int64     `json:"id"`
-	Name         string    `json:"name"`
-	ReportType   string    `json:"report_type"`
-	ClientID     *string   `json:"client_id,omitempty"`
-	Schedule     string    `json:"schedule"`
-	OutputFormat string    `json:"output_format"`
-	Enabled      bool      `json:"enabled"`
-	Note         string    `json:"note"`
-	CreatedBy    string    `json:"created_by"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID           int64      `json:"id"`
+	Name         string     `json:"name"`
+	ReportType   string     `json:"report_type"`
+	ClientID     *string    `json:"client_id,omitempty"`
+	Schedule     string     `json:"schedule"`
+	OutputFormat string     `json:"output_format"`
+	Enabled      bool       `json:"enabled"`
+	Note         string     `json:"note"`
+	CreatedBy    string     `json:"created_by"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+	LastRunAt    *time.Time `json:"last_run_at,omitempty"`
 }
 
 // Run is one report execution (scheduled or manual).
@@ -93,11 +94,11 @@ func (s *Store) GetSchedule(ctx context.Context, id int64) (Schedule, error) {
 	var sch Schedule
 	err := s.db.QueryRow(ctx, `
 		SELECT id, name, report_type, client_id, schedule,
-		       output_format, enabled, note, created_by, created_at, updated_at
+		       output_format, enabled, note, created_by, created_at, updated_at, last_run_at
 		FROM report_schedules WHERE id=$1`, id).Scan(
 		&sch.ID, &sch.Name, &sch.ReportType, &sch.ClientID, &sch.Schedule,
 		&sch.OutputFormat, &sch.Enabled, &sch.Note, &sch.CreatedBy,
-		&sch.CreatedAt, &sch.UpdatedAt)
+		&sch.CreatedAt, &sch.UpdatedAt, &sch.LastRunAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Schedule{}, fmt.Errorf("report schedule %d not found", id)
@@ -111,7 +112,7 @@ func (s *Store) GetSchedule(ctx context.Context, id int64) (Schedule, error) {
 func (s *Store) ListSchedules(ctx context.Context) ([]Schedule, error) {
 	rows, err := s.db.Query(ctx, `
 		SELECT id, name, report_type, client_id, schedule,
-		       output_format, enabled, note, created_by, created_at, updated_at
+		       output_format, enabled, note, created_by, created_at, updated_at, last_run_at
 		FROM report_schedules ORDER BY id DESC`)
 	if err != nil {
 		return nil, err
@@ -122,7 +123,7 @@ func (s *Store) ListSchedules(ctx context.Context) ([]Schedule, error) {
 		var sch Schedule
 		if err := rows.Scan(&sch.ID, &sch.Name, &sch.ReportType, &sch.ClientID,
 			&sch.Schedule, &sch.OutputFormat, &sch.Enabled, &sch.Note,
-			&sch.CreatedBy, &sch.CreatedAt, &sch.UpdatedAt); err != nil {
+			&sch.CreatedBy, &sch.CreatedAt, &sch.UpdatedAt, &sch.LastRunAt); err != nil {
 			return nil, err
 		}
 		out = append(out, sch)
@@ -140,6 +141,13 @@ func (s *Store) DeleteSchedule(ctx context.Context, id int64) error {
 		return fmt.Errorf("report schedule %d not found", id)
 	}
 	return nil
+}
+
+// UpdateLastRunAt updates the last_run_at timestamp for a schedule.
+func (s *Store) UpdateLastRunAt(ctx context.Context, id int64, at time.Time) error {
+	_, err := s.db.Exec(ctx, `
+		UPDATE report_schedules SET last_run_at = $1 WHERE id = $2`, at, id)
+	return err
 }
 
 // ---- report runs ------------------------------------------------------------

@@ -32,6 +32,30 @@
   now count unique deliveries instead of exact counts to tolerate
   retry-based duplicates.
 
+## [0.1.5] - 2026-09-24
+
+### Added
+
+- **Scheduled reports now execute**: the report scheduler runs every
+  minute, checks for due schedules (based on ISO 8601 duration), generates
+  the report, and records the run. Configurable via
+  `OURWAY_RMM_REPORT_SCHEDULE_INTERVAL`.
+- **Notification policy routing is live**: Postgres-backed notification
+  channels and policies persist across restarts. When an alert fires or
+  updates, the router consults policies and sends to matching channels
+  (email, Slack, Teams, PagerDuty, webhook).
+- **Staged/canary agent rollout**: publish a `release-canary.json`
+  alongside `release.json` with `is_canary: true` and `canary_percent: N`.
+  The server hashes each device's ID to deterministically select which
+  devices get the canary release. The agent passes its device_id when
+  checking for updates.
+
+### Fixed
+
+- **Migration 0017**: added `last_run_at` column to `report_schedules`.
+- **Migration 0018**: added `notification_channels` table for persistent
+  channel storage.
+
 ## [1.4.0] - 2026-09-24
 
 ### Added
@@ -192,6 +216,7 @@
 - Settings and profile pages
 
 [0.1.4]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v0.1.4
+[0.1.5]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v0.1.5
 [1.4.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.4.0
 [1.3.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.3.0
 [1.2.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.2.0

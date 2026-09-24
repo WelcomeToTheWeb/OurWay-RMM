@@ -53,6 +53,8 @@ const maxDownload = 256 << 20
 type Config struct {
 	// BaseURL is the server's base URL (e.g. "http://rmm.local").
 	BaseURL string
+	// DeviceID is this agent's device ID (used for canary rollout selection).
+	DeviceID string
 	// CurrentVersion is this agent's stamped version (main.version).
 	CurrentVersion string
 	// PublicKey is the resolved pinned key (PublicKey(); .pub contents).
@@ -210,7 +212,11 @@ func (u *Updater) Run(ctx context.Context, checkOnly, noRestart bool) *Result {
 // latest fetches + decodes the release manifest.
 func (u *Updater) latest(ctx context.Context) (*Manifest, error) {
 	var man Manifest
-	if err := u.getJSON(ctx, u.cfg.BaseURL+"/agent/releases/latest", &man); err != nil {
+	url := u.cfg.BaseURL + "/agent/releases/latest"
+	if u.cfg.DeviceID != "" {
+		url += "?device_id=" + u.cfg.DeviceID
+	}
+	if err := u.getJSON(ctx, url, &man); err != nil {
 		return nil, err
 	}
 	if man.Version == "" || len(man.Assets) == 0 {

@@ -33,7 +33,9 @@ import (
 	"github.com/welcometotheweb/ourway-rmm/server/internal/flow"
 	"github.com/welcometotheweb/ourway-rmm/server/internal/heal"
 	"github.com/welcometotheweb/ourway-rmm/server/internal/httpapi"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/notify"
 	"github.com/welcometotheweb/ourway-rmm/server/internal/oidc"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/reports"
 	"github.com/welcometotheweb/ourway-rmm/server/internal/sessionrelay"
 	"github.com/welcometotheweb/ourway-rmm/server/internal/setup"
 	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
@@ -761,6 +763,9 @@ func main() {
 		}
 	}()
 
+	// gap #6: notification channels + policies (see wire_notify.go).
+	notifyStore, notifySender, notifyRouter := wireNotify(hasPG, pgPool)
+
 	// ---- event bus wiring (W5-2) ------------------------------------------
 	flowBus = wireFlowBus(hasPG)
 
@@ -770,6 +775,16 @@ func main() {
 		alertStore.SetEventSink(func(action string, payload map[string]any) {
 			devID, _ := payload["device_id"].(string)
 			publishEvent(flow.SubjectAlert, devID, action+" alert "+fmt.Sprint(payload["name"]), payload)
+			// Fire notification channels via router (fired/updated only).
+			if notifyRouter != nil && (action == "fired" || action == "updated") {
+				req := notify.SendRequest{
+					Category: "alert",
+					Title:    fmt.Sprint(payload["name"]),
+					Message:  fmt.Sprintf("Alert %s on %s (score %v)", action, fmt.Sprint(payload["device_id"]), payload["score"]),
+					Data:     payload,
+				}
+				notifyRouter.Notify(context.Background(), req, nil, nil)
+			}
 		})
 	}
 
@@ -803,9 +818,6 @@ func main() {
 			log.Println("tickets: shutdown")
 		}
 	}()
-
-	// gap #6: notification channels + policies (see wire_notify.go).
-	notifyStore, notifySender := wireNotify(hasPG, pgPool)
 
 	// ---- self-healing playbook engine (W5-1) ---------------------------
 	// When the ticket store is available, heal escalations create real
@@ -866,6 +878,21 @@ func main() {
 
 	// gap #8b: reports (see wire_reports.go).
 	reportsStore := wireReports(hasPG, pgPool)
+
+	// Reports scheduler: runs due schedules in the background.
+	if reportsStore != nil {
+		repInterval := time.Minute
+		if v := os.Getenv("OURWAY_RMM_REPORT_SCHEDULE_INTERVAL"); v != "" {
+			if d, err := time.ParseDuration(v); err == nil && d > 0 {
+				repInterval = d
+			} else {
+				log.Printf("reports: bad OURWAY_RMM_REPORT_SCHEDULE_INTERVAL %q, using %s", v, repInterval)
+			}
+		}
+		repScheduler := reports.NewScheduler(reportsStore, repInterval, log.New(os.Stderr, "reports: ", 0))
+		go repScheduler.Start(context.Background())
+		log.Printf("reports: scheduler started (interval %s)", repInterval)
+	}
 
 	// C #10b: OpenID Connect authentication store.
 	var oidcStore oidc.Store

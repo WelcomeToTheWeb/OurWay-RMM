@@ -68,6 +68,11 @@ func NewSender(smtpSend func(ctx context.Context, host, port string, from, to, u
 	return &Sender{smtpSend: smtpSend}
 }
 
+// SetChannels populates the sender's channel configs.
+func (s *Sender) SetChannels(chans []*ChannelConfig) {
+	s.chans = chans
+}
+
 // For creates a Channel from a ChannelConfig.
 func (s *Sender) For(cfg *ChannelConfig) (Channel, error) {
 	switch cfg.Type {
