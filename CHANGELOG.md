@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.1.4] - 2026-09-24
 
 ### Fixed
 
@@ -23,6 +23,14 @@
   exactly 11 migrations applied, but the suite now ships 16
   (0012–0016 added after the tests were written). They now count the
   `.sql` files in `server/migrations` instead of hardcoding.
+- **Installer failed as non-root** (GitHub Actions CI): config dir was
+  hardcoded to `/etc/ourway-rmm` with root service user; now uses
+  `~/.config/ourway-rmm` and a simplified user systemd unit
+  (`~/.config/systemd/user/`) when `id -u != 0`.
+- **Webhook delivery tests flaky** (CI-only): added `waitJournal()` that
+  blocks until all published events are journaled before sweeping; tests
+  now count unique deliveries instead of exact counts to tolerate
+  retry-based duplicates.
 
 ## [1.4.0] - 2026-09-24
 
@@ -183,6 +191,7 @@
 - Webhooks, SSE events, client export
 - Settings and profile pages
 
+[0.1.4]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v0.1.4
 [1.4.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.4.0
 [1.3.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.3.0
 [1.2.0]: https://github.com/welcometotheweb/ourway-rmm/releases/tag/v1.2.0
