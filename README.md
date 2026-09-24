@@ -8,6 +8,12 @@ OurWay RMM is a self-hosted remote monitoring & management (RMM) platform. A sma
 - **Dynamic baselining** — automatic anomaly detection against each device's own baseline
 - **Alert inbox** — deduplicated alerts with auto-resolution
 - **Remote management** — dispatch commands to live devices with results reported back
+- **Remote sessions** — live device screen view over the agent uplink; 2-way input relay in progress
+- **Ticketing** — built-in helpdesk queue
+- **Flow automation** — self-healing playbooks triggered by alerts/events
+- **Patch management** — Windows: query/apply patches
+- **Maintenance windows** — mute + schedule
+- **Webhook alerts** — HMAC-signed
 - **MSP-ready** — organize the fleet by client/tenant with RBAC
 - **One-click enrollment** — mint a token in the UI, paste a single command on the target
 - **Signed auto-updates** — agents self-update with cryptographic verification
@@ -24,7 +30,7 @@ Requires Docker. The entire stack runs in containers with pre-built images. Ther
 Download the release compose file from the [latest release](https://github.com/welcometotheweb/ourway-rmm/releases):
 
 ```sh
-curl -LO https://github.com/welcometotheweb/ourway-rmm/releases/download/v1.2.0/docker-compose.release.yml
+curl -LO https://github.com/welcometotheweb/ourway-rmm/releases/download/v1.3.0/docker-compose.release.yml
 ```
 
 ### 2. Configure secrets
@@ -32,8 +38,8 @@ curl -LO https://github.com/welcometotheweb/ourway-rmm/releases/download/v1.2.0/
 Download the example environment file from the same release and set the required secrets:
 
 ```sh
-curl -LO https://github.com/welcometotheweb/ourway-rmm/releases/download/v1.2.0/default.env.prod.example
-cp default.env.prod.example .env.prod
+curl -LO https://github.com/welcometotheweb/ourway-rmm/releases/download/v1.3.0/.env.prod.example
+cp .env.prod.example .env.prod
 ```
 
 Edit `.env.prod` and set these required secrets (generate each with `openssl rand -hex 32`):
@@ -85,7 +91,6 @@ docker compose down -v # stop + remove volumes (destructive)
 This README is aimed at deploying and using OurWay RMM. If you're building, testing, or extending OurWay RMM, see:
 
 - **[DEVELOPER.md](DEVELOPER.md)** — repo layout, local dev workflow, test/e2e matrix, env knobs, and the full test suite
-- **[TASKS.md](TASKS.md)** — the project's shared task board
 
 ## Architecture Overview
 

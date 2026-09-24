@@ -29,7 +29,7 @@ alerting, reporting, patch management, and maintenance.
 - 4 CPU cores minimum
 - 8GB RAM minimum (16GB recommended)
 - 100GB SSD storage minimum
-- Docker 24+ or Go 1.24+ for building from source
+- Docker 24+ or Go 1.26+ for building from source
 
 ### Quick Start (Docker)
 
@@ -53,7 +53,7 @@ The server will be accessible at the URL you configured in `OURWAY_RMM_PUBLIC_UR
 After the stack starts, visit the web UI and complete the first-boot wizard:
 
 1. Create your root admin account
-2. Configure the organization's mTLS CA (or use auto-generated)
+2. Set the organization name (stamped into the auto-generated mTLS root CA)
 3. Configure the SMTP outbox (or skip for now)
 
 ### Verifying Installation
@@ -63,7 +63,7 @@ After the stack starts, visit the web UI and complete the first-boot wizard:
 curl -fsS https://rmm.example.com/healthz
 
 # Check server logs
-docker compose logs server --tail 50
+docker compose --env-file .env.prod -f docker-compose.prod.yml logs server --tail 50
 ```
 
 ---
@@ -91,12 +91,18 @@ Agents are configured via environment variables or a config file:
 
 | Variable | Purpose | Example |
 | -------- | ------- | ------- |
-| `OURWAY_RMM_SERVER` | Server URL | `https://rmm.example.com` |
-| `OURWAY_RMM_AGENT_MTLS_PORT` | mTLS port | `50052` |
-| `OURWAY_RMM_HEARTBEAT_INTERVAL` | Heartbeat interval | `60s` |
-| `OURWAY_RMM_METRICS_INTERVAL` | Metric collection interval | `60s` |
-| `OURWAY_RMM_SERVICES` | Services to monitor | `nginx,postgresql` |
-| `OURWAY_RMM_AUTO_UPDATE` | Enable auto-updates | `on` |
+| `OURWAY_RMM_SERVER` | server URL (HTTPS origin) | `https://rmm.example.com` |
+| `OURWAY_RMM_BOOTSTRAP_TOKEN` | one-time enrollment token (first boot only; stripped from the config file after use) | `<token>` |
+| `OURWAY_RMM_GRPC_ADDR` | plain gRPC bootstrap endpoint override (default: server host, port 50051) | `rmm.example.com:50051` |
+| `OURWAY_RMM_GRPC_MTLS_ADDR` | mTLS gRPC endpoint override (default: server host, port 50052) | `rmm.example.com:50052` |
+| `OURWAY_RMM_IDENTITY` | persisted enrollment identity path | `~/.ourway-rmm/agent-identity.json` |
+| `OURWAY_RMM_LOG_FILE` | JSON-lines log path | `/var/log/ourway-rmm-agent.jsonl` |
+| `OURWAY_RMM_SERVICES` | comma-separated services to sample (unset = no service sampling) | `nginx,postgresql` |
+| `OURWAY_RMM_AUTO_UPDATE` | set `off`/`0` to disable signed auto-update (on by default when a valid `OURWAY_RMM_UPDATE_PUBKEY` is configured) | `off` |
+| `OURWAY_RMM_UPDATE_INTERVAL` | auto-update check cadence | `15m` |
+| `OURWAY_RMM_UPDATE_PUBKEY` | pinned minisign public key for release verification (auto-update is a no-op without it) | `<pubkey>` |
+| `OURWAY_RMM_CERT_DIRS` | TLS certificate dirs to scan (default `/etc/ssl/certs`) | `/etc/letsencrypt/live` |
+| `OURWAY_RMM_EVENTLOG` | OS event-log tailing (journal / Windows Event Log / unified log); `off` disables | `off` |
 
 ---
 
@@ -110,8 +116,8 @@ Agents are configured via environment variables or a config file:
 4. Run the command on the target device
 
 ```sh
-# Linux example
-curl -fsSL https://rmm.example.com/install.sh | OURWAY_RMM_SERVER=https://rmm.example.com OURWAY_RMM_TOKEN=<token> bash
+# Linux example (the UI's "Add Device" dialog shows the same command)
+curl -fsSL https://raw.githubusercontent.com/welcometotheweb/ourway-rmm/main/scripts/install.sh | bash -s -- --server https://rmm.example.com --bootstrap <token>
 ```
 
 ### Bootstrap Token API
@@ -147,7 +153,7 @@ curl -s -H "Authorization: Bearer <token>" \
 curl -X POST \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"name":"Acme Corp","address":"123 Main St"}' \
+  -d '{"name":"Acme Corp","description":"Enterprise client, 123 Main St"}' \
   https://rmm.example.com/api/clients
 ```
 
@@ -183,7 +189,7 @@ curl -s -H "Authorization: Bearer <token>" \
 curl -X POST \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"username":"technician","password":"secret","role":"technician"}' \
+  -d '{"username":"tech","password":"secret","role":"tech"}' \
   https://rmm.example.com/api/users
 ```
 
@@ -192,7 +198,7 @@ curl -X POST \
 | Role | Permissions |
 | ---- | ----------- |
 | `admin` | Full access to all features |
-| `technician` | Device management, alerts, tickets |
+| `tech` | Device management, alerts, tickets |
 | `viewer` | Read-only access to dashboards and reports |
 
 ### MFA Setup
@@ -220,22 +226,36 @@ curl -s -H "Authorization: Bearer <token>" \
 ### Acknowledging an Alert
 
 ```sh
-curl -X POST \
+# Alerts transition open -> acked -> resolved; PATCH with the target
+# status ("acked" or "resolved"). Re-opening is refused.
+curl -X PATCH \
   -H "Authorization: Bearer <token>" \
-  https://rmm.example.com/api/alerts/<alert-id>/ack
+  -H "Content-Type: application/json" \
+  -d '{"status":"acked"}' \
+  https://rmm.example.com/api/alerts/<alert-id>
 ```
 
 ### Flow Automation
 
 Flows are event-driven automation chains. Create a flow via the UI or API.
 
-Example flow: When disk usage exceeds 90% for 1 hour, send a Slack notification.
+Example flow (the body is `{name, description, graph, cooldown_seconds?, enabled?}`,
+where `graph` is a DAG of trigger -> script -> check -> notify nodes):
 
 ```json
 {
   "name": "High disk usage",
-  "triggers": [{"type": "alert", "metric": "disk.used_percent", "threshold": 90}],
-  "actions": [{"type": "slack", "channel": "#alerts", "message": "High disk: {{device.hostname}}"}]
+  "description": "Free space when a disk exceeds 90%, notify if it stays full",
+  "graph": {
+    "nodes": [
+      {"id": "t", "kind": "trigger", "name": "disk > 90%", "metric": "disk.used_percent", "op": ">", "threshold": 90, "next": "free"},
+      {"id": "free", "kind": "script", "name": "free space", "lang": "sh", "script": "df -h", "timeout_s": 120, "next": "still"},
+      {"id": "still", "kind": "check", "name": "if still > 90%", "metric": "disk.used_percent", "op": ">", "threshold": 90, "then": "notify", "else": ""},
+      {"id": "notify", "kind": "notify", "name": "notify", "message": "disk still full after cleanup"}
+    ]
+  },
+  "cooldown_seconds": 3600,
+  "enabled": true
 }
 ```
 
@@ -246,10 +266,12 @@ Example flow: When disk usage exceeds 90% for 1 hour, send a Slack notification.
 ### Creating Tickets
 
 ```sh
+# Title is required; queue defaults to "general", priority to "medium"
+# (low | medium | high | critical)
 curl -X POST \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"device_id":"<id>","subject":"Printer offline","priority":"high"}' \
+  -d '{"title":"Printer offline","description":"HP M404 on floor 3 is offline","queue":"general","priority":"high","device_id":"<device-id>"}' \
   https://rmm.example.com/api/tickets
 ```
 
@@ -274,26 +296,39 @@ metric type. Configure via the UI.
 ### Generating Reports
 
 ```sh
-# Fleet status report
+# On-demand generation. report_type: fleet_status | device |
+# patch_compliance | license_compliance | uptime_sla; output_format:
+# csv (default) or pdf. device_id is required for device reports.
 curl -X POST \
   -H "Authorization: Bearer <token>" \
-  https://rmm.example.com/api/reports/fleet-status
+  -H "Content-Type: application/json" \
+  -d '{"report_type":"fleet_status","output_format":"pdf"}' \
+  https://rmm.example.com/api/reports/generate
 
 # Device report
 curl -X POST \
   -H "Authorization: Bearer <token>" \
-  "https://rmm.example.com/api/reports/device/<device-id>"
+  -H "Content-Type: application/json" \
+  -d '{"report_type":"device","output_format":"csv","device_id":"<device-id>"}' \
+  https://rmm.example.com/api/reports/generate
 
-# Patch compliance report
-curl -X POST \
-  -H "Authorization: Bearer <token>" \
-  https://rmm.example.com/api/reports/patch-compliance
+# Past runs
+curl -s -H "Authorization: Bearer <token>" \
+  https://rmm.example.com/api/reports/runs | jq '.'
 ```
 
 ### Scheduled Reports
 
-Configure report schedules in the Reports UI. Reports can be delivered
-via email or stored in the report history.
+Configure report schedules in the Reports UI, or via the API (schedule is
+an ISO 8601 interval, e.g. `24h`):
+
+```sh
+curl -X POST \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Daily fleet report","report_type":"fleet_status","schedule":"24h","output_format":"csv"}' \
+  https://rmm.example.com/api/reports/schedules
+```
 
 ### Available Report Types
 
@@ -312,20 +347,27 @@ via email or stored in the report history.
 ### Querying Available Patches
 
 ```sh
-# Query Windows Update for available patches
+# Query Windows Update for available patches. The optional severity
+# filter rides the "path" field (substring match, e.g. "critical").
 curl -X POST \
   -H "Authorization: Bearer <token>" \
-  -d '{"action":"patch_query"}' \
+  -H "Content-Type: application/json" \
+  -d '{"action":"patch_query","path":"critical"}' \
   https://rmm.example.com/api/devices/<device-id>/commands
 ```
 
 ### Installing Patches
 
 ```sh
-# Approve and install specific patches
+# Approve and install specific patches. The patch ids travel as a
+# base64-encoded JSON array in the "script" field:
+#   echo -n '["KB123456"]' | base64   ->  WyJLQjEyMzQ1NiJd
+# timeout_s > 0 also schedules a reboot after that many seconds.
+# The UI performs this encoding automatically.
 curl -X POST \
   -H "Authorization: Bearer <token>" \
-  -d '{"action":"patch_apply","patch_ids":["KB123456"]}' \
+  -H "Content-Type: application/json" \
+  -d '{"action":"patch_apply","script":"WyJLQjEyMzQ1NiJd"}' \
   https://rmm.example.com/api/devices/<device-id>/commands
 ```
 
@@ -380,28 +422,40 @@ docker compose exec timescale psql -U ourway-rmm -d ourway-rmm -c \
 
 ```sh
 # Backup TimescaleDB
-docker compose exec timescale pg_dump -U ourway-rmm ourway-rmm > ourway-rmm-backup.sql
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec timescale \
+  pg_dump -U ourway-rmm ourway-rmm > ourway-rmm-backup.sql
 
 # Restore
-cat ourway-rmm-backup.sql | docker compose exec -T timescale psql -U ourway-rmm ourway-rmm
+cat ourway-rmm-backup.sql | \
+  docker compose --env-file .env.prod -f docker-compose.prod.yml exec -T timescale psql -U ourway-rmm ourway-rmm
 ```
 
 ### File Storage Backup
 
 ```sh
-# Backup MinIO (using mc)
-mc alias set local http://localhost:9000 ourway-rmm ourway-rmm-dev-secret
-mc cp --recursive local/ourway-rmm-backup ./minio-backup
+# MinIO publishes no ports on the prod stack - run mc inside the
+# container. Credentials come from .env.prod: OURWAY_RMM_MINIO_USER
+# (default ourway-rmm) and OURWAY_RMM_MINIO_PASSWORD.
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec minio \
+  mc alias set prod http://localhost:9000 "$OURWAY_RMM_MINIO_USER" "$OURWAY_RMM_MINIO_PASSWORD"
+docker compose --env-file .env.prod -f docker-compose.prod.yml exec minio \
+  mc cp --recursive "prod/<bucket>" ./minio-backup
 ```
 
 ### Complete Backup
 
 ```sh
-# Backup all volumes
-docker compose down
-tar -czf ourway-rmm-full-backup.tar.gz ourway-rmm-timescale-data ourway-rmm-nats-data \
-  ourway-rmm-redis-data ourway-rmm-minio-data ourway-rmm-meili-data ourway-rmm-loki-data
-docker compose up -d
+# Backup all volumes. The prod compose project is named
+# ourway-rmm-prod, so its volumes carry that prefix.
+docker compose --env-file .env.prod -f docker-compose.prod.yml down
+docker run --rm -v /var/lib/docker/volumes:/volumes -v "$PWD":/backup alpine \
+  tar -czf /backup/ourway-rmm-full-backup.tar.gz -C /volumes \
+  ourway-rmm-prod-timescale-data ourway-rmm-prod-nats-data \
+  ourway-rmm-prod-redis-data ourway-rmm-prod-minio-data \
+  ourway-rmm-prod-meili-data ourway-rmm-prod-loki-data
+# (ourway-rmm-prod-caddy-data holds regeneratable TLS certs and is
+# omitted.)
+docker compose --env-file .env.prod --profile edge -f docker-compose.prod.yml up -d
 ```
 
 ---
@@ -434,7 +488,7 @@ Rotate secrets annually or after suspected exposure:
 openssl rand -hex 32
 
 # Update .env.prod and restart
-docker compose up -d --build
+docker compose --env-file .env.prod --profile edge -f docker-compose.prod.yml up -d --build
 ```
 
 ### Regular Updates
@@ -443,11 +497,8 @@ docker compose up -d --build
 # Update agent binaries
 make agent && make sign
 
-# Update server
-docker compose pull server
-docker compose up -d server
+# Update the server (the prod image is built locally from source;
+# there is no registry to pull from)
+make prod
 ```
 
----
-
-*This operator guide is part of the M5 release documentation package.*

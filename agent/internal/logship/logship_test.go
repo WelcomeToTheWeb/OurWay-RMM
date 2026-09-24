@@ -54,13 +54,11 @@ func TestParseLineAndStableID(t *testing.T) {
 	if e.Attrs["device"] != "dev-1" {
 		t.Fatalf("bad attrs: %v", e.Attrs)
 	}
+	// Content-derived: the id equals the parsed entry's (the replay-safe
+	// dedup key, so it is stable across calls); different device ->
+	// different id.
 	if IDForLine("dev-1", line) != e.ID {
 		t.Fatalf("id mismatch")
-	}
-	// Content-derived: same line -> same id (the replay-safe dedup key);
-	// different device -> different id.
-	if IDForLine("dev-1", line) != IDForLine("dev-1", line) {
-		t.Fatalf("id not stable")
 	}
 	if IDForLine("dev-2", line) == e.ID {
 		t.Fatalf("id should differ per device")

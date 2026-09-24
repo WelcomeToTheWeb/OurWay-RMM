@@ -118,9 +118,7 @@ func NewMemoryMetricsSink(cap int) *MemoryMetricsSink {
 func (m *MemoryMetricsSink) Write(deviceID string, batch *agentv1.MetricBatch) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	for _, s := range batch.GetSamples() {
-		m.perDev[deviceID] = append(m.perDev[deviceID], s)
-	}
+	m.perDev[deviceID] = append(m.perDev[deviceID], batch.GetSamples()...)
 	if n := len(m.perDev[deviceID]); n > m.cap {
 		m.perDev[deviceID] = m.perDev[deviceID][n-m.cap:]
 	}

@@ -120,13 +120,6 @@ func (b *basePDFReport) writeSummaryBox(pdf *gofpdf.Fpdf, title string, items []
 	pdf.Ln(5)
 }
 
-// writeFooter adds the footer with page numbers.
-func (b *basePDFReport) writeFooter(pdf *gofpdf.Fpdf) {
-	pdf.SetTextColor(150, 150, 150)
-	pdf.SetFont("Helvetica", "I", 8)
-	pdf.CellFormat(0, 5, fmt.Sprintf("Page %d", pdf.PageNo()), "", 0, "C", false, 0, "")
-}
-
 // GeneratePDF generates a basic PDF report with the given title and content rows.
 func GeneratePDF(title, subtitle string, headers []string, rows [][]string) (io.Reader, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")

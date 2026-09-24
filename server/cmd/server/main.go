@@ -478,7 +478,7 @@ func main() {
 	migrateOnly := flag.Bool("migrate-only", false, "apply SQL migrations and exit")
 	flag.Parse()
 
-	version := env("OURWAY_RMM_VERSION", "1.2.0")
+	version := env("OURWAY_RMM_VERSION", "1.3.0")
 	httpAddr := env("OURWAY_RMM_ADDR", ":8080")
 	grpcAddr := env("OURWAY_RMM_GRPC_ADDR", ":50051")
 	// W3-1: the mTLS agent channel. A second gRPC listener that REQUIRES a
@@ -780,6 +780,21 @@ func main() {
 	svc, grpcServer, mtlsServer := wireIngest(version, jwtSecret, grpcAddr, grpcMTLSAddr, httpAddr,
 		indexer, caMgr, capsIssuer, logSink, flowBus, publishEvent, metricsSink, devicesStore, sessionRelay)
 
+	// gap #1a: when the LAST browser viewer disconnects mid-session, close
+	// the session server-side (send the close downlink) so the agent stops
+	// capturing — a browser crash / closed tab must not leave the screen
+	// streaming forever.
+	sessionRelay.OnAutoClose = func(devID, sessionID string) {
+		svc.SendSessionControl(devID, &agentv1.SessionControl{
+			Action: &agentv1.SessionControl_Close{
+				Close: &agentv1.SessionControl_CloseSession{SessionId: sessionID},
+			},
+		})
+	}
+	// gap #1a: GC stale session/transfer state (a registry with no sweeper
+	// grows for the process lifetime).
+	go sessionRelay.SweepLoop(context.Background())
+
 	// gap #7: helpdesk ticketing (see wire_tickets.go). The ticket store
 	// is created early so heal escalations can create real tickets.
 	ticketStore, _ := wireTickets(hasPG, pgPool)
@@ -873,6 +888,12 @@ func main() {
 		Sessions:      sessionRelay,
 		SendSessionControl: func(deviceID string, sc *agentv1.SessionControl) bool {
 			return svc.SendSessionControl(deviceID, sc)
+		},
+		SessionAudit: func(ctx context.Context, devID, event string, data map[string]any) {
+			// The webhook framework journals bus events and fans them out to
+			// /events subscribers: operators can answer "who viewed which
+			// device, for how long".
+			publishEvent(flow.SubjectSession, devID, event, data)
 		},
 		MintBootstrap: svc.MintBootstrapToken,
 		Enroll:        svc.Enroll,

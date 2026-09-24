@@ -9,23 +9,6 @@ import (
 	"github.com/welcometotheweb/ourway-rmm/server/internal/reports"
 )
 
-// setupReportsServer creates a test server with an in-memory reports store.
-func setupReportsServer(t *testing.T) (*Server, *httptest.Server) {
-	t.Helper()
-
-	// Create an actual PG pool for testing (using the existing test DB pattern)
-	// For simplicity, we'll use a mock approach for this test.
-	// In real tests, you'd connect to the test DB.
-	store := &reports.Store{}
-
-	s := New(Config{
-		Reports: store,
-	})
-	mux := http.NewServeMux()
-	s.Register(mux)
-	return s, httptest.NewServer(mux)
-}
-
 // TestReportRoutes tests that all report generation routes are registered
 // and respond appropriately.
 func TestReportRoutes(t *testing.T) {
@@ -124,15 +107,4 @@ func TestReportOutputFormats(t *testing.T) {
 			}
 		})
 	}
-}
-
-// Helper function to test the report generation API flow.
-// This would be expanded in a full integration test.
-func testReportFlow(t *testing.T, reportType string, outputFormat string) error {
-	// This would:
-	// 1. Create a request to POST /api/reports/generate
-	// 2. Provide the report_type and output_format
-	// 3. Assert the response is the correct format
-	// 4. Verify the report content
-	return nil
 }

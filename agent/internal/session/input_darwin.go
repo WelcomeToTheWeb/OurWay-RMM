@@ -5,7 +5,6 @@ package session
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 )
 
@@ -18,29 +17,14 @@ func newPlatformInputRelayer(cfg InputRelayerConfig) (InputRelayer, error) {
 }
 
 func (r *darwinInputRelayer) MouseEvent(ctx context.Context, eventType string, x, y, button, wheelDelta int) error {
-	switch eventType {
-	case "move":
-		r.logger.Debug("mouse move", "x", x, "y", y)
-		return nil
-	case "down", "up", "click":
-		r.logger.Debug("mouse event", "type", eventType, "x", x, "y", y, "button", button)
-		return nil
-	case "wheel":
-		r.logger.Debug("mouse wheel", "delta", wheelDelta)
-		return nil
-	default:
-		return fmt.Errorf("unknown mouse event type: %s", eventType)
-	}
+	// Not implemented yet (CGEvent APIs) — report failure, never fake success.
+	r.logger.Debug("mouse event (not implemented)", "type", eventType, "x", x, "y", y, "button", button, "wheel", wheelDelta)
+	return errNotImplemented
 }
 
 func (r *darwinInputRelayer) KeyboardEvent(ctx context.Context, eventType string, codepoint uint32, modifiers uint32) error {
-	switch eventType {
-	case "down", "up", "key":
-		r.logger.Debug("keyboard event", "type", eventType, "codepoint", codepoint, "modifiers", modifiers)
-		return nil
-	default:
-		return fmt.Errorf("unknown keyboard event type: %s", eventType)
-	}
+	r.logger.Debug("keyboard event (not implemented)", "type", eventType, "codepoint", codepoint, "modifiers", modifiers)
+	return errNotImplemented
 }
 
 func (r *darwinInputRelayer) Close() error {

@@ -4,12 +4,10 @@ go 1.24.0
 
 toolchain go1.24.5
 
-require (
-	github.com/welcometotheweb/rmmway/proto/gen v0.0.0
-	google.golang.org/grpc v1.77.0
-)
+require google.golang.org/grpc v1.77.0
 
 require (
+	github.com/welcometotheweb/ourway-rmm/proto/gen v0.0.0
 	golang.org/x/net v0.46.1-0.20251013234738-63d1a5100f82 // indirect
 	golang.org/x/sys v0.37.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
@@ -17,4 +15,4 @@ require (
 	google.golang.org/protobuf v1.36.12 // indirect
 )
 
-replace github.com/welcometotheweb/rmmway/proto/gen => ../../proto/gen
+replace github.com/welcometotheweb/ourway-rmm/proto/gen => ../../proto/gen

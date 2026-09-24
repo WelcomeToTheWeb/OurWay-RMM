@@ -2,8 +2,10 @@
 
 ## Overview
 
-This document describes the methodology, infrastructure, and expected results of the
-OurWay RMM 5,000-device synthetic load test, part of the M5 integration milestone.
+This document describes the methodology, scale goals, and expected
+baselines of the OurWay RMM 5,000-device synthetic load test.
+
+Harness usage, flags, and metrics: see `scripts/load-test/README.md`.
 
 ## Methodology
 
@@ -31,81 +33,10 @@ The test targets the production-equivalent stack:
 | Loki | Log aggregation |
 | Caddy | TLS edge (production only) |
 
-### Phases
+## Report Output
 
-1. **Enrollment phase:** All 5,000 agents mint bootstrap tokens via HTTP
-   (`POST /api/bootstrap`) and enroll via gRPC (`AgentService.Enroll`).
-2. **Stream phase:** Each enrolled agent opens a long-lived gRPC
-   `AgentService.Stream` connection.
-3. **Load phase:** Agents send heartbeats with attached metric batches
-   (cpu, memory, disk, network, uptime) every 60 seconds. 1% of devices
-   generate anomalous values to trigger baseline alerting.
-4. **Teardown phase:** Connections close; final server metrics collected.
-
-### Metrics Collected
-
-- Enrollment success rate and latency
-- Stream open success rate and latency
-- Heartbeat round-trip latency (avg, p95, p99)
-- Metric ingestion throughput (samples/sec)
-- Server CPU and memory usage (via `/proc` on Linux)
-- NATS queue depth and active subscriptions (via `:8222` monitoring API)
-- TimescaleDB query latency and connection count
-- Alert generation rate and resolution lag
-- Aggregate error count across all synthetic agents
-
-## Running the Load Test
-
-### Prerequisites
-
-- Live OurWay RMM server with backing services (TimescaleDB, NATS, Redis, MinIO, Meilisearch)
-- Go 1.24+ toolchain
-- Access to server's HTTP API (default `:8080`) and gRPC port (default `:50051`)
-
-### Build
-
-```sh
-cd scripts/load-test
-go build -o load-test .
-```
-
-### Execute
-
-```sh
-# Basic: 5000 devices for 15 minutes against localhost
-./load-test -n 5000 -duration 15m -server localhost
-
-# Custom configuration
-./load-test \
-  -n 5000 \
-  -duration 15m \
-  -heartbeat 60s \
-  -metrics 60s \
-  -alert-rate 0.01 \
-  -parallel 100 \
-  -report-interval 30s \
-  -output load-test-report.json
-```
-
-### Flags
-
-| Flag | Default | Description |
-| ---- | ------- | ----------- |
-| `-n` | 5000 | Number of synthetic devices |
-| `-duration` | 15m | Load phase duration |
-| `-server` | localhost | Server hostname |
-| `-grpc-port` | 50051 | gRPC port |
-| `-http-port` | 8080 | HTTP API port |
-| `-heartbeat` | 60s | Heartbeat interval |
-| `-metrics` | 60s | Metric batch interval |
-| `-alert-rate` | 0.01 | Fraction of devices generating anomalies |
-| `-parallel` | 100 | Concurrent connections per phase |
-| `-report-interval` | 30s | Progress reporting interval |
-| `-output` | load-test-report.json | Report output file |
-
-### Expected Output
-
-The harness writes a JSON report to the specified output file with:
+The harness writes a JSON report to the output file (default
+`load-test-report.json`):
 
 ```json
 {
@@ -177,6 +108,3 @@ metric throughput is comfortable at 250 inserts/sec, and alert generation
 is accurate. At 10x scale (50k devices), connection pooling and read
 replicas become necessary.
 
----
-
-*Report generated as part of M5 integration milestone, Wave 4, Lane C.*

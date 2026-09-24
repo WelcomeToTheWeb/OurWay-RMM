@@ -141,6 +141,14 @@ type Server struct {
 	// gap #1a: remote session support.
 	sessions           *sessionrelay.Registry
 	sendSessionControl func(deviceID string, sc *agentv1.SessionControl) bool
+	// sessionAudit (gap #1a audit) publishes session hops (started/stopped/
+	// stream_opened/stream_closed) to the event bus. Nil = in-memory mode.
+	sessionAudit func(ctx context.Context, deviceID, event string, data map[string]any)
+	// stream tickets for the SSE session stream (see streamTicket in
+	// domain_session.go): the browser presents a short-lived ticket instead
+	// of the operator JWT in the URL. Guarded by ticketMu.
+	ticketMu      sync.Mutex
+	streamTickets map[string]streamTicket
 }
 
 // Config wires a Server. AdminPassword is hashed with a fresh per-boot salt
@@ -243,6 +251,10 @@ type Config struct {
 	// SendSessionControl pushes a SessionControl downlink (open/close);
 	// nil disables session start/stop.
 	SendSessionControl func(deviceID string, sc *agentv1.SessionControl) bool
+	// SessionAudit publishes session audit hops (session.started, etc.) to
+	// the event bus for the journal + /events stream. Nil disables auditing
+	// (in-memory mode).
+	SessionAudit func(ctx context.Context, deviceID, event string, data map[string]any)
 }
 
 // New builds a Server. A nil Devices falls back to an in-memory store.
@@ -312,6 +324,7 @@ func New(cfg Config) *Server {
 		publicURL:          cfg.PublicURL,
 		sessions:           cfg.Sessions,
 		sendSessionControl: cfg.SendSessionControl,
+		sessionAudit:       cfg.SessionAudit,
 		oidcStore:          cfg.OIDCStore,
 		oidcStateStore:     oidc.NewStateStore(),
 	}
@@ -455,57 +468,6 @@ func hasCapability(ctx context.Context, want string) bool {
 		}
 	}
 	return false
-}
-
-// requireOperator gates a handler behind a valid operator JWT and binds the
-// session's capability set (W3-3) to the request context.
-func (s *Server) requireOperator(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		tok, ok := bearerToken(r.Header.Get("Authorization"))
-		capList, ok2 := ingest.ParseOperatorJWT(s.jwtSecret, tok)
-		if !ok || !ok2 {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
-			return
-		}
-		next(w, r.WithContext(context.WithValue(r.Context(), capsKey{}, capList)))
-	}
-}
-
-// requireOperatorStream is the SSE variant of requireOperator: it also accepts
-// the operator JWT via ?token= (the EventSource browser API cannot set an
-// Authorization header, so the UI passes the short-lived JWT as a query param
-// for the stream route only — the header form is still honored for curl/API
-// clients).
-func (s *Server) requireOperatorStream(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// The operator JWT arrives as an Authorization header (curl/API
-		// clients) or a ?token= query param (EventSource can't set headers).
-		// Header wins if present.
-		var tok string
-		if htok, ok := bearerToken(r.Header.Get("Authorization")); ok {
-			tok = htok
-		} else if q := r.URL.Query().Get("token"); q != "" {
-			tok = q
-		}
-		capList, ok2 := ingest.ParseOperatorJWT(s.jwtSecret, tok)
-		if tok == "" || !ok2 {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
-			return
-		}
-		next(w, r.WithContext(context.WithValue(r.Context(), capsKey{}, capList)))
-	}
-}
-
-func bearerToken(h string) (string, bool) {
-	const p = "bearer "
-	if len(h) <= len(p) || !strings.EqualFold(h[:len(p)], p) {
-		return "", false
-	}
-	t := strings.TrimSpace(h[len(p):])
-	if t == "" {
-		return "", false
-	}
-	return t, true
 }
 
 // ---- L8: login rate limiting -------------------------------------------------

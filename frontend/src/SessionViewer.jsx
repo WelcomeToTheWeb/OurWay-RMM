@@ -5,6 +5,14 @@ import "./views/session-viewer.css";
 
 // SessionViewer renders a live remote session for one device.
 // Connects to the SSE stream and renders frames on a canvas.
+//
+// SSE protocol (server-side named events — `onmessage` would NEVER fire for
+// them, which is why the viewer used to render nothing):
+//   event: hello    — stream established, carries the session id
+//   event: frame    — a captured JPEG (jpeg_b64, width, height, seq)
+//   event: status   — capture status (vnc_required, agent_offline, …)
+//   event: goodbye  — the server closed the session (auto-close on last
+//                     viewer, or another operator stopped it)
 export default function SessionViewer({
   deviceID,
   deviceName,
@@ -16,12 +24,22 @@ export default function SessionViewer({
   const ctxRef = useRef(null);
   const streamRef = useRef(null);
   const sessionIDRef = useRef(null);
+  // statusRef mirrors `status` for handlers that would otherwise capture a
+  // stale closure (the onerror handler closes the EventSource and checks
+  // whether we're already stopped).
+  const statusRef = useRef("connecting");
+  const stoppedRef = useRef(false);
 
   const [status, setStatus] = useState("connecting");
   const [error, setError] = useState(null);
   const [connected, setConnected] = useState(false);
   const [frameCount, setFrameCount] = useState(0);
   const [lastFrameTime, setLastFrameTime] = useState(null);
+
+  const updateStatus = useCallback((next) => {
+    statusRef.current = next;
+    setStatus(next);
+  }, []);
 
   // Connect to the SSE stream when mounted.
   useEffect(() => {
@@ -30,14 +48,15 @@ export default function SessionViewer({
 
     let cancelled = false;
 
-    // Start the session via API.
+    // Start the session via API. The response carries a short-lived stream
+    // ticket: the EventSource presents it instead of the operator JWT (the
+    // JWT in the URL would leak into access logs).
     api
       .startSession(token, deviceID, { fps: 2 })
       .then((res) => {
         if (cancelled) return;
         sessionIDRef.current = res.session_id;
-        setStatus("connecting");
-        connectStream();
+        connectStream(res.stream_ticket);
       })
       .catch((e) => {
         if (cancelled) return;
@@ -45,62 +64,105 @@ export default function SessionViewer({
         else setError(e.message);
       });
 
-    function connectStream() {
+    function connectStream(ticket) {
       const evtSource = new EventSource(
-        `/api/devices/${deviceID}/session/stream?token=${token}`,
+        `/api/devices/${deviceID}/session/stream?ticket=${encodeURIComponent(ticket)}`,
       );
       streamRef.current = evtSource;
 
       evtSource.onopen = () => {
         if (cancelled) return;
         setConnected(true);
-        setStatus("streaming");
       };
 
-      evtSource.onmessage = (evt) => {
+      // Named events: the server sends `event: <kind>` frames, which do NOT
+      // trigger onmessage — only addEventListener(kind) does.
+      evtSource.addEventListener("hello", (evt) => {
         if (cancelled) return;
         try {
           const data = JSON.parse(evt.data);
-          handleFrameEvent(data);
+          if (data.session_id) sessionIDRef.current = data.session_id;
+          updateStatus("streaming");
         } catch (e) {
-          // Ignore parse errors
+          // Ignore parse errors.
         }
-      };
+      });
 
-      evtSource.onerror = (e) => {
+      evtSource.addEventListener("frame", (evt) => {
+        if (cancelled) return;
+        try {
+          const data = JSON.parse(evt.data);
+          renderFrame(data);
+          setFrameCount((c) => c + 1);
+          setLastFrameTime(new Date());
+        } catch (e) {
+          // Ignore parse errors.
+        }
+      });
+
+      evtSource.addEventListener("status", (evt) => {
+        if (cancelled) return;
+        try {
+          const data = JSON.parse(evt.data);
+          if (data.status === "vnc_required") {
+            updateStatus("vnc_required");
+            setError("Headless device — open a local VNC session");
+          } else if (data.status === "agent_offline") {
+            // The agent's uplink dropped mid-session: the server keeps the
+            // session alive and re-opens capture when it reconnects, but the
+            // viewer must know the screen is frozen in the meantime.
+            updateStatus("agent_offline");
+          } else if (statusRef.current === "agent_offline") {
+            // A fresh frame (or cleared status) means the agent is back.
+            updateStatus("streaming");
+          }
+        } catch (e) {
+          // Ignore parse errors.
+        }
+      });
+
+      evtSource.addEventListener("goodbye", () => {
+        // The server closed the session (last viewer auto-close on another
+        // tab, or another operator stopped it). Mark stopped WITHOUT calling
+        // the stop API again — the session is already gone.
+        if (cancelled || stoppedRef.current) return;
+        stoppedRef.current = true;
+        evtSource.close();
+        setConnected(false);
+        updateStatus("stopped");
+        onClose();
+      });
+
+      evtSource.onerror = () => {
         if (cancelled) return;
         evtSource.close();
         setConnected(false);
-        if (status !== "stopped") {
-          setStatus("disconnected");
+        // statusRef: the plain `status` state here would be stale
+        // (captured at connect time).
+        if (statusRef.current !== "stopped") {
+          updateStatus("disconnected");
         }
       };
-    }
-
-    function handleFrameEvent(data) {
-      if (data.kind === "frame" && ctxRef.current) {
-        renderFrame(data);
-        setFrameCount((c) => c + 1);
-        setLastFrameTime(new Date());
-      } else if (data.kind === "status") {
-        if (data.status === "vnc_required") {
-          setStatus("vnc_required");
-          setError("Headless device — open a local VNC session");
-        }
-      }
     }
 
     function renderFrame(data) {
       if (!data.jpeg_b64 || !ctxRef.current) return;
 
-      // Decode base64 JPEG and render to canvas.
+      // Decode base64 JPEG and render to canvas. Resize only when the
+      // resolution changes — setting canvas.width on every frame resets the
+      // context state and forces a full reallocation at 30fps.
       const img = new Image();
       img.onload = () => {
-        if (!ctxRef.current) return;
+        if (!ctxRef.current || !canvasRef.current) return;
         const canvas = canvasRef.current;
-        canvas.width = data.width || img.width;
-        canvas.height = data.height || img.height;
-        ctxRef.current.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const w = data.width || img.width;
+        const h = data.height || img.height;
+        if (canvas.width !== w) canvas.width = w;
+        if (canvas.height !== h) canvas.height = h;
+        ctxRef.current.drawImage(img, 0, 0, w, h);
+        if (statusRef.current === "agent_offline") {
+          updateStatus("streaming");
+        }
       };
       img.src = "data:image/jpeg;base64," + data.jpeg_b64;
     }
@@ -110,16 +172,24 @@ export default function SessionViewer({
       if (streamRef.current) {
         streamRef.current.close();
       }
-      if (sessionIDRef.current) {
+      if (sessionIDRef.current && !stoppedRef.current) {
         api
           .stopSession(token, deviceID, { session_id: sessionIDRef.current })
           .catch(() => {});
       }
+      // Note: closing the EventSource is also the server-side signal that
+      // the last viewer left — the server auto-closes the session (agent
+      // stops capturing), so no stop call is strictly required here.
     };
-  }, [deviceID, token, onUnauthorized]);
+  }, [deviceID, token, onClose, onUnauthorized, updateStatus]);
 
   const stopSession = useCallback(async () => {
-    setStatus("stopped");
+    if (stoppedRef.current) {
+      onClose();
+      return;
+    }
+    stoppedRef.current = true;
+    updateStatus("stopped");
     if (streamRef.current) {
       streamRef.current.close();
     }
@@ -130,10 +200,12 @@ export default function SessionViewer({
         });
       } catch (e) {
         if (e.unauthorized) onUnauthorized();
+        // 404 = the server already auto-closed it; either way, on our way
+        // out.
       }
     }
     onClose();
-  }, [token, deviceID, onClose, onUnauthorized]);
+  }, [token, deviceID, onClose, onUnauthorized, updateStatus]);
 
   const statusLabel = {
     connecting: "Connecting…",
@@ -141,6 +213,7 @@ export default function SessionViewer({
     disconnected: "Disconnected",
     stopped: "Stopped",
     vnc_required: "VNC Required",
+    agent_offline: "Agent offline",
   };
 
   return (
@@ -173,8 +246,14 @@ export default function SessionViewer({
       </div>
 
       {error && (
-        <Banner variant="error" onClose={() => setError(null)}>
+        <Banner tone="err" onClose={() => setError(null)}>
           {error}
+        </Banner>
+      )}
+      {status === "agent_offline" && (
+        <Banner tone="info">
+          The device's uplink dropped — the screen is frozen. Waiting for the
+          agent to reconnect (capture resumes automatically).
         </Banner>
       )}
 
@@ -195,8 +274,9 @@ export default function SessionViewer({
 
       <div className="session-footer">
         <p className="session-note">
-          Screen capture with Windows input support. Input events require the
-          agent's SendInput driver (Windows SendInput API).
+          Phase 1: view-only screen capture (JPEG over SSE, drop-oldest).
+          Interactive input is not wired in this phase — see the remote
+          session docs for the phase 2 plan.
         </p>
       </div>
     </div>

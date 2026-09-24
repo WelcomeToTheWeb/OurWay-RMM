@@ -5,6 +5,7 @@ package session
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 )
 
@@ -30,3 +31,9 @@ func NewInputRelayer(cfg InputRelayerConfig) (InputRelayer, error) {
 	}
 	return newPlatformInputRelayer(cfg)
 }
+
+// errNotImplemented is returned by platform relayers that are not wired up
+// yet (macOS / Linux stubs). A stub MUST report failure, never fake success:
+// returning nil would let the server believe input reached the desktop when
+// it was silently dropped.
+var errNotImplemented = errors.New("input relay not implemented on this platform")

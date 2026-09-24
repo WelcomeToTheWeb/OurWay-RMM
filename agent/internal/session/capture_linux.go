@@ -176,7 +176,7 @@ func (c *linuxCapturer) getImage() (*image.RGBA, error) {
 		return nil, err
 	}
 	if reply[0] != 1 {
-		return nil, fmt.Errorf("X error reply: code %d", reply[1])
+		return nil, fmt.Errorf("x11 error reply: code %d", reply[1])
 	}
 	rw, rh := int(ord.Uint16(reply[20:22])), int(ord.Uint16(reply[22:24]))
 	if rw != w || rh != h {

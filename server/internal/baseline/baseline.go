@@ -8,8 +8,8 @@
 // smoothed level (trend signal + future alerting input).
 //
 // Deterministic by construction: pure functions of the input samples, no
-// randomness, no ML dependencies (IDEA.md "AIOps without a data-science
-// team"). W2-4 turns emitted Anomalies into deduped inbox alerts.
+// randomness, no ML dependencies — AIOps without a data-science team.
+// W2-4 turns emitted Anomalies into deduped inbox alerts.
 package baseline
 
 import (
@@ -152,16 +152,6 @@ type SeriesKey struct {
 
 func (k SeriesKey) String() string {
 	return k.DeviceID + "/" + k.Name + "/" + k.Source
-}
-
-type sample struct {
-	at  time.Time
-	val float64
-}
-
-type seriesData struct {
-	key SeriesKey
-	pts []sample // sorted ascending by at
 }
 
 // ---- anomaly ---------------------------------------------------------------
@@ -386,10 +376,8 @@ func (j *Job) RunOnce(ctx context.Context, now time.Time) ([]Anomaly, error) {
 	j.anoms = out
 	j.scored = seriesSeen
 	j.runCount++
-	if seriesSeen != nil {
-		for k := range seriesSeen {
-			j.series[k] = true
-		}
+	for k := range seriesSeen { // ranging a nil map is a no-op
+		j.series[k] = true
 	}
 	j.mu.Unlock()
 

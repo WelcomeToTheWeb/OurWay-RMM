@@ -4,6 +4,9 @@
 package httpapi
 
 import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -12,8 +15,100 @@ import (
 	"time"
 
 	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/users"
 	"github.com/welcometotheweb/ourway-rmm/server/internal/sessionrelay"
 )
+
+// streamTicketTTL bounds how long a minted stream ticket is accepted by the
+// SSE endpoint (the browser connects right after session start).
+const streamTicketTTL = 5 * time.Minute
+
+// streamTicket is a short-lived, device+user-bound credential for the SSE
+// stream endpoint. EventSource cannot set auth headers, so without a ticket
+// the full operator JWT would ride in the URL query string — and therefore
+// into server access logs, reverse-proxy logs and browser network tooling.
+// A leaked ticket expires within minutes and only opens the screen stream
+// for the device it was minted for, never any other operator capability.
+type streamTicket struct {
+	deviceID  string
+	sessionID string
+	user      string
+	expires   time.Time
+}
+
+// requireDeviceAccess (gap #3) resolves the device (404 if unknown) and
+// scopes non-admin sessions to the device's client, mirroring the device
+// sub-route dispatch. The session routes used to skip this entirely — any
+// authenticated viewer could stream any device in the estate.
+func (s *Server) requireDeviceAccess(w http.ResponseWriter, r *http.Request, deviceID string) bool {
+	dev, err := s.devices.Get(r.Context(), deviceID)
+	if err != nil {
+		http.Error(w, "unknown device", http.StatusNotFound)
+		return false
+	}
+	cid := dev.ClientID
+	if cid == "" {
+		cid = store.DefaultClientID
+	}
+	return requireClientAccess(w, r, cid)
+}
+
+// auditSession emits a session audit hop onto the event bus (journaled by
+// the webhook framework, visible on /events). Nil-safe (in-memory mode).
+func (s *Server) auditSession(ctx context.Context, deviceID, event string, data map[string]any) {
+	if s.sessionAudit != nil {
+		s.sessionAudit(ctx, deviceID, event, data)
+	}
+}
+
+// newSessionID mints a session id from a CSPRNG. (The old format was
+// `sess-<nanotime>-<nanotime>>32` — fully derivable from the wall clock.)
+func newSessionID() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		// crypto/rand failure is effectively impossible; fall back to a
+		// time-based id rather than failing the session start.
+		return fmt.Sprintf("sess-%d", time.Now().UnixNano())
+	}
+	return "sess-" + hex.EncodeToString(b)
+}
+
+// mintStreamTicket issues a stream ticket bound to one device session and
+// one operator (see streamTicket). Expired tickets are swept lazily.
+func (s *Server) mintStreamTicket(deviceID, sessionID, user string) string {
+	s.ticketMu.Lock()
+	defer s.ticketMu.Unlock()
+	if s.streamTickets == nil {
+		s.streamTickets = make(map[string]streamTicket)
+	}
+	now := time.Now()
+	for k, t := range s.streamTickets {
+		if now.After(t.expires) {
+			delete(s.streamTickets, k)
+		}
+	}
+	b := make([]byte, 16)
+	_, _ = rand.Read(b)
+	tok := "st-" + hex.EncodeToString(b)
+	s.streamTickets[tok] = streamTicket{deviceID: deviceID, sessionID: sessionID, user: user, expires: now.Add(streamTicketTTL)}
+	return tok
+}
+
+// validStreamTicket reports whether ticket is unexpired and bound to this
+// device + operator.
+func (s *Server) validStreamTicket(ticket, deviceID, user string) (sessionID string, ok bool) {
+	s.ticketMu.Lock()
+	defer s.ticketMu.Unlock()
+	t, exists := s.streamTickets[ticket]
+	if !exists || time.Now().After(t.expires) || t.deviceID != deviceID {
+		return "", false
+	}
+	if user != "" && t.user != "" && t.user != user {
+		return "", false
+	}
+	return t.sessionID, true
+}
 
 // handleSessionStart opens a remote session on a device.
 //
@@ -34,13 +129,21 @@ func (s *Server) handleSessionStart(w http.ResponseWriter, r *http.Request, devi
 		http.Error(w, "session control not configured", http.StatusServiceUnavailable)
 		return
 	}
+	if !s.requireDeviceAccess(w, r, deviceID) {
+		return
+	}
 
-	// Parse optional fps (default 0 = agent default).
+	// Parse optional fps (default 0 = agent default). Cap the body: a session
+	// start is a small JSON object, not an upload.
 	var body struct {
 		FPS *int `json:"fps"`
 	}
 	if r.Body != nil {
-		json.NewDecoder(r.Body).Decode(&body)
+		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil && err.Error() != "EOF" {
+			http.Error(w, "bad request body", http.StatusBadRequest)
+			return
+		}
 	}
 	fps := 0
 	if body.FPS != nil {
@@ -51,8 +154,8 @@ func (s *Server) handleSessionStart(w http.ResponseWriter, r *http.Request, devi
 		}
 	}
 
-	// Generate a session ID.
-	sessionID := fmt.Sprintf("sess-%d-%d", time.Now().UnixNano(), randInt31())
+	// Generate a session ID (CSPRNG — see newSessionID).
+	sessionID := newSessionID()
 
 	// Register in the session relay so viewers can subscribe.
 	s.sessions.Open(deviceID, sessionID, fps)
@@ -74,10 +177,25 @@ func (s *Server) handleSessionStart(w http.ResponseWriter, r *http.Request, devi
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{
+	// Mint the short-lived stream ticket the browser viewer presents to the
+	// SSE endpoint (so the operator JWT never appears in the stream URL).
+	sess, _ := users.SessionFromContext(r.Context())
+	user := sess.Username
+	ticket := s.mintStreamTicket(deviceID, sessionID, user)
+
+	// Audit: who started a session on which device (the compliance answer
+	// to "who had remote access").
+	s.auditSession(r.Context(), deviceID, "session.started", map[string]any{
+		"user":       user,
 		"session_id": sessionID,
 		"fps":        fps,
-		"device_id":  deviceID,
+	})
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"session_id":    sessionID,
+		"fps":           fps,
+		"device_id":     deviceID,
+		"stream_ticket": ticket,
 	})
 }
 
@@ -94,15 +212,24 @@ func (s *Server) handleSessionStop(w http.ResponseWriter, r *http.Request, devic
 		http.Error(w, "session relay not configured", http.StatusServiceUnavailable)
 		return
 	}
+	if !s.requireDeviceAccess(w, r, deviceID) {
+		return
+	}
 
 	var body struct {
 		SessionID string `json:"session_id"`
 	}
 	if r.Body != nil {
-		json.NewDecoder(r.Body).Decode(&body)
+		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil && err.Error() != "EOF" {
+			http.Error(w, "bad request body", http.StatusBadRequest)
+			return
+		}
 	}
 
-	// Look up the active session ID from the relay.
+	// Look up the active session ID from the relay. A caller-supplied id
+	// must MATCH the active session — stopping an arbitrary (possibly
+	// superseded) id used to report success without doing anything.
 	activeID, hasActive := s.sessions.ActiveSession(deviceID)
 	if !hasActive && body.SessionID == "" {
 		http.Error(w, "no active session for device", http.StatusNotFound)
@@ -111,6 +238,15 @@ func (s *Server) handleSessionStop(w http.ResponseWriter, r *http.Request, devic
 	sessionID := body.SessionID
 	if sessionID == "" {
 		sessionID = activeID
+	} else if sessionID != activeID {
+		http.Error(w, "session id does not match the active session", http.StatusNotFound)
+		return
+	}
+
+	// Duration for the audit hop (best effort — openedAt is set on Open).
+	var durationMS int64
+	if _, _, openedAt, ok := s.sessions.SessionInfo(deviceID); ok && !openedAt.IsZero() {
+		durationMS = time.Since(openedAt).Milliseconds()
 	}
 
 	// Send the close control downlink.
@@ -121,19 +257,23 @@ func (s *Server) handleSessionStop(w http.ResponseWriter, r *http.Request, devic
 			},
 		},
 	}
+	stopped := true
 	if s.sendSessionControl != nil && !s.sendSessionControl(deviceID, sc) {
 		// Agent is offline; mark session as closed locally.
-		s.sessions.Close(deviceID, sessionID)
-		writeJSON(w, http.StatusOK, map[string]any{
-			"stopped": false,
-			"error":   "device is offline; session marked closed locally",
-		})
-		return
+		stopped = false
 	}
-
 	s.sessions.Close(deviceID, sessionID)
+
+	sess, _ := users.SessionFromContext(r.Context())
+	s.auditSession(r.Context(), deviceID, "session.stopped", map[string]any{
+		"user":         sess.Username,
+		"session_id":   sessionID,
+		"duration_ms":  durationMS,
+		"agent_online": stopped,
+	})
+
 	writeJSON(w, http.StatusOK, map[string]any{
-		"stopped":    true,
+		"stopped":    stopped,
 		"session_id": sessionID,
 		"device_id":  deviceID,
 	})
@@ -151,6 +291,21 @@ func (s *Server) handleSessionStream(w http.ResponseWriter, r *http.Request, dev
 		http.Error(w, "session relay not configured", http.StatusServiceUnavailable)
 		return
 	}
+	if !s.requireDeviceAccess(w, r, deviceID) {
+		return
+	}
+
+	// The stream endpoint is authenticated by a short-lived stream ticket
+	// (minted at session start, bound to device + operator) — NOT by the
+	// operator JWT, which EventSource can only pass via the URL query
+	// string (and which would then leak into access logs).
+	sess, _ := users.SessionFromContext(r.Context())
+	user := sess.Username
+	ticket := r.URL.Query().Get("ticket")
+	if _, ok := s.validStreamTicket(ticket, deviceID, user); !ok {
+		http.Error(w, "invalid or expired stream ticket (start a session first)", http.StatusForbidden)
+		return
+	}
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -161,11 +316,32 @@ func (s *Server) handleSessionStream(w http.ResponseWriter, r *http.Request, dev
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
 	w.Write([]byte(": connected\n\n"))
 	flusher.Flush()
 
 	viewer, cancel := s.sessions.Subscribe(deviceID)
-	defer cancel()
+	defer cancel() // last-viewer disconnect closes the session server-side
+
+	ctx := r.Context()
+	s.auditSession(ctx, deviceID, "session.stream_opened", map[string]any{
+		"user": user,
+		"session_id": func() string {
+			if id, ok := s.sessions.ActiveSession(deviceID); ok {
+				return id
+			}
+			return ""
+		}(),
+	})
+	startedAt := time.Now()
+	defer func() {
+		// The bus wiring publishes on a background context, so this audit
+		// hop survives the request context cancellation.
+		s.auditSession(ctx, deviceID, "session.stream_closed", map[string]any{
+			"user":        user,
+			"duration_ms": time.Since(startedAt).Milliseconds(),
+		})
+	}()
 
 	// Send initial status if available.
 	if status := s.sessions.Status(deviceID); status != "" {
@@ -173,13 +349,20 @@ func (s *Server) handleSessionStream(w http.ResponseWriter, r *http.Request, dev
 		s.writeSSEEvent(w, flusher, "status", evt)
 	}
 
-	ctx := r.Context()
+	// Keepalive so proxies and the browser don't treat a stalled agent as a
+	// dead connection (and the viewer can distinguish "paused" from "dead").
+	keepalive := time.NewTicker(15 * time.Second)
+	defer keepalive.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-viewer.Done():
 			return
+		case <-keepalive.C:
+			w.Write([]byte(": ping\n\n"))
+			flusher.Flush()
 		case evt, ok := <-viewer.Chan():
 			if !ok {
 				return
@@ -209,9 +392,18 @@ func (s *Server) handleFileDownload(w http.ResponseWriter, r *http.Request, devi
 		http.Error(w, "session relay not configured", http.StatusServiceUnavailable)
 		return
 	}
+	if !s.requireDeviceAccess(w, r, deviceID) {
+		return
+	}
 
 	t, ok := s.sessions.PullState(commandID)
 	if !ok {
+		http.Error(w, "transfer not found", http.StatusNotFound)
+		return
+	}
+	// A transfer belongs to the device that pulled it — never serve one
+	// device's file under another device's route.
+	if t.DeviceID != "" && t.DeviceID != deviceID {
 		http.Error(w, "transfer not found", http.StatusNotFound)
 		return
 	}
@@ -236,11 +428,6 @@ func (s *Server) handleFileDownload(w http.ResponseWriter, r *http.Request, devi
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filepath.Base(t.Path)))
 	w.Header().Set("Content-Length", strconv.FormatInt(t.Received, 10))
 	w.Write(t.Data)
-}
-
-// randInt31 returns a random int31.
-func randInt31() int32 {
-	return int32(time.Now().UnixNano() >> 32)
 }
 
 // registerSession registers the remote session routes.

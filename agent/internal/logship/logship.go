@@ -11,7 +11,7 @@
 // stable content-derived id (sha256 of device|line), so both destinations
 // dedup by id and the at-least-once delivery is replay-safe: a crash, a
 // dropped uplink, or a Loki blip just re-sends the same entries — the
-// second time they are no-ops (same story as MetricBatch, IDEA.md §1).
+// second time they are no-ops (same replay story as MetricBatch).
 //
 // Delivery model: the shipper reads new lines into a bounded pending queue
 // and flushes on a timer or when the queue hits BatchSize. A flush only

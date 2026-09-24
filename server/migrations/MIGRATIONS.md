@@ -34,24 +34,13 @@ parallel lanes (A/B/C) can never collide.
 | 0009 | `0009_setup.sql` | — | shipped | A-2: first-boot setup wizard state |
 | 0010 | `0010_clients.sql` | — | shipped | B #2: clients table + devices.client_id + seeded 'unassigned' backfill |
 | 0011 | `0011_users.sql` | — | shipped | B #3: operator users + RBAC grants + TOTP MFA + API tokens |
+| 0012 | `0012_tickets.sql` | B | shipped | B #7: helpdesk tickets (queues, open→in_progress→resolved→closed + re-open, SLA timers) + ticket notes |
+| 0013 | `0013_inventory.sql` | A | shipped | A #4: deep inventory (device_hardware, device_software, device_services, device_users, device_patches) |
 | 0014 | `0014_maintenance_windows.sql` | C | shipped | C #10b: maintenance windows + snooze tables |
 | 0015 | `0015_report_schedules.sql` | C | shipped | C #8b: report schedules + runs tables |
-
-## Pre-reserved (gap-closure plan — TEAM-PLAN.md §2 F4)
-
-These numbers are claimed by lane at plan time; the files do not exist yet.
-The owning lane writes them during its wave; the claim stays in this table.
-
-| # | Reserved for | Owner (lane) | File (planned) |
-| --- | ------------ | ------------ | -------------- |
-
-| 0012 | tickets (helpdesk) | B — People & MSP | `0012_tickets.sql` |
-| 0013 | deep inventory | A — Agent & Edge | `0013_inventory.sql` |
-
-| 0016 | notification policies | B — People & MSP | `0016_notification_policies.sql` |
+| 0016 | `0016_notification_policies.sql` | B | shipped | B #6: notification routing policies (event category + client/role → channels) |
 
 ## Free numbers
 
 **0017+** — first-come, first-served: claim the number in the PR
-description, add a row to the pre-reserved table above in the same PR, then
-write the file.
+description, add a row to this ledger in the same PR, then write the file.

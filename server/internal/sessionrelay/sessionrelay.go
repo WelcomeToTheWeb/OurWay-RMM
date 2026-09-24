@@ -9,6 +9,7 @@
 package sessionrelay
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"sync"
@@ -17,8 +18,28 @@ import (
 	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
 )
 
+// Pull bounds + GC TTLs (a single pull must not be able to OOM the server,
+// and finished work must not stay resident for the process lifetime).
+const (
+	// DefaultMaxPullBytes caps one file_pull transfer (1 GiB).
+	DefaultMaxPullBytes = int64(1 << 30)
+	// doneTransferTTL keeps completed transfers downloadable this long.
+	doneTransferTTL = time.Hour
+	// inflightTransferTTL bounds a stuck (no-eof) transfer.
+	inflightTransferTTL = 2 * time.Hour
+	// deviceIdleTTL drops device state that has no session, no viewers and
+	// no recent frames (sweeper only; never touches a live session).
+	deviceIdleTTL = 10 * time.Minute
+)
+
+// StatusAgentOffline is reported (server-side) when the device's uplink
+// drops mid-session: the viewer sees the degraded state instead of a
+// silently frozen screen.
+const StatusAgentOffline = "agent_offline"
+
 // TransferState tracks an in-progress file_pull.
 type TransferState struct {
+	DeviceID  string
 	Path      string
 	Total     int64
 	Received  int64
@@ -30,17 +51,19 @@ type TransferState struct {
 	Complete  time.Time
 }
 
-// FrameEvent is one SSE frame sent to a viewer.
+// FrameEvent is one SSE frame sent to a viewer. JSON tags are the SSE wire
+// contract (snake_case, matching the rest of the API) — the frontend reads
+// data.kind / data.jpeg_b64 / data.status off these.
 type FrameEvent struct {
-	Kind      string // "frame" | "status" | "hello"
-	SessionID string
-	Seq       uint64
-	Codec     string
-	Width     uint32
-	Height    uint32
-	JPEGB64   string // base64 of the jpeg bytes (empty on status frames)
-	CaptureTS int64
-	Status    string // non-empty on status frames ("vnc_required", "unavailable")
+	Kind      string `json:"kind"` // "frame" | "status" | "hello" | "goodbye"
+	SessionID string `json:"session_id,omitempty"`
+	Seq       uint64 `json:"seq,omitempty"`
+	Codec     string `json:"codec,omitempty"`
+	Width     uint32 `json:"width,omitempty"`
+	Height    uint32 `json:"height,omitempty"`
+	JPEGB64   string `json:"jpeg_b64,omitempty"` // base64 of the jpeg bytes
+	CaptureTS int64  `json:"capture_ts_ms,omitempty"`
+	Status    string `json:"status,omitempty"` // non-empty on status frames
 }
 
 // Viewer is a single subscribed browser viewer.
@@ -67,6 +90,8 @@ type DeviceState struct {
 	latest    *FrameEvent
 	status    string
 	viewers   map[*Viewer]bool
+	openedAt  time.Time // last Open (session audit: duration)
+	lastFrameAt time.Time
 }
 
 // Registry is the central session relay. Thread-safe.
@@ -74,19 +99,36 @@ type Registry struct {
 	mu        sync.Mutex
 	devices   map[string]*DeviceState
 	transfers map[string]*TransferState // command_id -> transfer
+	// maxPullBytes bounds one file_pull transfer (0 = DefaultMaxPullBytes).
+	maxPullBytes int64
+	// GC TTLs, instance fields (defaults from the constants above) so tests
+	// can shorten them. See Sweep.
+	doneTTL     time.Duration
+	inflightTTL time.Duration
+	idleTTL     time.Duration
+	// OnAutoClose (optional) fires when the LAST viewer disconnects while a
+	// session is active: the server closes the session (sends the close
+	// downlink via the httpapi/ingest wiring) so the agent stops capturing.
+	// Called without the registry lock held.
+	OnAutoClose func(devID, sessionID string)
 }
 
-// New creates a Registry.
+// New creates a Registry with the default pull cap + GC TTLs.
 func New() *Registry {
 	return &Registry{
-		devices:   make(map[string]*DeviceState),
-		transfers: make(map[string]*TransferState),
+		devices:     make(map[string]*DeviceState),
+		transfers:   make(map[string]*TransferState),
+		doneTTL:     doneTransferTTL,
+		inflightTTL: inflightTransferTTL,
+		idleTTL:     deviceIdleTTL,
 	}
 }
 
 // Open records that a session has been opened for a device (the server
 // just sent SessionControl open). Viewers can subscribe before frames
-// arrive; they'll get a hello event with the session info.
+// arrive; they'll get a hello event with the session info. A new open
+// supersedes any prior state for the device (old session's latest frame
+// and status are dropped — they belong to a different session).
 func (r *Registry) Open(devID, sessionID string, fps int) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -98,21 +140,29 @@ func (r *Registry) Open(devID, sessionID string, fps int) {
 	ds.sessionID = sessionID
 	ds.fps = fps
 	ds.status = ""
+	ds.latest = nil
+	ds.openedAt = time.Now()
 }
 
 // OnFrame is called by ingest when a SessionFrame arrives from an agent.
 // Status frames update the device's status; real frames are stored as
 // the latest and sent to viewers (drop if their channel is full).
+//
+// Frames for a CLOSED or unknown session are dropped, and a frame must not
+// revive a closed session by re-stamping the session id (the close
+// downlink can race the agent's in-flight frames).
 func (r *Registry) OnFrame(devID string, f *agentv1.SessionFrame) {
 	r.mu.Lock()
 	ds := r.devices[devID]
-	if ds == nil {
-		ds = &DeviceState{viewers: make(map[*Viewer]bool)}
-		r.devices[devID] = ds
+	if ds == nil || ds.sessionID == "" {
+		r.mu.Unlock()
+		return // no active session — never (re)create state from a frame
 	}
-	if f.GetSessionId() != "" {
-		ds.sessionID = f.GetSessionId()
+	if sid := f.GetSessionId(); sid != "" && sid != ds.sessionID {
+		r.mu.Unlock()
+		return // stale frame from a superseded session
 	}
+	ds.lastFrameAt = time.Now()
 
 	evt := FrameEvent{
 		SessionID: f.GetSessionId(),
@@ -149,7 +199,8 @@ func (r *Registry) OnFrame(devID string, f *agentv1.SessionFrame) {
 
 // Subscribe returns a channel of FrameEvents for a device. The viewer
 // should call the returned cancel func when done. An initial "hello" event
-// is sent with the current state (session info, latest frame if available).
+// is sent with the current state, followed by the latest frame if one is
+// available (so a (re)connecting viewer sees the screen immediately).
 func (r *Registry) Subscribe(devID string) (*Viewer, func()) {
 	r.mu.Lock()
 	ds := r.devices[devID]
@@ -164,43 +215,90 @@ func (r *Registry) Subscribe(devID string) (*Viewer, func()) {
 	}
 	ds.viewers[v] = true
 
-	// Send hello event with session info.
+	// Send hello event with session info, then the latest frame.
 	hello := FrameEvent{
 		Kind:      "hello",
 		SessionID: ds.sessionID,
 	}
+	latest := ds.latest
 	r.mu.Unlock()
 
 	select {
 	case v.ch <- hello:
 	default:
 	}
-
-	cancel := func() {
-		r.mu.Lock()
-		if ds2 := r.devices[devID]; ds2 != nil {
-			delete(ds2.viewers, v)
+	if latest != nil {
+		select {
+		case v.ch <- *latest:
+		default:
 		}
-		r.mu.Unlock()
-		close(v.done)
+	}
+
+	cancelOnce := sync.Once{}
+	cancel := func() {
+		cancelOnce.Do(func() {
+			r.mu.Lock()
+			var autoCloseDev, autoCloseSess string
+			if ds2 := r.devices[devID]; ds2 != nil {
+				delete(ds2.viewers, v)
+				if len(ds2.viewers) == 0 && ds2.sessionID != "" {
+					// Last viewer left: close the session server-side. Without
+					// this, a browser that dies (crash, closed tab, network
+					// drop) leaves the agent capturing the screen forever.
+					autoCloseDev, autoCloseSess = devID, ds2.sessionID
+					ds2.sessionID = ""
+					ds2.status = ""
+					ds2.latest = nil
+				}
+				if ds2.sessionID == "" && len(ds2.viewers) == 0 && ds2.latest == nil && ds2.status == "" {
+					delete(r.devices, devID)
+				}
+			}
+			r.mu.Unlock()
+			close(v.done)
+			if autoCloseSess != "" && r.OnAutoClose != nil {
+				r.OnAutoClose(autoCloseDev, autoCloseSess)
+			}
+		})
 	}
 	return v, cancel
 }
 
 // OnChunk is called by ingest when a FileChunk arrives for a file_pull.
-// Chunks are accumulated; the eof chunk finalizes the transfer.
+// Chunks are accumulated (bounded by maxPullBytes); the eof chunk
+// finalizes the transfer.
 func (r *Registry) OnChunk(devID string, c *agentv1.FileChunk) {
 	r.mu.Lock()
 	t := r.transfers[c.GetCommandId()]
-	if t == nil {
+	if t == nil || t.Done {
 		r.mu.Unlock()
 		return // No transfer registered (or already complete)
+	}
+	if t.DeviceID != "" && t.DeviceID != devID {
+		r.mu.Unlock()
+		return // chunk for another device's transfer
+	}
+	if t.Err != nil {
+		r.mu.Unlock()
+		return
 	}
 	if c.GetTotalBytes() != 0 {
 		t.Total = c.GetTotalBytes()
 	}
 	if c.GetSourceMode() != 0 {
 		t.Mode = c.GetSourceMode()
+	}
+	limit := r.maxPullBytes
+	if limit <= 0 {
+		limit = DefaultMaxPullBytes
+	}
+	if int64(len(t.Data))+int64(len(c.GetData())) > limit {
+		t.Err = fmt.Errorf("pull exceeds limit (%d bytes)", limit)
+		t.Done = true
+		t.Complete = time.Now()
+		t.Data = nil // release the buffer; the download route reports t.Err
+		r.mu.Unlock()
+		return
 	}
 	t.Received += int64(len(c.GetData()))
 	t.Data = append(t.Data, c.GetData()...)
@@ -216,6 +314,7 @@ func (r *Registry) BeginPull(deviceID, commandID, path string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.transfers[commandID] = &TransferState{
+		DeviceID:  deviceID,
 		Path:      path,
 		StartedAt: time.Now(),
 	}
@@ -245,6 +344,46 @@ func (r *Registry) ActiveSession(devID string) (string, bool) {
 	return ds.sessionID, true
 }
 
+// SessionInfo returns the active session's id, fps and start time (for the
+// agent-reconnect re-open and the stop audit's duration). ok=false when the
+// device has no active session.
+func (r *Registry) SessionInfo(devID string) (sessionID string, fps int, openedAt time.Time, ok bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	ds := r.devices[devID]
+	if ds == nil || ds.sessionID == "" {
+		return "", 0, time.Time{}, false
+	}
+	return ds.sessionID, ds.fps, ds.openedAt, true
+}
+
+// OnAgentOffline marks a device's active session as degraded (the uplink
+// dropped mid-session). The session itself stays active — when the agent
+// reconnects the server re-sends the open control and capture resumes —
+// but viewers get a "agent_offline" status frame instead of a silently
+// frozen screen.
+func (r *Registry) OnAgentOffline(devID string) {
+	r.mu.Lock()
+	ds := r.devices[devID]
+	if ds == nil || ds.sessionID == "" || ds.status == StatusAgentOffline {
+		r.mu.Unlock()
+		return
+	}
+	ds.status = StatusAgentOffline
+	evt := FrameEvent{Kind: "status", SessionID: ds.sessionID, Status: StatusAgentOffline}
+	viewers := make([]*Viewer, 0, len(ds.viewers))
+	for v := range ds.viewers {
+		viewers = append(viewers, v)
+	}
+	r.mu.Unlock()
+	for _, v := range viewers {
+		select {
+		case v.ch <- evt:
+		default:
+		}
+	}
+}
+
 // LatestFrame returns the most recent frame for a device.
 func (r *Registry) LatestFrame(devID string) (*FrameEvent, bool) {
 	r.mu.Lock()
@@ -269,12 +408,14 @@ func (r *Registry) Status(devID string) string {
 
 // Close marks a session as closed (the server sent a SessionControl close
 // downlink or the viewer disconnected). Future frames for this session are
-// dropped; the viewer gets a "goodbye" event.
+// dropped (see OnFrame); the viewers get a "goodbye" event. An empty
+// device entry is removed so the maps cannot grow unboundedly.
 func (r *Registry) Close(devID, sessionID string) {
 	r.mu.Lock()
-	ds := r.devices[devID]
-	if ds != nil && (sessionID == "" || ds.sessionID == sessionID) {
+	if ds := r.devices[devID]; ds != nil && (sessionID == "" || ds.sessionID == sessionID) {
 		ds.sessionID = ""
+		ds.status = ""
+		ds.latest = nil // stale frame must not survive a close
 		for v := range ds.viewers {
 			select {
 			case v.ch <- FrameEvent{Kind: "goodbye", SessionID: sessionID}:
@@ -282,7 +423,46 @@ func (r *Registry) Close(devID, sessionID string) {
 			}
 		}
 	}
+	if ds := r.devices[devID]; ds != nil && ds.sessionID == "" && len(ds.viewers) == 0 && ds.latest == nil && ds.status == "" {
+		delete(r.devices, devID)
+	}
 	r.mu.Unlock()
+}
+
+// Sweep drops stale state: empty device entries idle past deviceIdleTTL,
+// completed transfers past doneTransferTTL, and stuck (no-eof) transfers
+// past inflightTransferTTL.
+func (r *Registry) Sweep(now time.Time) {
+	r.mu.Lock()
+	for devID, ds := range r.devices {
+		empty := ds.sessionID == "" && len(ds.viewers) == 0
+		idle := ds.lastFrameAt.IsZero() || now.Sub(ds.lastFrameAt) > r.idleTTL
+		if empty && idle {
+			delete(r.devices, devID)
+		}
+	}
+	for id, t := range r.transfers {
+		if t.Done && now.Sub(t.Complete) > r.doneTTL {
+			delete(r.transfers, id)
+		} else if !t.Done && now.Sub(t.StartedAt) > r.inflightTTL {
+			delete(r.transfers, id)
+		}
+	}
+	r.mu.Unlock()
+}
+
+// SweepLoop runs Sweep on a 30s ticker until ctx is done.
+func (r *Registry) SweepLoop(ctx context.Context) {
+	t := time.NewTicker(30 * time.Second)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			r.Sweep(time.Now())
+		}
+	}
 }
 
 // FormatBytes formats a byte count for display.

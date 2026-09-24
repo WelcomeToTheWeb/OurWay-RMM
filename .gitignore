@@ -29,6 +29,7 @@ agent/bin/
 server/bin/
 agent/agent
 server/server
+scripts/load-test/load-test
 SHA256SUMS
 SHA256SUMS.minisig
 *.minisig

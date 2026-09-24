@@ -32,7 +32,7 @@ jobs:
           TAG="${GITHUB_REF_NAME}"
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --title "OurWay RMM ${TAG}" \
-              --notes "Signed release (W3-4): agent binaries + installers + SHA256SUMS carry minisign signatures (minisign.pub ships alongside); the server image ghcr.io/welcometotheweb/ourway-rmm:${TAG#v} is cosign/Sigstore-signed. Every artifact ships a CycloneDX SBOM (W4-1): <artifact>.cdx.json (+ .minisig)."
+              --notes "Signed release (W3-4): agent binaries + installers + SHA256SUMS carry minisign signatures (minisign.pub ships alongside); the server image ghcr.io/welcometotheweb/ourway-rmm-server:${TAG#v} is cosign/Sigstore-signed. Every artifact ships a CycloneDX SBOM (W4-1): <artifact>.cdx.json (+ .minisig)."
           fi
 
   agent:
@@ -92,7 +92,7 @@ jobs:
           done
           # Invariant: every shipped artifact has its signature present too
           # (W4-1: each binary's SBOM is a shipped artifact as well).
-          EXPECTED='ourway-rmm-agent-linux-amd64 ourway-rmm-agent-linux-arm64 ourway-rmm-agent-darwin-amd64 ourway-rmm-agent-darwin-arm64 ourway-rmm-agent-windows-amd64.exe ourway-rmm-agent-linux-amd64.cdx.json ourway-rmm-agent-linux-arm64.cdx.json ourway-rmm-agent-darwin-amd64.cdx.json ourway-rmm-agent-darwin-arm64.cdx.json ourway-rmm-agent-windows-amd64.exe.cdx.json install.sh install.ps1 SHA256SUMS'
+          EXPECTED='ourway-rmm-agent-linux-amd64 ourway-rmm-agent-linux-arm64 ourway-rmm-agent-darwin-amd64 ourway-rmm-agent-darwin-arm64 ourway-rmm-agent-windows-amd64.exe ourway-rmm-agent-windows-arm64.exe ourway-rmm-agent-linux-amd64.cdx.json ourway-rmm-agent-linux-arm64.cdx.json ourway-rmm-agent-darwin-amd64.cdx.json ourway-rmm-agent-darwin-arm64.cdx.json ourway-rmm-agent-windows-amd64.exe.cdx.json ourway-rmm-agent-windows-arm64.exe.cdx.json install.sh install.ps1 SHA256SUMS'
           ACTUAL="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
           for a in $EXPECTED; do
             for f in "$a" "$a.minisig"; do

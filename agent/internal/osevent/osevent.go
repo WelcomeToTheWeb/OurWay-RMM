@@ -22,7 +22,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"os"
 	"sort"
@@ -227,6 +226,3 @@ func entryID(source string, parts ...string) string {
 	h := sha256.Sum256([]byte("ourway-rmm-osevent|" + source + "|" + strings.Join(parts, "|")))
 	return hex.EncodeToString(h[:])
 }
-
-// intToStr keeps the id inputs uniformly string-encoded.
-func intToStr(v int64) string { return fmt.Sprint(v) }

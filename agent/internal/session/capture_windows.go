@@ -77,7 +77,6 @@ func (w *windowsCapturer) Capture(_ context.Context) (*Frame, error) {
 		defer procSelectObject.Call(memDC, old)
 	}
 
-	const bltOK = 1
 	if ok, _, _ := procBitBlt.Call(memDC, 0, 0, cx, cy, screenDC, 0, 0,
 		uintptr(srccopy|captureBlt)); ok == 0 {
 		return &Frame{Status: "unavailable"}, nil

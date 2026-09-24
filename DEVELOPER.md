@@ -1,7 +1,8 @@
 # OurWay RMM — Developer Guide
 
 Deployment and usage docs live in [`README.md`](README.md). This file is for
-people who build, test, or extend OurWay RMM. Coordination happens in the gap-closure plan — [`TEAM-PLAN.md`](TEAM-PLAN.md) (claim a lane/wave before coding).
+people who build, test, or extend OurWay RMM. Coordination and shipped-feature
+history live in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Repo layout
 
@@ -13,12 +14,12 @@ frontend/    React (Vite) app
 scripts/     dev-stack + installer + signing helper scripts
 deploy/      Caddyfiles (prod edge + frontend internal proxy)
 keys/        minisign public key (the private key never lives in git)
-Makefile     make dev / up / down / health / build / test / proto / prod / e2e …
+Makefile     make dev / up / down / health / build / test / proto / prod …
 ```
 
 ## Local dev
 
-Requires Docker + Go 1.24+ + Node 18+.
+Requires Docker + Go 1.26+ + Node 18+.
 
 ```sh
 make dev        # boots TimescaleDB, NATS (JetStream), Redis, MinIO, Meilisearch,
@@ -50,7 +51,7 @@ minted account is the primary login).
 | --- | --- |
 | `OURWAY_RMM_PG_DSN` | `postgres://ourway-rmm:***@localhost:5432/ourway-rmm?sslmode=disable` |
 | `OURWAY_RMM_MEILI_ENDPOINT` / `OURWAY_RMM_MEILI_KEY` | `http://localhost:7700` / `` (dev instance) |
-| `OURWAY_RMM_JWT_SECRET` | random per boot (tokens rotate on restart — dev only) |
+| `OURWAY_RMM_JWT_SECRET` | unset → built-in dev secret `ourway-rmm-dev-secret-change-me` (insecure; startup warning) |
 | `OURWAY_RMM_ADMIN_USER` / `OURWAY_RMM_ADMIN_PASSWORD` | `admin` / `admin` (env fallback) |
 | `OURWAY_RMM_HTTP_ADDR` / `OURWAY_RMM_GRPC_ADDR` | `:8080` / `:50051` |
 | `OURWAY_RMM_BASELINE_INTERVAL` | `5m` |
@@ -73,7 +74,6 @@ in-process servers against scratch databases:
 
 | Target | Proves |
 | --- | --- |
-| `make e2e` | full pipeline: enroll → metric spike → baseline engine flags the spiked series → exactly 1 deduped inbox alert (re-runs bump, don't storm) → auto-resolve on recovery → fresh alert on re-spike → ack/resolve via API |
 | `make setup-e2e` | first-boot wizard against a scratch DB (mint admin, re-issue org CA under the org name, SMTP to a real in-process sink, live mTLS trust-pool swap, second boot bypasses the wizard); `make setup-ui-smoke` drives the real `<App/>` through wizard → login |
 | `make adddevice-e2e` | token mint → HTTP enroll over the operator origin with the plain gRPC port **dead** → real agent comes online over the mTLS port; `make adddevice-ui-smoke` covers the UI half |
 | `make update-e2e` | signed release is applied (1.0.0 → 2.0.0); a tampered build is refused by the signature gate; an unsigned build is refused — previous binary intact |
@@ -161,13 +161,13 @@ Notes:
 
 ```sh
 make build          # server + agent
-make agent          # cross-compile 5 static binaries (linux/darwin/windows × amd64/arm64)
+make agent          # cross-compile 6 static binaries (linux/darwin/windows × amd64/arm64)
 make verify-agent   # confirm binaries are static + run --version
 make image          # server Docker image
 
 MINISIGN_PASS=<pwd> make sign        # sign agent/dist/*, installers, SHA256SUMS
 make verify-sigs                      # re-check everything with the public key
-make sbom                             # CycloneDX SBOMs (5 agent binaries + server image)
+make sbom                             # CycloneDX SBOMs (6 agent binaries + server image)
 make release-dir DIR=releases-local   # assemble release.json + binaries + .minisig
 ```
 
@@ -181,53 +181,11 @@ release. The signer is a thin CLI over go-minisign (interop with
 self-verification. The server image is signed keyless with cosign
 (Sigstore TUF) in CI.
 
-## Ownership — gap-closure plan
-
-The top-10 gap-closure work is delivered by **three lanes** that never edit
-another lane's files. Full plan, lane scopes, waves, and milestones:
-[TEAM-PLAN.md](TEAM-PLAN.md). The rule that makes parallel work safe:
-**you only write the paths your lane owns; everyone else reviews.**
-
-### Who writes what
-
-| Lane | Owns (write) | Never edits |
-| ---- | ------------ | ----------- |
-| **A — Agent & Edge** | `proto/` (sole proto writer), `agent/`, `server/internal/{ingest,caps,releases}`, `httpapi/domain_commands.go` + `domain_enroll.go`, `frontend/src/views/devices/DeviceDetail.jsx`, `styles/views/devices.css` | B's domain packages, C's shell/UI |
-| **B — People & MSP** | `server/internal/{clients,users,tickets,notify,heal,ca,setup,smtp}`, `httpapi/domain_{clients,users,tickets,notify}.go`, `wire_{notify,tickets,clients}.go`, frontend `Clients/Users/Tickets/Notify/Heal.jsx` | `proto/`, `agent/`, C's shell/UI |
-| **C — Surfaces & Ops** | `frontend/src/App.jsx`, `ui/`, global `styles/` (+ `views/*.css` for non-A/B views), `httpapi/domain_{reports,settings,maintenance}.go`, `server/internal/{flow,baseline,webhook,export}`, `scripts/install.{sh,ps1}`, frontend `Devices/Alerts/Dashboard/Settings/Reports/SessionViewer.jsx` | `proto/`, `agent/`, B's domain packages |
-
-### Shared-artifact rules
-
-- **`httpapi/httpapi.go`** (shared helpers + `Register`) is **frozen** — C may
-  touch it additively only. New domain routes go in a new `domain_<x>.go`
-  (new file = new owner).
-- **`server/cmd/server/main.go`** is C-additive; new wiring goes in a
-  `wire_<subsystem>.go` owned by that subsystem's lane.
-- **`server/migrations/*`** — claim the number in [MIGRATIONS.md](server/migrations/MIGRATIONS.md)
-  **before** writing the file (0010–0012 B, 0013 A, 0014–0016 C, 0017+ first-come).
-- **`frontend/src/api.js`** — append-only helper blocks, one per PR, never
-  reformatted.
-- **`server/internal/store/`** — same append-only convention; each lane adds
-  its own `store_<domain>.go`.
-- **`proto/`** — only A commits; B/C review; generated code (agent + server)
-  is regenerated in the same PR.
-- **Nav items** — A/B request them from C via a 1-line PR to `App.jsx`.
-- **Login fallback** — `handleLogin` (httpapi.go) checks the `admin_users`
-  DB row first; the `OURWAY_RMM_ADMIN_USER/PASSWORD` env pair is a fallback
-  only for usernames with NO DB row. Changing a password from the settings
-  page (C #10a) mints/updates that row, so from then on the env pair no
-  longer signs in for that user.
-
-### Merge discipline
-
-Rebase-daily on `main`; PRs stay under ~600 lines of core logic (UI polish
-exempt). Lane A is the plan's critical path (remote control); B/C carry
-~1.5 w of float each to absorb slippage.
-
 ## Conventions
 
-- `TEAM-PLAN.md` is the coordination of record — claim before coding; one task
-  at a time; commit the claim before code.
-- Generated code (`server/gen`, `agent/gen`) stays out of git; use `make proto`.
+- Rebase-daily on `main`; PRs stay under ~600 lines of core logic (UI polish
+  exempt).
+- Generated gRPC code is committed under `proto/gen`; regenerate with
+  `make proto`.
 - Production hardening (compose) lives in `docker-compose.prod.yml` +
   `deploy/Caddyfile`; BYO-proxy variant in `docker-compose.byoproxy.yml`.

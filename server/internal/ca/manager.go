@@ -261,15 +261,14 @@ func (m *Manager) TLSConfig(names []string) (*tls.Config, error) {
 	}
 	cfg.GetConfigForClient = func(*tls.ClientHelloInfo) (*tls.Config, error) {
 		c := &tls.Config{
-			MinVersion:               cfg.MinVersion,
-			MaxVersion:               cfg.MaxVersion,
-			CipherSuites:             cfg.CipherSuites,
-			PreferServerCipherSuites: cfg.PreferServerCipherSuites,
-			SessionTicketsDisabled:   cfg.SessionTicketsDisabled,
-			GetCertificate:           cfg.GetCertificate,
-			NextProtos:               cfg.NextProtos,
-			ClientAuth:               tls.RequireAndVerifyClientCert,
-			ClientCAs:                m.Root().CertPool(),
+			MinVersion:             cfg.MinVersion,
+			MaxVersion:             cfg.MaxVersion,
+			CipherSuites:           cfg.CipherSuites,
+			SessionTicketsDisabled: cfg.SessionTicketsDisabled,
+			GetCertificate:         cfg.GetCertificate,
+			NextProtos:             cfg.NextProtos,
+			ClientAuth:             tls.RequireAndVerifyClientCert,
+			ClientCAs:              m.Root().CertPool(),
 		}
 		return c, nil
 	}

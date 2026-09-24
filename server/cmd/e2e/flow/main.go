@@ -537,9 +537,8 @@ func parseCertPEM(pemBytes []byte) (*x509.Certificate, error) {
 // captureNotifier counts + records notifications (the "notify" half of the
 // DoD); W6-2's NATS/webhook notifier plugs into the same seam.
 type captureNotifier struct {
-	mu       sync.Mutex
-	devByRun map[int64]string
-	reasons  []string
+	mu      sync.Mutex
+	reasons []string
 }
 
 func (n *captureNotifier) Notify(ctx context.Context, r *flow.Run, nodeID, reason string) {

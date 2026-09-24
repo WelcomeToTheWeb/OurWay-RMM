@@ -114,7 +114,7 @@ services:
     cap_drop: [ALL]
 
   loki:
-    image: ghcr.io/welcometotheweb/ourway-rmm-loki:1.2.0
+    image: ghcr.io/welcometotheweb/ourway-rmm-loki:1.3.0
     command: ["-config.file=/etc/loki/loki-local-config.yaml"]
     volumes:
       - loki-data:/loki
@@ -129,9 +129,9 @@ services:
     cap_drop: [ALL]
 
   server:
-    image: ghcr.io/welcometotheweb/ourway-rmm-server:1.2.0
+    image: ghcr.io/welcometotheweb/ourway-rmm-server:1.3.0
     environment:
-      OURWAY_RMM_VERSION: "1.0.2"
+      OURWAY_RMM_VERSION: "1.3.0"
       OURWAY_RMM_ADDR: ":8080"
       OURWAY_RMM_GRPC_ADDR: ":50051"
       OURWAY_RMM_GRPC_MTLS_ADDR: ":50052"
@@ -171,7 +171,7 @@ services:
     cap_drop: [ALL]
 
   frontend:
-    image: ghcr.io/welcometotheweb/ourway-rmm-frontend:1.2.0
+    image: ghcr.io/welcometotheweb/ourway-rmm-frontend:1.3.0
     ports:
       - "${OURWAY_RMM_FRONTEND_PORT:-8081}:8080"
     networks: [ourway-rmm]

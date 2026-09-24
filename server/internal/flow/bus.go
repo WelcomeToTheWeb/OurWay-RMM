@@ -51,6 +51,10 @@ const (
 	// webhook / SSE framework can journal + fan them out like any other.
 	SubjectAlert  = "ourway-rmm.events.alert"
 	SubjectDevice = "ourway-rmm.events.device"
+	// SubjectSession carries remote-session audit hops (session.started /
+	// session.stopped / session.stream_opened / session.stream_closed) so
+	// operators can answer "who viewed which device, for how long".
+	SubjectSession = "ourway-rmm.events.session"
 	SubjectAll    = "ourway-rmm.events.>"
 )
 

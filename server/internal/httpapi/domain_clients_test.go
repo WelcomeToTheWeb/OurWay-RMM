@@ -234,6 +234,9 @@ func TestClientRoutes(t *testing.T) {
 		t.Fatalf("scoped list: got %v, want 1", devs)
 	}
 	code, raw = doRaw(t, s, http.MethodGet, "/api/devices?client=unassigned", tok, nil)
+	if code != http.StatusOK {
+		t.Fatalf("unassigned scope: got %d: %s", code, raw)
+	}
 	devs = devs[:0]
 	if err := json.Unmarshal([]byte(raw), &devs); err != nil {
 		t.Fatalf("unassigned scope: unmarshal: %v", err)
@@ -244,6 +247,9 @@ func TestClientRoutes(t *testing.T) {
 
 	// The client's devices + rollup reflect the assignment.
 	code, raw = doRaw(t, s, http.MethodGet, "/api/clients/"+acmeID+"/devices", tok, nil)
+	if code != http.StatusOK {
+		t.Fatalf("client devices after assign: got %d: %s", code, raw)
+	}
 	devs = devs[:0]
 	if err := json.Unmarshal([]byte(raw), &devs); err != nil {
 		t.Fatalf("client devices after assign: unmarshal: %v", err)
@@ -252,6 +258,9 @@ func TestClientRoutes(t *testing.T) {
 		t.Fatalf("client devices after assign: got %v, want 1", devs)
 	}
 	code, raw = doRaw(t, s, http.MethodGet, "/api/clients", tok, nil)
+	if code != http.StatusOK {
+		t.Fatalf("rollup list: got %d: %s", code, raw)
+	}
 	list = list[:0]
 	if err := json.Unmarshal([]byte(raw), &list); err != nil {
 		t.Fatalf("rollup list: unmarshal: %v", err)
@@ -278,6 +287,9 @@ func TestClientRoutes(t *testing.T) {
 		t.Fatalf("unassigned client_id = %v, want null", cid)
 	}
 	code, raw = doRaw(t, s, http.MethodGet, "/api/clients/unassigned/devices", tok, nil)
+	if code != http.StatusOK {
+		t.Fatalf("default client devices: got %d: %s", code, raw)
+	}
 	devs = devs[:0]
 	if err := json.Unmarshal([]byte(raw), &devs); err != nil {
 		t.Fatalf("default client devices: unmarshal: %v", err)

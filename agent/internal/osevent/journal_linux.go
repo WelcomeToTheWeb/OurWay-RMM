@@ -105,3 +105,6 @@ func journalPriorityToLevel(p string) string {
 		return "INFO"
 	}
 }
+
+// intToStr keeps the id inputs uniformly string-encoded.
+func intToStr(v int64) string { return fmt.Sprint(v) }

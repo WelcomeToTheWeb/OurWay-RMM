@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -33,7 +34,9 @@ func (n ticketHealNotifier) Escalate(run *heal.Run, reason string) {
 			Source:      "heal",
 			HealRunID:   &healRunID,
 		}
-		created, err := n.store.Create(nil, ticket)
+		// Escalate has no request context of its own (it runs on the heal
+		// engine's loop); Background is the correct scope for this write.
+		created, err := n.store.Create(context.Background(), ticket)
 		if err != nil {
 			if n.log != nil {
 				n.log.Printf("ticket creation on escalation failed: %v", err)

@@ -73,6 +73,10 @@ type Driver struct {
 	live *liveSession
 	// Phase 2: input relay for two-way remote control.
 	input InputRelayer
+	// modState tracks the modifier bits the server believes are held (the
+	// protocol sends modifier keys as separate codepoint-0 events). Used to
+	// block dangerous key combos regardless of which event carries them.
+	modState uint32
 }
 
 type liveSession struct {
@@ -114,9 +118,17 @@ func (d *Driver) Control(ctx context.Context, sc *agentv1.SessionControl) {
 	}
 }
 
-// handleMouseEvent relays a mouse event to the local desktop.
+// handleMouseEvent relays a mouse event to the local desktop. Input is only
+// accepted for the device's LIVE session (a matching session id) — an event
+// for a closed, unknown or superseded session is dropped so a compromised
+// or buggy server cannot drive the desktop outside an operator-initiated
+// session.
 func (d *Driver) handleMouseEvent(ctx context.Context, me *agentv1.SessionControl_MouseEvent) {
 	if d.input == nil {
+		return
+	}
+	if !d.inputSessionLive(me.GetSessionId()) {
+		d.cfg.Logger.Warn("session: dropping mouse event for inactive session", "session", me.GetSessionId())
 		return
 	}
 	if err := d.input.MouseEvent(ctx, me.GetEventType(), int(me.GetX()), int(me.GetY()), int(me.GetButton()), int(me.GetWheelDelta())); err != nil {
@@ -124,14 +136,66 @@ func (d *Driver) handleMouseEvent(ctx context.Context, me *agentv1.SessionContro
 	}
 }
 
-// handleKeyboardEvent relays a keyboard event to the local desktop.
+// handleKeyboardEvent relays a keyboard event to the local desktop. Same
+// gating as mouse: live session with a matching session id only. Modifier
+// keys (codepoint 0) also update the driver's modifier state so dangerous
+// combos (see blockedCombo) are caught even when the modifier arrives as a
+// separate event from the key itself.
 func (d *Driver) handleKeyboardEvent(ctx context.Context, ke *agentv1.SessionControl_KeyboardEvent) {
 	if d.input == nil {
+		return
+	}
+	if !d.inputSessionLive(ke.GetSessionId()) {
+		d.cfg.Logger.Warn("session: dropping keyboard event for inactive session", "session", ke.GetSessionId())
+		return
+	}
+	d.updateModState(ke)
+	if blockedCombo(ke.GetEventType(), ke.GetCodepoint(), ke.GetModifiers(), d.modState) {
+		d.cfg.Logger.Warn("session: dropping blocked key combo", "event", ke.GetEventType(), "codepoint", ke.GetCodepoint(), "modifiers", ke.GetModifiers())
 		return
 	}
 	if err := d.input.KeyboardEvent(ctx, ke.GetEventType(), ke.GetCodepoint(), ke.GetModifiers()); err != nil {
 		d.cfg.Logger.Warn("session: keyboard event failed", "err", err)
 	}
+}
+
+// inputSessionLive reports whether an input event may be relayed: the
+// event's session id must match the device's live (open) session.
+func (d *Driver) inputSessionLive(sessionID string) bool {
+	if sessionID == "" {
+		return false
+	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.live != nil && d.live.sessionID == sessionID
+}
+
+// updateModState tracks held modifiers from the protocol's separate
+// modifier-key events (codepoint 0, the modifiers bitmask naming the key).
+func (d *Driver) updateModState(ke *agentv1.SessionControl_KeyboardEvent) {
+	if ke.GetCodepoint() != 0 || ke.GetModifiers() == 0 {
+		return
+	}
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	switch ke.GetEventType() {
+	case "down":
+		d.modState |= ke.GetModifiers()
+	case "up":
+		d.modState &^= ke.GetModifiers()
+	}
+}
+
+// blockedCombo reports a key event that must never be relayed. The rule is
+// deliberately strict: ANY key event while the Windows/Meta key is held
+// (inline in the event, or tracked from the protocol's separate modifier
+// events) is dropped. That blocks Win+L (lock the workstation), Win+R (Run
+// dialog), Win+X (power menu), the Start menu, and the Win-then-key
+// sequence that would otherwise type into the Start search — none of which
+// the remote operator can recover from over the screen stream. Non-Meta
+// modifiers (Shift/Ctrl/Alt) are unaffected.
+func blockedCombo(eventType string, codepoint uint32, inlineMods, heldMods uint32) bool {
+	return (inlineMods|heldMods)&8 != 0 // meta/windows held
 }
 
 // ActiveSessionID reports the live session ("" = none) — used by tests.
@@ -195,7 +259,12 @@ func (d *Driver) open(ctx context.Context, sessionID string, fpsHint int) {
 		return
 	}
 	d.mu.Lock()
-	d.live.capturer = cap
+	// Re-check identity: a concurrent close/stop may have nil-ed the record
+	// while NewCapturer ran (the driver promises concurrent Control + Stop
+	// safety — an unconditional dereference here would panic).
+	if d.live != nil && d.live.sessionID == sessionID {
+		d.live.capturer = cap
+	}
 	d.mu.Unlock()
 	d.startLoop(ctx, sessionID, fps, cap)
 }
@@ -269,6 +338,15 @@ func (d *Driver) runLoop(ctx context.Context, ls *liveSession, cap Capturer) {
 		if done != nil {
 			close(done)
 		}
+		// If the PUBLISHED session is the one that just exited (a stream drop
+		// or send failure kills the loop, not an explicit stop), clear it: a
+		// re-sent open on reconnect must start a fresh loop, not fast-path
+		// into the dead record (which used to freeze the viewer forever).
+		d.mu.Lock()
+		if d.live == ls {
+			d.live = nil
+		}
+		d.mu.Unlock()
 	}()
 	interval := time.Second / time.Duration(ls.fps)
 	if interval < time.Millisecond {

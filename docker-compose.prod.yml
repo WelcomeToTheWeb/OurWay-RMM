@@ -156,9 +156,9 @@ services:
     build:
       context: .
       dockerfile: server/Dockerfile
-    image: ourway-rmm-server:${OURWAY_RMM_VERSION:-0.1.0}
+    image: ourway-rmm-server:${OURWAY_RMM_VERSION:-1.3.0}
     environment:
-      OURWAY_RMM_VERSION: ${OURWAY_RMM_VERSION:-0.1.0}
+      OURWAY_RMM_VERSION: ${OURWAY_RMM_VERSION:-1.3.0}
       OURWAY_RMM_ADDR: ":8080"
       OURWAY_RMM_GRPC_ADDR: ":50051"
       OURWAY_RMM_GRPC_MTLS_ADDR: ":50052"
@@ -223,7 +223,7 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-    image: ourway-rmm-frontend:${OURWAY_RMM_VERSION:-0.1.0}
+    image: ourway-rmm-frontend:${OURWAY_RMM_VERSION:-1.3.0}
     networks: [ourway-rmm]
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]

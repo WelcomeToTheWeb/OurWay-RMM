@@ -6,7 +6,7 @@
 -- gRPC Stream uplink, where they land in this hypertable so the RMM can
 -- surface recent indexed events per device without querying Loki.
 --
--- Replay safety (same pattern as the metrics table, IDEA.md §1 outbox):
+-- Replay safety (same idempotent-outbox pattern as the metrics table):
 -- each entry carries a STABLE agent-generated id (sha256 of device|line),
 -- so ON CONFLICT DO NOTHING makes a re-sent batch after a reconnect a
 -- no-op. The hypertable dimension is ts (derived from timestamp_ms); the

@@ -18,6 +18,14 @@ import (
 // testdata (NOT the W3-4 release key). fixture.bin is pre-signed with it;
 // the signature was produced by tools/signer, the same code path CI uses to
 // sign real releases, so this exercises genuine signer/verifier interop.
+//
+// To regenerate the fixture (e.g. after changing the signature comment): the
+// throwaway key's passphrase is "testpass" (it protects nothing — the
+// security comes from the signature, not the key):
+//
+//	go -C tools/signer run . sign \
+//	  -k agent/internal/update/testdata/minisign.key -pass testpass \
+//	  -c "ourway-rmm release v2.0.0" agent/internal/update/testdata/fixture.bin
 
 func testPub(t *testing.T) string {
 	t.Helper()

@@ -196,7 +196,3 @@ func serviceAction(a agentv1.ServiceControl_Action) string {
 		return ""
 	}
 }
-
-func runtimeError(msg string) error {
-	return fmt.Errorf("%s", msg)
-}

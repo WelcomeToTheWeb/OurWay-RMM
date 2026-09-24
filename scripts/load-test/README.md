@@ -3,6 +3,8 @@
 Simulates N synthetic agents connecting to a running OurWay RMM server and
 sending heartbeats, metric batches, and occasional alert-triggering anomalies.
 
+Methodology, scale goals, and expected baselines: see `docs/load-test.md`.
+
 ## Usage
 
 ```sh

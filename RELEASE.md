@@ -5,22 +5,26 @@ release. Follow these steps for every release, including patches.
 
 ## Prerequisites
 
-- Go 1.24+ toolchain
+- Go 1.26+ toolchain
 - Docker and Docker Compose
-- minisign and cosign installed
 - Write access to the GitHub repository
 - Write access to GitHub Container Registry (`ghcr.io`)
+
+Signing needs no extra tools: `make sign` builds the minisign signer from
+`tools/signer` (plain `go build`), and CI signs the server image with keyless
+cosign (Sigstore, GitHub OIDC).
 
 ## Release Checklist
 
 ### 1. Prepare the Release
 
 ```sh
-# Update version constant in server
-# Edit server/cmd/server/main.go: change "0.1.0" to the new version
-
-# Update .env.prod.example
-# Edit .env.prod.example: update OURWAY_RMM_VERSION
+# Update the version in every place that carries it:
+#   server/cmd/server/main.go       — default in env("OURWAY_RMM_VERSION", "1.2.0")
+#   Makefile                        — VERSION := 1.2.0
+#   .env.prod.example               — OURWAY_RMM_VERSION
+#   docker-compose.release.yml      — image tags
+#   docker-compose.release-byop.yml — image tags
 
 # Write release notes
 # Edit docs/releases/vX.Y.Z.md with feature summary
@@ -66,10 +70,14 @@ MINISIGN_PASS=password VERSION=X.Y.Z make sign
 # Verify signatures
 make verify-sigs
 
-# Sign Docker image with cosign
-docker build -t ourway-rmm:${VERSION} -f server/Dockerfile .
-docker push ghcr.io/welcometotheweb/ourway-rmm:${VERSION}
-cosign sign --key env:AWS_PRIVATE_KEY ghcr.io/welcometotheweb/ourway-rmm:${VERSION}
+# Build + push the server image (the image is named ourway-rmm-server)
+docker build -t ourway-rmm-server:${VERSION} -f server/Dockerfile .
+docker push ghcr.io/welcometotheweb/ourway-rmm-server:${VERSION}
+
+# Sign the image with keyless cosign (Sigstore). In the tag-push flow CI does
+# this automatically (GitHub OIDC, id-token: write); equivalent command,
+# signing by digest:
+cosign sign --yes "ghcr.io/welcometotheweb/ourway-rmm-server@${IMAGE_DIGEST}"
 ```
 
 ### 5. Generate SBOMs
@@ -103,10 +111,10 @@ Every release must include:
 
 | Artifact | Description |
 | -------- | ----------- |
-| Agent binaries (5 platforms) | Static Linux/Windows/macOS executables |
+| Agent binaries (6 platforms) | Static Linux/Windows/macOS executables |
 | Agent minisig signatures | Per-binary cryptographic signatures |
 | Checksums file | SHA-256 hashes for all binaries |
-| Docker image | Multi-arch manifest for the server |
+| Docker image | Single-arch (amd64) image for the server |
 | SBOM files | CycloneDX format for each binary |
 | Release notes | Human-readable change summary |
 
@@ -124,6 +132,3 @@ OurWay RMM follows semantic versioning:
 - Announce the release (GitHub, mailing list, etc.)
 - Update documentation links to the new version
 
----
-
-*Release process documented as part of M5 integration milestone.*

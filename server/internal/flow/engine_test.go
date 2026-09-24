@@ -104,8 +104,7 @@ func insertSample(t *testing.T, db *pgxpool.Pool, deviceID, metric, source strin
 
 // captureNotifier records notify-node + run-failure notifications.
 type captureNotifier struct {
-	mu    chan string
-	calls []string
+	mu chan string
 }
 
 func newCaptureNotifier() *captureNotifier { return &captureNotifier{mu: make(chan string, 16)} }

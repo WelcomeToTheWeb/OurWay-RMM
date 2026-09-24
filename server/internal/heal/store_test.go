@@ -533,7 +533,9 @@ func TestHealServiceDownAndWSUS(t *testing.T) {
 			insertSample(t, db, "dev-heal-wsus", "wsus.update_state", "", 0, t0.Add(45*time.Second))
 		}
 	}
-	pass = eng.RunOnce(ctx, t0.Add(60*time.Second)) // -> confirming
+	if p := eng.RunOnce(ctx, t0.Add(60*time.Second)); p.Errors != nil { // -> confirming
+		t.Fatalf("confirm-1 pass: %v", p.Errors)
+	}
 	pass = eng.RunOnce(ctx, t0.Add(75*time.Second)) // -> resolved
 	if pass.Confirmed != 2 || pass.Errors != nil {
 		t.Fatalf("confirm pass: confirmed=%d errors=%v, want 2", pass.Confirmed, pass.Errors)

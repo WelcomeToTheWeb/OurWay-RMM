@@ -5,7 +5,7 @@
 -- set by the ingest writer from the agent's `timestamp_ms`
 -- (ts = to_timestamp(timestamp_ms / 1000.0)). We keep BOTH:
 --   timestamp_ms  bigint     — raw agent wall clock, part of the idempotency
---                              PK (ON CONFLICT DO NOTHING, IDEA.md §1 outbox)
+--                              PK (ON CONFLICT DO NOTHING, idempotent on replay)
 --   ts            timestamptz— the hypertable dimension (Timescale wants a
 --                              real time type; a bigint/generated column won't
 --                              do)

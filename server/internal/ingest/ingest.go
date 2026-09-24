@@ -277,7 +277,10 @@ func bearerFromMD(ctx context.Context) (string, error) {
 // JWTInterceptor enforces agent JWTs on every unary RPC except Enroll.
 // Exported so cmd/server can wire it into the gRPC server.
 func (s *Service) JWTInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-	if info.FullMethod == "/ourway-rmm.agent.v1.AgentService/Enroll" {
+	// NB: use the generated constant, not a hand-typed path — the proto
+	// package is ourway_rmm.agent.v1 (underscores; proto names can't carry
+	// the module's hyphen) and a mismatch here 401s every enroll.
+	if info.FullMethod == agentv1.AgentService_Enroll_FullMethodName {
 		return handler(ctx, req)
 	}
 	tok, err := bearerFromMD(ctx)
@@ -548,6 +551,19 @@ func (s *Service) Stream(stream agentv1.AgentService_StreamServer) error {
 	}
 	s.streamW[devID] = &streamWriter{devID: devID, ch: ch, ctx: ctx, cancel: cancel}
 	s.mu.Unlock()
+	// gap #1a: if a session is still active (a browser viewer is connected),
+	// re-send the open control so the (re)connecting agent resumes capturing.
+	// The agent's capture loop stops when its stream drops, so without this
+	// a brief uplink blip would freeze the viewer's screen forever.
+	if s.cfg.Sessions != nil {
+		if sid, fps, _, ok := s.cfg.Sessions.SessionInfo(devID); ok {
+			s.SendSessionControl(devID, &agentv1.SessionControl{
+				Action: &agentv1.SessionControl_Open{
+					Open: &agentv1.SessionControl_OpenSession{SessionId: sid, Fps: int32(fps)},
+				},
+			})
+		}
+	}
 	defer func() {
 		cancel()
 		s.mu.Lock()
@@ -570,6 +586,13 @@ func (s *Service) Stream(stream agentv1.AgentService_StreamServer) error {
 		// streamW before this handler returns, so a superseded stream
 		// reports no "offline" — the device is still online).
 		if wasCurrent {
+			// gap #1a: a genuine disconnect mid-session — mark the active
+			// session degraded (viewers get an "agent_offline" status frame
+			// instead of a silently frozen screen). The session stays
+			// active: the reconnect path re-sends the open control.
+			if s.cfg.Sessions != nil {
+				s.cfg.Sessions.OnAgentOffline(devID)
+			}
 			s.emitDevice("offline", map[string]any{"action": "offline", "device_id": devID, "reason": "uplink closed"})
 		}
 	}()

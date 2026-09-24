@@ -484,7 +484,9 @@ func runAgent(ctx context.Context, log *slog.Logger, cfg agentConfig, jsonl *log
 					return store.Save(res.Identity)
 				}),
 			)
-			if rerr := rot.Run(ctx); rerr != nil && !errors.Is(rerr, context.Canceled) {
+			// Run only returns when ctx is done (its error is ctx.Err()), so a
+			// non-canceled result means a deadline — worth logging.
+			if rerr := rot.Run(ctx); !errors.Is(rerr, context.Canceled) {
 				log.Warn("rotator stopped", "err", rerr)
 			}
 		}()

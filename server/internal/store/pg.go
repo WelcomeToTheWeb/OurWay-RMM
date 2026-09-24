@@ -17,7 +17,7 @@ import (
 // PostgresMetricsSink writes metric batches into the metrics hypertable.
 // Writes are idempotent: the PK (device_id, name, source, timestamp_ms) +
 // ON CONFLICT DO NOTHING makes offline replay at-least-once without
-// double-counting (IDEA.md §1 outbox story).
+// double-counting.
 type PostgresMetricsSink struct {
 	db *pgxpool.Pool
 }
@@ -64,7 +64,7 @@ func (s *PostgresMetricsSink) Write(deviceID string, batch *agentv1.MetricBatch)
 
 	// ts is derived from timestamp_ms so it always matches the row's PK.
 	// DO NOTHING makes replay idempotent (a re-sent sample with the same
-	// (device, name, source, timestamp_ms) is a no-op — IDEA.md §1).
+	// (device, name, source, timestamp_ms) is a no-op).
 	_, err := s.db.Exec(ctx, `
 		INSERT INTO metrics (device_id, name, source, value, labels, timestamp_ms, ts)
 		SELECT $1,

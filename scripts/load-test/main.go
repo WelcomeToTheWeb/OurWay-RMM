@@ -57,8 +57,8 @@ type Stats struct {
 
 // Device tracks a synthetic agent's identity.
 type Device struct {
-	id    string
-	jwt   string
+	id  string
+	jwt string
 }
 
 // StreamClient is the generated gRPC client interface.
@@ -287,8 +287,8 @@ func (h *Harness) collectMetrics() *agentv1.MetricBatch {
 	if h.rng.Float64() < 0.05 {
 		cpu = float64(h.rng.Intn(30) + 70) // 70-99% spike
 	}
-	mem := float64(h.rng.Intn(40) + 40)        // 40-79%
-	disk := float64(h.rng.Intn(40) + 50)       // 50-89%
+	mem := float64(h.rng.Intn(40) + 40)  // 40-79%
+	disk := float64(h.rng.Intn(40) + 50) // 50-89%
 	netBytes := float64(h.rng.Int63n(100000000))
 	uptime := float64(h.rng.Intn(86400*30) + 3600) // 1h to 30 days
 	h.rngMu.Unlock()
@@ -321,25 +321,25 @@ func (h *Harness) anomalousMetrics() *agentv1.MetricBatch {
 
 // LoadTestReport holds the final results.
 type LoadTestReport struct {
-	StartTime        time.Time  `json:"start_time"`
-	EndTime          time.Time  `json:"end_time"`
-	Duration         time.Duration `json:"duration"`
-	DurationActual   time.Duration `json:"duration_actual"`
-	NumDevices       int         `json:"num_devices"`
-	HeartbeatInt     time.Duration `json:"heartbeat_interval"`
-	MetricsInt       time.Duration `json:"metrics_interval"`
-	AlertRate        float64     `json:"alert_rate"`
-	Parallel         int         `json:"parallel"`
-	ReportInterval   time.Duration `json:"report_interval"`
-	ReportFile       string      `json:"report_file"`
-	Enrolled         int64       `json:"enrolled"`
-	Streamed         int64       `json:"streamed"`
-	HeartbeatsSent   int64       `json:"heartbeats_sent"`
-	HeartbeatsAcked  int64       `json:"heartbeats_acked"`
-	MetricsSent      int64       `json:"metrics_sent"`
-	AlertsFired      int64       `json:"alerts_fired"`
-	Errors           int64       `json:"errors"`
-	ServerMetrics    *ServerMetrics `json:"server_metrics,omitempty"`
+	StartTime       time.Time      `json:"start_time"`
+	EndTime         time.Time      `json:"end_time"`
+	Duration        time.Duration  `json:"duration"`
+	DurationActual  time.Duration  `json:"duration_actual"`
+	NumDevices      int            `json:"num_devices"`
+	HeartbeatInt    time.Duration  `json:"heartbeat_interval"`
+	MetricsInt      time.Duration  `json:"metrics_interval"`
+	AlertRate       float64        `json:"alert_rate"`
+	Parallel        int            `json:"parallel"`
+	ReportInterval  time.Duration  `json:"report_interval"`
+	ReportFile      string         `json:"report_file"`
+	Enrolled        int64          `json:"enrolled"`
+	Streamed        int64          `json:"streamed"`
+	HeartbeatsSent  int64          `json:"heartbeats_sent"`
+	HeartbeatsAcked int64          `json:"heartbeats_acked"`
+	MetricsSent     int64          `json:"metrics_sent"`
+	AlertsFired     int64          `json:"alerts_fired"`
+	Errors          int64          `json:"errors"`
+	ServerMetrics   *ServerMetrics `json:"server_metrics,omitempty"`
 }
 
 // ServerMetrics holds server resource measurements.
@@ -399,25 +399,25 @@ func main() {
 
 	// Write report.
 	report := &LoadTestReport{
-		StartTime:      start,
-		EndTime:        time.Now(),
-		Duration:       *duration,
-		DurationActual: time.Since(start),
-		NumDevices:     *numDevices,
-		HeartbeatInt:   *heartbeatInt,
-		MetricsInt:     *metricsInt,
-		AlertRate:      *alertRate,
-		Parallel:       *parallel,
-		ReportInterval: *reportInterval,
-		ReportFile:     *outputFile,
-		Enrolled:       atomic.LoadInt64(&h.stats.enrolled),
-		Streamed:       atomic.LoadInt64(&h.stats.streamed),
-		HeartbeatsSent: atomic.LoadInt64(&h.stats.heartbeatsSent),
+		StartTime:       start,
+		EndTime:         time.Now(),
+		Duration:        *duration,
+		DurationActual:  time.Since(start),
+		NumDevices:      *numDevices,
+		HeartbeatInt:    *heartbeatInt,
+		MetricsInt:      *metricsInt,
+		AlertRate:       *alertRate,
+		Parallel:        *parallel,
+		ReportInterval:  *reportInterval,
+		ReportFile:      *outputFile,
+		Enrolled:        atomic.LoadInt64(&h.stats.enrolled),
+		Streamed:        atomic.LoadInt64(&h.stats.streamed),
+		HeartbeatsSent:  atomic.LoadInt64(&h.stats.heartbeatsSent),
 		HeartbeatsAcked: atomic.LoadInt64(&h.stats.heartbeatsAcked),
-		MetricsSent:    atomic.LoadInt64(&h.stats.metricsSent),
-		AlertsFired:    atomic.LoadInt64(&h.stats.alertsFired),
-		Errors:         atomic.LoadInt64(&h.stats.errors),
-		ServerMetrics:  serverMetrics,
+		MetricsSent:     atomic.LoadInt64(&h.stats.metricsSent),
+		AlertsFired:     atomic.LoadInt64(&h.stats.alertsFired),
+		Errors:          atomic.LoadInt64(&h.stats.errors),
+		ServerMetrics:   serverMetrics,
 	}
 
 	if err := writeReport(report); err != nil {

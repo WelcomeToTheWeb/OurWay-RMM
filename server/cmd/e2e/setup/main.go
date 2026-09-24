@@ -397,7 +397,7 @@ func main() {
 
 	// The open window has CLOSED: smtp/test now requires an operator token
 	// (no unauthenticated open relay through the operator's SMTP account).
-	code, body, err = postJSON(ctx, apiBase, "/api/setup/smtp/test", map[string]any{"smtp": smtpCfg, "to": "ops@acme.test"})
+	code, _, err = postJSON(ctx, apiBase, "/api/setup/smtp/test", map[string]any{"smtp": smtpCfg, "to": "ops@acme.test"})
 	if err != nil {
 		die("smtp test (post-setup, no token): %v", err)
 	}
@@ -469,7 +469,7 @@ func main() {
 		"restart must RESTORE the re-issued root (no second re-issue)")
 	check(caMgr2.Root().OrgName() == org, "restored root org = %q, want %q", caMgr2.Root().OrgName(), org)
 
-	code, body, err = getJSON(ctx, apiBase2, "/api/setup/status", &st)
+	code, _, err = getJSON(ctx, apiBase2, "/api/setup/status", &st)
 	if err != nil || code != 200 {
 		die("boot2 status -> %d (err=%v)", code, err)
 	}
@@ -504,10 +504,9 @@ func main() {
 	if err != nil {
 		die("boot2 complete request: %v", err)
 	}
-	b2B, _ := io.ReadAll(b2Resp.Body)
+	_, _ = io.ReadAll(b2Resp.Body) // drain
 	b2Resp.Body.Close()
 	code = b2Resp.StatusCode
-	body = b2B
 	check(code == 409, "boot2 complete -> %d (want 409)", code)
 	info("boot2: complete still 409 (state is in the database, not the process)")
 
@@ -542,7 +541,7 @@ func main() {
 	// itself as set up — the UI skips the wizard instead of offering a
 	// completion that would have to refuse (the env admin stays the login).
 	var gSt setupStatus
-	code, body, err = getJSON(ctx, apiBase3, "/api/setup/status", &gSt)
+	code, _, err = getJSON(ctx, apiBase3, "/api/setup/status", &gSt)
 	if err != nil || code != 200 {
 		die("guard status -> %d (err=%v)", code, err)
 	}
