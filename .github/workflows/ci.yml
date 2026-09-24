@@ -85,13 +85,13 @@ jobs:
           --health-retries 20
       nats:
         # JetStream stream the W5-2 flow engine + W6-2 webhook framework run
-        # over (the e2e deletes/recreates the OURWAY_RMM_EVENTS stream per run).
-        # --jetstream/--port/--http_port are nats-server flags: they go in
-        # `command`, not `options` (options is docker-create flags only).
+        # over (the e2e deletes/recreates the OURWAY_RMM_EVENTS stream per
+        # run). The image's default config already enables JetStream and
+        # the 8222 monitor port, so only the healthcheck goes in options
+        # (options are docker-create flags; services have no command key).
         image: nats:2.10-alpine
         ports:
           - 4222:4222
-        command: ["--jetstream", "--port", "4222", "--http_port", "8222"]
         options: >-
           --health-cmd "wget -qO- http://localhost:8222/healthz"
           --health-interval 5s
@@ -210,10 +210,11 @@ jobs:
           --health-timeout 5s
           --health-retries 20
       nats:
+        # Image default config enables JetStream + 8222 monitor; options are
+        # docker-create flags only (services have no command key).
         image: nats:2.10-alpine
         ports:
           - 4222:4222
-        command: ["--jetstream", "--port", "4222", "--http_port", "8222"]
         options: >-
           --health-cmd "wget -qO- http://localhost:8222/healthz"
           --health-interval 5s
