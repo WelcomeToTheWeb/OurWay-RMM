@@ -6,6 +6,7 @@ lint:
     - STANDARD
   except:
     - ENUM_VALUE_PREFIX   # per-message enums are fine for our small set
+    - PACKAGE_DIRECTORY_MATCH  # module path is hyphenated (ourway-rmm), proto package underscored (ourway_rmm)
 breaking:
   use:
     - FILE
