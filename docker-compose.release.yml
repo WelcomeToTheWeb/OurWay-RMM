@@ -76,7 +76,7 @@ services:
     cap_add: [SETUID, SETGID, DAC_OVERRIDE]
 
   minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: minio/minio:latest
     command: ["server", "/data"]
     environment:
       MINIO_ROOT_USER: ${OURWAY_RMM_MINIO_USER:-ourway-rmm}
@@ -112,7 +112,7 @@ services:
     cap_drop: [ALL]
 
   loki:
-    image: ghcr.io/welcometotheweb/ourway-rmm-loki:1.4.0
+    image: ghcr.io/welcometotheweb/ourway-rmm-loki:1.5.0
     command: ["-config.file=/etc/loki/loki-local-config.yaml"]
     volumes:
       - loki-data:/loki
@@ -127,9 +127,9 @@ services:
     cap_drop: [ALL]
 
   server:
-    image: ghcr.io/welcometotheweb/ourway-rmm-server:1.4.0
+    image: ghcr.io/welcometotheweb/ourway-rmm-server:1.5.0
     environment:
-      OURWAY_RMM_VERSION: "1.4.0"
+      OURWAY_RMM_VERSION: "1.5.0"
       OURWAY_RMM_ADDR: ":8080"
       OURWAY_RMM_GRPC_ADDR: ":50051"
       OURWAY_RMM_GRPC_MTLS_ADDR: ":50052"
@@ -168,7 +168,7 @@ services:
     cap_drop: [ALL]
 
   frontend:
-    image: ghcr.io/welcometotheweb/ourway-rmm-frontend:1.4.0
+    image: ghcr.io/welcometotheweb/ourway-rmm-frontend:1.5.0
     networks: [ourway-rmm]
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
@@ -176,7 +176,7 @@ services:
     cap_add: [SETPCAP, NET_BIND_SERVICE]
 
   caddy:
-    image: ghcr.io/welcometotheweb/ourway-rmm-caddy:1.4.0
+    image: ghcr.io/welcometotheweb/ourway-rmm-caddy:1.5.0
     ports:
       - "80:80"
       - "443:443"
