@@ -339,7 +339,7 @@ func TestDriverBlockedCombo(t *testing.T) {
 	key("down", 76, 8) // L with meta held
 	key("up", 76, 8)
 	// Separate modifier events: meta down, then R.
-	key("down", 0, 8) // meta down
+	key("down", 0, 8)  // meta down
 	key("down", 82, 0) // R while meta tracked as held
 	key("up", 82, 0)
 	key("up", 0, 8) // meta up

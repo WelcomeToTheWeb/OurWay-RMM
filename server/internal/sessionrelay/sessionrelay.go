@@ -85,12 +85,12 @@ func (v *Viewer) Done() chan struct{} {
 
 // DeviceState holds the live state for one device.
 type DeviceState struct {
-	sessionID string
-	fps       int
-	latest    *FrameEvent
-	status    string
-	viewers   map[*Viewer]bool
-	openedAt  time.Time // last Open (session audit: duration)
+	sessionID   string
+	fps         int
+	latest      *FrameEvent
+	status      string
+	viewers     map[*Viewer]bool
+	openedAt    time.Time // last Open (session audit: duration)
 	lastFrameAt time.Time
 }
 

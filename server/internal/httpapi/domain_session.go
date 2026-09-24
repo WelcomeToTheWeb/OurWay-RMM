@@ -15,9 +15,9 @@ import (
 	"time"
 
 	agentv1 "github.com/welcometotheweb/ourway-rmm/proto/gen/ourway-rmm/agent/v1"
+	"github.com/welcometotheweb/ourway-rmm/server/internal/sessionrelay"
 	"github.com/welcometotheweb/ourway-rmm/server/internal/store"
 	"github.com/welcometotheweb/ourway-rmm/server/internal/users"
-	"github.com/welcometotheweb/ourway-rmm/server/internal/sessionrelay"
 )
 
 // streamTicketTTL bounds how long a minted stream ticket is accepted by the

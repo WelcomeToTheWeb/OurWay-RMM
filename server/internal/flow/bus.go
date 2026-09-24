@@ -55,7 +55,7 @@ const (
 	// session.stopped / session.stream_opened / session.stream_closed) so
 	// operators can answer "who viewed which device, for how long".
 	SubjectSession = "ourway-rmm.events.session"
-	SubjectAll    = "ourway-rmm.events.>"
+	SubjectAll     = "ourway-rmm.events.>"
 )
 
 // Bus is the transport interface.
