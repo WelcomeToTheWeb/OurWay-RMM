@@ -310,7 +310,7 @@ log "done. agent ${VER_OUT} installed."
 log "  binary : ${BIN}"
 log "  config : ${CFG}"
 [ "$OS" = "linux" ] && command -v systemctl >/dev/null 2>&1 &&
-  systemctl is-active ourway-rmm-agent.service 2>/dev/null | sed 's/^/  status : /'
+  $SYSTEMCTL is-active ourway-rmm-agent.service 2>/dev/null | sed 's/^/  status : /'
 log "note: the agent enrolls over the server's HTTPS origin, then streams over"
 log "      the mTLS gRPC port (default 50052 on the server host). Only that"
 log "      host + port need to be reachable from this machine."
