@@ -16,7 +16,7 @@ import (
 // serviceName is the Windows service the installer registers. It MUST match the
 // $svc used by scripts/install.ps1 (`sc create $svc ...`). Windows service
 // names are case-insensitive, but keep them identical to avoid confusion.
-const serviceName = "RmmWayAgent"
+const serviceName = "OurWayRMMAgent"
 
 // isWindowsService reports whether this process was started by the Service
 // Control Manager (i.e. it should speak the Windows service-control protocol

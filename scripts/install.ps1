@@ -7,7 +7,7 @@
 #   powershell -ExecutionPolicy Bypass -File install.ps1 -Server https://rmm.example.com -Bootstrap <TOKEN>
 #
 # What it does: detect arch (amd64), download the static agent from the GitHub
-# release, install to %ProgramFiles%\OurWay RMM\ (or %LOCALAPPDATA%\RmmWay when not
+# release, install to %ProgramFiles%\OurWay RMM\ (or %LOCALAPPDATA%\OurWayRMM when not
 # elevated), write a 0600-style ACL'd config, and register a Windows Service
 # via sc.exe.
 #
@@ -49,13 +49,43 @@ Log "asset: $url"
 # --- pick install dir (elevated -> ProgramFiles, else LocalAppData) ---------
 $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
     ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+# --- migrate pre-rebrand install (RMMWay/RmmWay -> OurWayRMM) ---------------
+# v1.3.0 renamed the service + install dirs. A re-run on an old install must
+# remove the legacy service (else two agents run) and carry the old dir over;
+# the legacy service is stopped first because its running exe locks the dir.
+$oldSvc = "RmmWayAgent"
+if (Get-Service -Name $oldSvc -ErrorAction SilentlyContinue) {
+    Log "migrating pre-rebrand service $oldSvc ..."
+    try { Stop-Service $oldSvc -Force -ErrorAction Stop } catch {
+        Log "WARNING: could not stop $oldSvc: $($_.Exception.Message)"
+    }
+    & sc.exe delete $oldSvc | Out-Null
+    if (Get-Service -Name $oldSvc -ErrorAction SilentlyContinue) {
+        Log "WARNING: pre-rebrand service $oldSvc is still present - stop it, run 'sc delete $oldSvc', then re-run this installer"
+    } else {
+        Log "pre-rebrand service $oldSvc removed"
+    }
+}
 if ($isAdmin) {
     $installDir = "C:\Program Files\OurWay RMM"
     $bin        = "$installDir\ourway-rmm-agent.exe"
+    $oldDir     = "C:\Program Files\RMMWay"
 } else {
-    $installDir = "$env:LOCALAPPDATA\RmmWay"
+    $installDir = "$env:LOCALAPPDATA\OurWayRMM"
     $bin        = "$installDir\ourway-rmm-agent.exe"
-    Log "not elevated - installing to $installDir"
+    $oldDir     = "$env:LOCALAPPDATA\RmmWay"
+}
+# Carry the pre-rebrand install dir over (agent.env + logs) when the new dir
+# doesn't exist yet; otherwise leave it so the operator can inspect it.
+if (Test-Path $oldDir -and -not (Test-Path $installDir)) {
+    try {
+        Rename-Item -Path $oldDir -NewName (Split-Path $installDir -Leaf) -ErrorAction Stop
+        Log "migrated install dir $oldDir -> $installDir"
+    } catch {
+        Log "WARNING: could not rename $oldDir (in use?): $($_.Exception.Message) - installing fresh to $installDir"
+    }
+} elseif (Test-Path $oldDir) {
+    Log "note: old install dir $oldDir left in place - remove it manually after upgrading"
 }
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 
@@ -79,7 +109,7 @@ try {
 Log "verified: $verOut"
 
 # --- integrity: the asset must match the release's published SHA256SUMS ---
-# The v0.4.0 windows asset was once hot-swapped without re-signing (the
+# A windows release asset was once hot-swapped without re-signing (the
 # .minisig and SHA256SUMS stayed stale) - refuse to install any asset whose
 # hash does not match the published sums, so an unsigned swap fails loud
 # instead of reaching the endpoint. (Full minisign verification needs the
@@ -147,7 +177,7 @@ try {
 # --- register + start the Windows service -----------------------------------
 # The agent is a real Windows service (it reports the SCM handshake on start),
 # so Start-Service succeeds even before the agent has enrolled/connected.
-$svc = "RmmWayAgent"
+$svc = "OurWayRMMAgent"
 # binPath is set in TWO steps because neither tool alone is sufficient:
 #   1. Set-SvcBinPath writes the registry value DIRECTLY (not via sc.exe):
 #      sc.exe + PowerShell native-argument quoting mangles the embedded quotes
