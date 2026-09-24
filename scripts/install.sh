@@ -231,9 +231,11 @@ if [ "$OS" = "linux" ] && command -v systemctl >/dev/null 2>&1; then
 	if [ "$(id -u)" = "0" ]; then
 		UNIT="/etc/systemd/system/ourway-rmm-agent.service"
 		SYSTEMCTL="systemctl"
+		WANTED_BY="multi-user.target"
 	else
 		UNIT="${HOME}/.config/systemd/user/ourway-rmm-agent.service"
 		SYSTEMCTL="systemctl --user"
+		WANTED_BY="default.target"
 	fi
 	log "installing systemd unit -> ${UNIT}"
 	mkdir -p "$(dirname "$UNIT")"
@@ -258,7 +260,7 @@ PrivateTmp=true
 ReadWritePaths=${CONFIG_DIR}
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=${WANTED_BY}
 EOF
 	$SYSTEMCTL daemon-reload
 	$SYSTEMCTL enable --now ourway-rmm-agent.service || log "unit enabled (start deferred — is systemd running?)"
